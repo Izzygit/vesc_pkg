@@ -19,7 +19,7 @@
 #include <math.h>
 #include "utils_tnt.h"
 
-void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeData *rt, tnt_config *config, TractionDebug *traction_dbg){
+void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeData *rt, tnt_config *config, float inputtilt_interpolated, TractionDebug *traction_dbg){
 	float erpmfactor = fmaxf(1, lerp(0, config->wheelslip_scaleerpm, config->wheelslip_scaleaccel, 1, m->abs_erpm));
 	bool start_condition1 = false;
 	bool start_condition2 = false;
@@ -115,7 +115,6 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 void reset_traction(TractionData *traction, State *state) {
 	state->wheelslip = false;
 	traction->reverse_wheelslip = false;
-	traction->traction_braking = false;
 }
 
 void deactivate_traction(TractionData *traction, State *state, RuntimeData *rt, TractionDebug *traction_dbg) {
