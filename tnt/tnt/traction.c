@@ -89,7 +89,7 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 	}
 	
 	// Initiate traction control
-	if ((start_condition1) && 					// Acceleration condition matches erpm
+	if ((start_condition1 || start_condition2) && 					// Acceleration condition matches erpm
 	   (!state->wheelslip) &&					// Not in traction control
 	   (rt->current_time - traction->timeroff > .02)) {		// Did not recently wheel slip.
 		state->wheelslip = true;
