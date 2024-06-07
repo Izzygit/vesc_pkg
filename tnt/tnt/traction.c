@@ -85,6 +85,7 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 		start_condition1 = (sign(m->current) * m->acceleration > traction->start_accel * erpmfactor) &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
 			(sign(m->current) == sign(m->accel_history[m->accel_idx])) &&				// a more precise condition than the first for current direction and erpm - last erpm
 	   		(!state->braking_pos);									// Do not apply for braking 
+		}
 	}
 	
 	// Initiate traction control
