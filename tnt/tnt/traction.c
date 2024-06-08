@@ -76,8 +76,8 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 		   		(!state->braking_pos);									// Do not apply for braking 
 		} 				
 	} else if (sign(m->erpm_sign_soft) != sign(m->accel_history[m->accel_idx])) {	// The wheel has changed direction and if these are the same sign we do not want traciton conrol because we likely just landed with high wheel spin
-		if (-inputtilt_interpolated * m->erpm_sign >= config->traction_braking_angle - .1){	//if we are beyond the traction braking angle
-			start_condition2 = (sign(m->current) * m->accel_history[m->accel_idx] > traction->start_accel * config->wheelslip_scaleaccel) &&	// Allow condition 2 for braking situations
+		if (-1 * inputtilt_interpolated * m->erpm_sign > config->traction_braking_angle - .1){	//if we are beyond the traction braking angle
+			start_condition2 = (sign(m->current) * m->accel_history[m->accel_idx] > traction->start_accel * erpmfactor) &&	// Allow condition 2 for braking situations
 				(state->braking_pos);												//and in braking position
 		} else {
 		traction->reverse_wheelslip = true;
@@ -98,7 +98,7 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 		
 		//Debug Section
 		traction_dbg->debug2 = erpmfactor;
-		traction_dbg->debug6 = start_condition1 ? m->acceleration / traction_dbg->freq_factor : m->accel_history[m->accel_idx] / traction_dbg->freq_factor;
+		traction_dbg->debug6 = start_condition1 ? fabsf(m->acceleration / traction_dbg->freq_factor) : -1 * fabsf(m->accel_history[m->accel_idx] / traction_dbg->freq_factor);
 		traction_dbg->debug9 = m->erpm;
 		traction_dbg->debug3 = m->erpm_history[m->last_erpm_idx];
 		traction_dbg->debug1 = 0;
