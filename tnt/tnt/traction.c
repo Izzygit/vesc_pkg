@@ -76,16 +76,10 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 		   		(!state->braking_pos);									// Do not apply for braking 
 		} 				
 	} else if (sign(m->erpm_sign_soft) != sign(m->accel_history[m->accel_idx])) {	// The wheel has changed direction and if these are the same sign we do not want traciton conrol because we likely just landed with high wheel spin
-		if (-1 * inputtilt_interpolated * m->erpm_sign >= config->traction_braking_angle &&	//if we are beyond the traction braking angle
-		    config->is_traction_braking_enabled) {	
-			start_condition2 = (sign(m->current) * m->accel_history[m->accel_idx] > traction->start_accel * erpmfactor) &&	// Allow condition 2 for braking situations
-				(state->braking_pos);									//and in braking position
-		} else {
 		traction->reverse_wheelslip = true;
 		start_condition1 = (sign(m->current) * m->acceleration > traction->start_accel * erpmfactor) &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
 			(sign(m->current) == sign(m->accel_history[m->accel_idx])) &&				// a more precise condition than the first for current direction and erpm - last erpm
 	   		(!state->braking_pos);									// Do not apply for braking 
-		}
 	}
 	
 	// Initiate traction control
@@ -129,4 +123,40 @@ void configure_traction(TractionData *traction, tnt_config *config, TractionDebu
 	traction->start_accel = 1000.0 * config->wheelslip_accelstart / config->hertz; //convert from erpm/ms to erpm/cycle
 	traction->slowed_accel = 1000.0 * config->wheelslip_accelend / config->hertz;
 	traction_dbg->freq_factor = 1000.0 / config->hertz;
+}
+
+void check_traction_braking(MotorData *m, TractionData *traction, State *state, RuntimeData *rt, tnt_config *config, float inputtilt_interpolated, TractionDebug *traction_dbg){
+	if (-inputtilt_interpolated * m->erpm_sign >= config->traction_braking_angle &&
+	    state->braking_pos &&
+	    m->duty_cycle > 0.01) {
+		traction->traction_braking = true;
+		
+		//Debug Section
+		traction_dbg->debug2 = 0;
+		traction_dbg->debug6 = 666;
+		traction_dbg->debug9 = 0;
+		traction_dbg->debug3 = 0;
+		traction_dbg->debug1 = 0;
+		traction_dbg->debug4 = 0;
+		if (!traction->traction_braking_last)  // Just entered traction braking, reset
+			traction->timeron = rt->current_time;
+
+		traction_dbg->debug8 = rt->current_time - traction->timeron;
+	} else { 
+		traction->traction_braking = false; 
+
+		//Debug Section
+		if (traction->traction_braking_last) {
+			traction->timeroff = rt->current_time;
+			traction_dbg->debug8 = traction->timeroff - traction->timeron;
+
+			if (rt->current_time - traction_dbg->aggregate_timer > 10) { // Aggregate the number of drop activations in 10 seconds
+				traction_dbg->aggregate_timer = rt->current_time;
+				traction_dbg->debug5 = 0;
+			}
+			if ( m->duty_cycle > 0.01)	//If erpm reduces to zero we have lost traction
+				traction_dbg->debug5 += 100;
+		}
+	}
+	traction->traction_braking_last = traction->traction_braking;
 }
