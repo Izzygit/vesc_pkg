@@ -19,9 +19,16 @@
 #include <math.h>
 #include "utils_tnt.h"
 
-void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeData *rt, tnt_config *config, TractionDebug *traction_dbg){
+void update_erpm_sign(TractionData *traction, MotorData *m) {
+	// Monitors erpm direction with a delay to prevent nuisance trips to surge and traction control
+	m->erpm_sign_soft = (1 - traction->erpm_sign_factor) * m->erpm_sign_soft + traction->erpm_sign_factor * m->erpm_sign; 
+}
+
+void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeData *rt, tnt_config *config, float inputtilt_interpolated, TractionDebug *traction_dbg){
+	update_erpm_sign(traction, m);
 	float erpmfactor = fmaxf(1, lerp(0, config->wheelslip_scaleerpm, config->wheelslip_scaleaccel, 1, m->abs_erpm));
 	bool start_condition1 = false;
+	bool start_condition2 = false;
 	
 	// Conditons to end traction control
 	if (state->wheelslip) {
@@ -67,32 +74,41 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 			}
 		}
 	}	
-	
-	if (m->erpm_sign == sign(m->erpm_history[m->last_erpm_idx])) { 	// We check sign to make sure erpm is increasing or has changed direction. 
-		if (m->abs_erpm > fabsf(m->erpm_history[m->last_erpm_idx])) {
-			start_condition1 = (sign(m->current) * m->acceleration > traction->start_accel * erpmfactor) &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
-				(sign(m->current) == sign(m->accel_history[m->accel_idx])) &&				// a more precise condition than the first for current direction and erpm - last erpm
-		   		(!state->braking_pos);									// Do not apply for braking 
-		} 				
-	} else if (sign(m->erpm_sign_soft) != sign(m->accel_history[m->accel_idx])) {	// The wheel has changed direction and if these are the same sign we do not want traciton conrol because we likely just landed with high wheel spin
+
+	//Check motor erpm and acceleration to determine the corrext detection condition to use if any
+	if (m->erpm_sign == sign(m->erpm_history[m->last_erpm_idx])) { 							//Check sign of the motor at the start of acceleration vs end
+		if (m->abs_erpm > fabsf(m->erpm_history[m->last_erpm_idx])) { 						//If signs the same check for magnitude increase
+			if (rt->current_time - traction->traction_braking_timer > .5) { 							//If we have a succesful brake wheelslip, prevent start condition 1 on landing since it will be at lower erpm and increase quickly
+				start_condition1 = (sign(m->current) * m->acceleration > traction->start_accel * erpmfactor) &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
+				    (sign(m->current) == sign(m->accel_history[m->accel_idx])) &&				// a more precise condition than the first for current direction and erpm - last erpm
+			   	    (!state->braking_pos);									// Do not apply for braking 
+			}
+		} else if (-inputtilt_interpolated * m->erpm_sign >= config->traction_braking_angle) { 			// Check braking start condition if at the right nose down angle
+			start_condition2 = (sign(m->current) * m->acceleration > traction->start_accel * erpmfactor) &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
+			    (sign(m->current) == sign(m->accel_history[m->accel_idx])) &&				// a more precise condition than the first for current direction and erpm - last erpm
+		   	    (state->braking_pos);									// only apply for braking 
+			if (start_condtion2)
+				traction->traction_braking_timer = rt->current_time;
+		}
+	} else if (sign(m->erpm_sign_soft) != sign(m->accel_history[m->accel_idx])) {				// If the motor is back spinning engage but don't allow wheelslip on landing
 		traction->reverse_wheelslip = true;
 		start_condition1 = (sign(m->current) * m->acceleration > traction->start_accel * erpmfactor) &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
-			(sign(m->current) == sign(m->accel_history[m->accel_idx])) &&				// a more precise condition than the first for current direction and erpm - last erpm
-	   		(!state->braking_pos);									// Do not apply for braking 
+		    (sign(m->current) == sign(m->accel_history[m->accel_idx])) &&				// a more precise condition than the first for current direction and erpm - last erpm
+	   	    (!state->braking_pos);									// Do not apply for braking 
 	}
 	
 	// Initiate traction control
-	if ((start_condition1) && 					// Acceleration condition matches erpm
+	if ((start_condition1 || start_condtion2) && 			// Condtions false by default
 	   (!state->wheelslip) &&					// Not in traction control
 	   (rt->current_time - traction->timeroff > .02)) {		// Did not recently wheel slip.
 		state->wheelslip = true;
 		traction->accelstartval = m->acceleration;
-		traction->highaccelon = true; 	
+		traction->highaccelon = true;
 		traction->timeron = rt->current_time;
 		
 		//Debug Section
 		traction_dbg->debug2 = erpmfactor;
-		traction_dbg->debug6 = m->acceleration / traction_dbg->freq_factor;
+		traction_dbg->debug6 = start_condition1 ? fabsf(m->acceleration / traction_dbg->freq_factor) : -1 * fabsf(m->accel_history[m->accel_idx] / traction_dbg->freq_factor);
 		traction_dbg->debug9 = m->erpm;
 		traction_dbg->debug3 = m->erpm_history[m->last_erpm_idx];
 		traction_dbg->debug1 = 0;
@@ -121,5 +137,6 @@ void deactivate_traction(TractionData *traction, State *state, RuntimeData *rt, 
 void configure_traction(TractionData *traction, tnt_config *config, TractionDebug *traction_dbg){
 	traction->start_accel = 1000.0 * config->wheelslip_accelstart / config->hertz; //convert from erpm/ms to erpm/cycle
 	traction->slowed_accel = 1000.0 * config->wheelslip_accelend / config->hertz;
+	traction->erpm_sign_factor = 0.0008 * 832.0 / config->hertz; //originally configured for 832 hz to delay an erpm sign change for 1 second
 	traction_dbg->freq_factor = 1000.0 / config->hertz;
 }
