@@ -32,6 +32,7 @@ typedef struct {
     float last_erpm;
     int8_t erpm_sign;
     float erpm_sign_soft;
+    bool erpm_sign_check;
 
     float current;
     bool braking;
