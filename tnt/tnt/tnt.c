@@ -962,7 +962,7 @@ static void tnt_thd(void *arg) {
 			check_current(&d->motor, &d->surge, &d->state, &d->rt,  &d->tnt_conf); // Check for high current conditions
 			
 			// Modifiers to PID control
-			check_traction(&d->motor, &d->traction, &d->state, &d->rt, &d->tnt_conf, &d->traction_dbg);
+			check_traction(&d->motor, &d->traction, &d->state, &d->rt, &d->tnt_conf, d->remote.inputtilt_interpolated, &d->traction_dbg);
 			if (d->tnt_conf.is_surge_enabled)
 				check_surge(&d->motor, &d->surge, &d->state, &d->rt, &d->tnt_conf, &d->surge_dbg);
 
