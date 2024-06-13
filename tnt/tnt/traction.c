@@ -100,7 +100,7 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 	}
 	
 	// Initiate traction control
-	if ((start_condition1 || start_condtion2) && 			// Condtions false by default
+	if ((start_condition1 || start_condition2) && 			// Conditions false by default
 	   (!state->wheelslip) &&					// Not in traction control
 	   (rt->current_time - traction->timeroff > .02)) {		// Did not recently wheel slip.
 		state->wheelslip = true;
