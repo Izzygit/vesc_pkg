@@ -21,7 +21,8 @@
 
 void update_erpm_sign(TractionData *traction, MotorData *m) {
 	// Monitors erpm direction with a delay to prevent nuisance trips to surge and traction control
-	m->erpm_sign_soft = (1 - traction->erpm_sign_factor) * m->erpm_sign_soft + traction->erpm_sign_factor * m->erpm_sign; 
+	m->erpm_sign_soft = (1 - traction->erpm_sign_factor) * m->erpm_sign_soft + traction->erpm_sign_factor * m->erpm_sign;
+	m->erpm_sign_check = m->erpm_sign == sign(m->erpm_sign_soft);
 }
 
 void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeData *rt, tnt_config *config, float inputtilt_interpolated, TractionDebug *traction_dbg){
