@@ -58,8 +58,6 @@ void motor_data_update(MotorData *m) {
     m->erpm = VESC_IF->mc_get_rpm();
     m->abs_erpm = fabsf(m->erpm);
     m->erpm_sign = sign(m->erpm);
-    m->erpm_sign_soft = 0.999 * m->erpm_sign_soft + (1-0.999) * m->erpm_sign;  // Monitors erpm direction with a delay to prevent nuisance trips to surge and traction control
-    m->erpm_sign_check = m->erpm_sign == sign(m->erpm_sign_soft);
 
     m->current = VESC_IF->mc_get_tot_current_directional_filtered();
     m->braking = m->abs_erpm > 250 && sign(m->current) != m->erpm_sign;
