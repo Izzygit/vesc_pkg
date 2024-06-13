@@ -31,7 +31,7 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 	bool start_condition1 = false;
 	bool start_condition2 = false;
 	
-	// Conditons to end traction control
+	// Conditions to end traction control
 	if (state->wheelslip) {
 		if (rt->current_time - traction->timeron > .3) {		// Time out at 300ms
 			traction_dbg->debug4 = 300;
@@ -89,7 +89,7 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 			start_condition2 = (sign(m->current) * m->acceleration > traction->start_accel * erpmfactor) &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
 			    (sign(m->current) == sign(m->accel_history[m->accel_idx])) &&				// a more precise condition than the first for current direction and erpm - last erpm
 		   	    (state->braking_pos);									// only apply for braking 
-			if (start_condtion2)
+			if (start_condition2)
 				traction->traction_braking_timer = rt->current_time;
 		}
 	} else if (sign(m->erpm_sign_soft) != sign(m->accel_history[m->accel_idx])) {				// If the motor is back spinning engage but don't allow wheelslip on landing
