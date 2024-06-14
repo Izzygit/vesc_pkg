@@ -85,8 +85,8 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 			   	    (!state->braking_pos);									// Do not apply for braking 
 			}
 		} else if (-inputtilt_interpolated * m->erpm_sign >= config->traction_braking_angle &&			// Check braking start condition if at the right nose down angle
-		    	 config->is_traction_braking_enabled) {
-			start_condition2 = (sign(m->current) * m->acceleration > traction->start_accel * erpmfactor) &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
+		    config->is_traction_braking_enabled) {
+			start_condition2 = (sign(m->current) * m->accel_history[m->accel_idx] > traction->start_accel) &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
 			    (sign(m->current) == sign(m->accel_history[m->accel_idx])) &&				// a more precise condition than the first for current direction and erpm - last erpm
 		   	    (state->braking_pos);									// only apply for braking 
 			if (start_condition2)
@@ -110,7 +110,8 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 		
 		//Debug Section
 		traction_dbg->debug2 = erpmfactor;
-		traction_dbg->debug6 = start_condition1 ? fabsf(m->acceleration / traction_dbg->freq_factor) : -1 * fabsf(m->accel_history[m->accel_idx] / traction_dbg->freq_factor);
+		traction_dbg->debug6 = start_condition1 ? fabsf(m->acceleration / traction_dbg->freq_factor) : 
+					-1 * fabsf(m->accel_history[m->accel_idx] / traction_dbg->freq_factor);
 		traction_dbg->debug9 = m->erpm;
 		traction_dbg->debug3 = m->erpm_history[m->last_erpm_idx];
 		traction_dbg->debug1 = 0;
