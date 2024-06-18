@@ -26,10 +26,6 @@
 void motor_data_reset(MotorData *m) {
     m->erpm_sign_soft = 0;
     m->acceleration = 0;
-    m->accel_idx = 0;
-    for (int i = 0; i < ACCEL_ARRAY_SIZE; i++) {
-        m->accel_history[i] = 0;
-    }
 
     m->erpm_idx = 0;
     for (int i = 0; i < ERPM_ARRAY_SIZE; i++) {
@@ -65,16 +61,12 @@ void motor_data_update(MotorData *m) {
     
     m->filtered_current = biquad_process(&m->current_biquad, m->current);
 
-    //Averaging/tracking for acceleration, erpm, and current
-    float current_acceleration = m->erpm_filtered - m->last_erpm;
-    m->acceleration += (current_acceleration - m->accel_history[m->accel_idx]) / ACCEL_ARRAY_SIZE;
-    m->accel_history[m->accel_idx] = current_acceleration;
-    m->last_accel_idx = m->accel_idx;
-    m->accel_idx = (m->accel_idx + 1) % ACCEL_ARRAY_SIZE;
+    m->last_acceleration = m->acceleration;
+    m->acceleration =  m->erpm_filtered - m->last_erpm;
 
     m->erpm_history[m->erpm_idx] = m->erpm_filtered;
     m->erpm_idx = (m->erpm_idx + 1) % ERPM_ARRAY_SIZE;
-    m->last_erpm_idx = m->erpm_idx - ACCEL_ARRAY_SIZE; // Identify ERPM at the start of the acceleration array
+    m->last_erpm_idx = m->erpm_idx - ERPM_ARRAY_SIZE; 
 	if (m->last_erpm_idx < 0) {
 		m->last_erpm_idx += ERPM_ARRAY_SIZE;
 	}
