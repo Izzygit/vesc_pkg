@@ -61,6 +61,6 @@ typedef struct {
 
 void motor_data_reset(MotorData *m);
 
-void motor_data_configure(MotorData *m, float frequency);
+void motor_data_configure(Biquad *motor_biquad, float frequency);
 
 void motor_data_update(MotorData *m);
