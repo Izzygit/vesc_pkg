@@ -42,51 +42,46 @@ void motor_data_reset(MotorData *m) {
         m->current_history[i] = 0;
     }
 
-    biquad_reset(&m->atr_current_biquad);
+    biquad_reset(&m->current_biquad);
+    biquad_reset(&m->erpm_biquad);
 }
 
-void motor_data_configure(MotorData *m, float frequency) {
+void motor_data_configure(Biquad *motor_biquad, float frequency) {
     if (frequency > 0) {
-        biquad_configure(&m->atr_current_biquad, BQ_LOWPASS, frequency);
-        m->atr_filter_enabled = true;
-    } else {
-        m->atr_filter_enabled = false;
+        biquad_configure(&motor_biquad, BQ_LOWPASS, frequency);
     }
 }
 
 void motor_data_update(MotorData *m) {
     m->erpm = VESC_IF->mc_get_rpm();
-    m->abs_erpm = fabsf(m->erpm);
-    m->erpm_sign = sign(m->erpm);
+    m->erpm_filtered = biquad_process(&m->erpm_filtered, m->erpm);
+    m->abs_erpm = fabsf(m->erpm_filtered);
+    m->erpm_sign = sign(m->erpm_filtered);
 
     m->current = VESC_IF->mc_get_tot_current_directional_filtered();
     m->braking = m->abs_erpm > 250 && sign(m->current) != m->erpm_sign;
 
     m->duty_cycle = fabsf(VESC_IF->mc_get_duty_cycle_now());
     
-    if (m->atr_filter_enabled) {
-        m->atr_filtered_current = biquad_process(&m->atr_current_biquad, m->current);
-    } else {
-        m->atr_filtered_current = m->current;
-    }
+    m->filtered_current = biquad_process(&m->current_biquad, m->current);
 
     //Averaging/tracking for acceleration, erpm, and current
-    float current_acceleration = m->erpm - m->last_erpm;
+    float current_acceleration = m->erpm_filtered - m->last_erpm;
     m->acceleration += (current_acceleration - m->accel_history[m->accel_idx]) / ACCEL_ARRAY_SIZE;
     m->accel_history[m->accel_idx] = current_acceleration;
     m->last_accel_idx = m->accel_idx;
     m->accel_idx = (m->accel_idx + 1) % ACCEL_ARRAY_SIZE;
 
-    m->erpm_history[m->erpm_idx] = m->erpm;
+    m->erpm_history[m->erpm_idx] = m->erpm_filtered;
     m->erpm_idx = (m->erpm_idx + 1) % ERPM_ARRAY_SIZE;
     m->last_erpm_idx = m->erpm_idx - ACCEL_ARRAY_SIZE; // Identify ERPM at the start of the acceleration array
 	if (m->last_erpm_idx < 0) {
 		m->last_erpm_idx += ERPM_ARRAY_SIZE;
 	}
     
-    m->current_avg += (m->atr_filtered_current - m->current_history[m->current_idx]) / CURRENT_ARRAY_SIZE;
-    m->current_history[m->current_idx] = m->atr_filtered_current;
+    m->current_avg += (m->filtered_current - m->current_history[m->current_idx]) / CURRENT_ARRAY_SIZE;
+    m->current_history[m->current_idx] = m->filtered_current;
     m->current_idx = (m->current_idx + 1) % CURRENT_ARRAY_SIZE;
     
-    m->last_erpm = m->erpm;
+    m->last_erpm = m->erpm_filtered;
 }
