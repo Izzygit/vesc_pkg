@@ -33,8 +33,9 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 	
 	// Conditions to end traction control
 	if (state->wheelslip) {
-		if (rt->current_time - traction->timeron > .3) {		// Time out at 300ms
-			traction_dbg->debug4 = 300;
+		if (rt->current_time - traction->timeron > .5) {		// Time out at 300ms
+			if (traction_dbg->debug5 == 1)
+				traction_dbg->debug4 = 300;
 			deactivate_traction(traction, state, rt, traction_dbg);
 		} else {
 			//This section determines if the wheel is acted on by outside forces by detecting acceleration direction change
@@ -43,14 +44,16 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 				// First we identify that the wheel has deccelerated due to traciton control, switching the sign
 					traction->highaccelon1 = false;				
 					traction_dbg->debug1 = rt->current_time - traction->timeron;
-				} else if (rt->current_time - traction->timeron > .21 && 
+				} else if (rt->current_time - traction->timeron > .31 && 
 				   traction->highaccelon2 ) {	// Time out at 210ms if wheel does not deccelerate
-					traction_dbg->debug4 = 210;
+					if (traction_dbg->debug5 == 1)
+						traction_dbg->debug4 = 310;
 					deactivate_traction(traction, state, rt, traction_dbg);
 				}
 			} else if (sign(m->accel_history[m->accel_idx])!= sign(m->accel_history[m->last_accel_idx])) { 
 			// Next we check to see if accel direction changes again from outside forces 
-				traction_dbg->debug4 = 1; //m->accel_history[m->last_accel_idx];
+				if (traction_dbg->debug5 == 1)
+					traction_dbg->debug4 = 1; //m->accel_history[m->last_accel_idx];
 				deactivate_traction(traction, state, rt, traction_dbg);
 			}
 			
@@ -59,13 +62,15 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 				if (traction->highaccelon2) {
 					if (sign(traction->accelstartval) * m->acceleration < traction->slowed_accel) {	 	// First we identify that the wheel has deccelerated due to traciton control
 						traction->highaccelon2 = false;	
-					} else if ((rt->current_time - traction->timeron > .22) && 
+					} else if ((rt->current_time - traction->timeron > .32) && 
 					    traction->highaccelon1) {					// Time out at 220ms if wheel does not deccelerate
-						traction_dbg->debug4 = 220;
+						if (traction_dbg->debug5 == 1)
+							traction_dbg->debug4 = 320;
 						deactivate_traction(traction, state, rt, traction_dbg);
 					}	
-				} else if (sign(traction->accelstartval) * m->acceleration > 2) {	
-					traction_dbg->debug4 = 2;
+				} else if (fabsf(m->acceleration) > 2) {	
+					if (traction_dbg->debug5 == 1)
+						traction_dbg->debug4 = 2;
 					deactivate_traction(traction, state, rt, traction_dbg);
 				}
 
@@ -75,21 +80,23 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 			if (traction->reverse_wheelslip && 
 			    m->erpm_sign == m->erpm_sign_soft && 
 			    state->wheelslip) {
-				traction_dbg->debug4 = 3;
+				if (traction_dbg->debug5 == 1)
+					traction_dbg->debug4 = 3;
 				deactivate_traction(traction, state, rt, traction_dbg);
 			}
 
 			if (traction->traction_braking && 
 			    m->erpm_sign_soft == sign(m->accel_history[m->accel_idx]) && 
 			    state->wheelslip) {
-				traction_dbg->debug4 = 4;
+				if (traction_dbg->debug5 == 1)
+					traction_dbg->debug4 = 4;
 				deactivate_traction(traction, state, rt, traction_dbg);
 			}
 		}
 	}	
 
 	//Check motor erpm and acceleration to determine the corrext detection condition to use if any
-	if (m->erpm_sign == sign(m->erpm_history[m->last_erpm_idx])) { 							//Check sign of the motor at the start of acceleration vs end
+	if (m->erpm_sign == sign(m->erpm_history[m->last_erpm_idx])) { 							//Check sign of the motor at the start of acceleration
 		if (m->abs_erpm > fabsf(m->erpm_history[m->last_erpm_idx])) { 						//If signs the same check for magnitude increase
 			if (rt->current_time - traction->traction_braking_timer > .5) { 							//If we have a succesful brake wheelslip, prevent start condition 1 on landing since it will be at lower erpm and increase quickly
 				start_condition1 = (sign(m->current) * m->acceleration > traction->start_accel * erpmfactor) &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
@@ -123,17 +130,19 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 		traction->timeron = rt->current_time;
 		
 		//Debug Section
-		traction_dbg->debug2 = erpmfactor;
-		traction_dbg->debug6 = start_condition1 ? fabsf(m->acceleration / traction_dbg->freq_factor) : 
-					-1 * fabsf(m->accel_history[m->accel_idx] / traction_dbg->freq_factor);
-		traction_dbg->debug9 = m->erpm;
-		traction_dbg->debug3 = m->erpm_history[m->last_erpm_idx];
-		traction_dbg->debug1 = 0;
-		traction_dbg->debug4 = 0;
-		traction_dbg->debug8 = 0;
 		if (rt->current_time - traction_dbg->aggregate_timer > 5) { // Aggregate the number of drop activations in 5 seconds
 			traction_dbg->aggregate_timer = rt->current_time;
 			traction_dbg->debug5 = 0;
+		}
+		if (traction_dbg->debug5 == 0) {
+			traction_dbg->debug2 = erpmfactor;
+			traction_dbg->debug6 = start_condition1 ? fabsf(m->acceleration / traction_dbg->freq_factor) : 
+						-1 * fabsf(m->accel_history[m->accel_idx] / traction_dbg->freq_factor);
+			traction_dbg->debug9 = m->erpm;
+			traction_dbg->debug3 = m->erpm_history[m->last_erpm_idx];
+			traction_dbg->debug1 = 0;
+			traction_dbg->debug4 = 0;
+			traction_dbg->debug8 = 0;
 		}
 		traction_dbg->debug5 += 1;
 	}
@@ -149,8 +158,9 @@ void deactivate_traction(TractionData *traction, State *state, RuntimeData *rt, 
 	state->wheelslip = false;
 	traction->timeroff = rt->current_time;
 	traction->reverse_wheelslip = false;
-	traction_dbg->debug8 = traction->timeroff - traction->timeron;
 	traction->traction_braking = false;
+	if (traction_dbg->debug5 == 1)
+		traction_dbg->debug8 = traction->timeroff - traction->timeron;
 }
 
 void configure_traction(TractionData *traction, tnt_config *config, TractionDebug *traction_dbg){
