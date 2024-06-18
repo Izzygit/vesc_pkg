@@ -23,7 +23,7 @@
 #include <stdint.h>
 
 #define ACCEL_ARRAY_SIZE 3 // For Traction Control acceleration average
-#define ERPM_ARRAY_SIZE 10 // For traction control erpm tracking
+#define ERPM_ARRAY_SIZE 3 // For traction control erpm tracking
 #define CURRENT_ARRAY_SIZE 20 // For surge current tracking
 
 typedef struct {
