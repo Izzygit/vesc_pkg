@@ -48,13 +48,13 @@ void motor_data_reset(MotorData *m) {
 
 void motor_data_configure(Biquad *motor_biquad, float frequency) {
     if (frequency > 0) {
-        biquad_configure(&motor_biquad, BQ_LOWPASS, frequency);
+        biquad_configure(motor_biquad, BQ_LOWPASS, frequency);
     }
 }
 
 void motor_data_update(MotorData *m) {
     m->erpm = VESC_IF->mc_get_rpm();
-    m->erpm_filtered = biquad_process(&m->erpm_filtered, m->erpm);
+    m->erpm_filtered = biquad_process(&m->erpm_biquad, m->erpm);
     m->abs_erpm = fabsf(m->erpm_filtered);
     m->erpm_sign = sign(m->erpm_filtered);
 
