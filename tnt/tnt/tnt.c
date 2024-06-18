@@ -1139,7 +1139,7 @@ static float app_get_debug(int index) {
     case (8):
         return d->motor.current;
     case (9):
-        return d->motor.atr_filtered_current;
+        return d->motor.filtered_current;
     default:
         return 0;
     }
