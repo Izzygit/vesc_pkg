@@ -33,6 +33,8 @@ typedef struct {
     int8_t erpm_sign;
     float erpm_sign_soft;
     bool erpm_sign_check;
+    Biquad erpm_biquad;
+    float erpm_filtered;
 
     float current;
     bool braking;
@@ -53,9 +55,8 @@ typedef struct {
     float current_history[CURRENT_ARRAY_SIZE];
     int8_t current_idx;
 
-    bool atr_filter_enabled;
-    Biquad atr_current_biquad;
-    float atr_filtered_current;
+    Biquad current_biquad;
+    float filtered_current;
 } MotorData;
 
 void motor_data_reset(MotorData *m);
