@@ -299,10 +299,7 @@ static void configure(data *d) {
 	configure_kalman(&d->tnt_conf, &d->pitch_kalman);
 
 	//Motor Data Configure
-	motor_data_configure(&d->motor.current_biquad, 3.0 / d->tnt_conf.hertz);
-	motor_data_configure(&d->motor.erpm_biquad, d->tnt_conf.pitch_filter / d->tnt_conf.hertz);
-	motor_data_configure(&d->motor.erpm_biquad, 25.0 / d->tnt_conf.hertz);
-
+	motor_data_configure(&d->motor, &d->tnt_conf);
 
 	//initialize current and pitch arrays for acceleration
 	angle_kp_reset(&d->accel_kp);
