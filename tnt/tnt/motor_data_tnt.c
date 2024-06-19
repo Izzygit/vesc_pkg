@@ -25,7 +25,8 @@
 
 void motor_data_reset(MotorData *m) {
     m->erpm_sign_soft = 0;
-    m->acceleration = 0;
+    m->accel_slow = 0;
+    m->accel_fast = 0;
 
     m->erpm_idx = 0;
     for (int i = 0; i < ERPM_ARRAY_SIZE; i++) {
@@ -37,8 +38,18 @@ void motor_data_reset(MotorData *m) {
     biquad_reset(&m->erpm_biquad_slow);
 }
 
-void motor_data_configure(Biquad *motor_biquad, float frequency) {
-    biquad_configure(motor_biquad, BQ_LOWPASS, frequency);
+void motor_data_configure(MotorData *m, tnt_config *config) {
+    biquad_configure(&m->current_biquad, BQ_LOWPASS, 3.0 / config->hertz);
+    biquad_configure(&m->erpm_biquad_fast, BQ_LOWPASS, d->tnt_conf.pitch_filter / config->hertz);
+    biquad_configure(&m->erpm_biquad_slow, BQ_LOWPASS, 25.0 / config->hertz);
+   
+    m->erpm_sign_factor = 0.0008 * 832.0 / config->hertz; //originally configured for 832 hz to delay an erpm sign change for 1 second
+}
+
+void update_erpm_sign(MotorData *m) {
+	// Monitors erpm direction with a delay to prevent nuisance trips to surge and traction control
+	m->erpm_sign_soft = (1 - m->erpm_sign_factor) * m->erpm_sign_soft + m->erpm_sign_factor * m->erpm_sign;
+	m->erpm_sign_check = m->erpm_sign == sign(m->erpm_sign_soft);
 }
 
 void motor_data_update(MotorData *m) {
@@ -46,7 +57,8 @@ void motor_data_update(MotorData *m) {
     m->erpm_filtered_fast = biquad_process(&m->erpm_biquad_fast, m->erpm);
     m->abs_erpm = fabsf(m->erpm_filtered_fast);
     m->erpm_sign = sign(m->erpm_filtered_fast);
-    
+    update_erpm_sign(traction, m);
+
     m->erpm_history[m->erpm_idx] = m->erpm_filtered_fast;
     m->erpm_idx = (m->erpm_idx + 1) % ERPM_ARRAY_SIZE;
     m->last_erpm_idx = m->erpm_idx - ERPM_ARRAY_SIZE; 
