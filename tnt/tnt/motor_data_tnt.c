@@ -33,8 +33,8 @@ void motor_data_reset(MotorData *m) {
     }
 
     biquad_reset(&m->current_biquad);
-    biquad_reset(&m->erpm_hs_biquad);
-    biquad_reset(&m->erpm_ls_biquad);
+    biquad_reset(&m->erpm_biquad_hs);
+    biquad_reset(&m->erpm_biquad_ls);
 }
 
 void motor_data_configure(Biquad *motor_biquad, float frequency) {
@@ -45,8 +45,8 @@ void motor_data_configure(Biquad *motor_biquad, float frequency) {
 
 void motor_data_update(MotorData *m) {
     m->erpm = VESC_IF->mc_get_rpm();
-    m->erpm_hs_filtered = biquad_process(&m->erpm_hs_biquad, m->erpm);
-    m->erpm_ls_filtered = biquad_process(&m->erpm_ls_biquad, m->erpm);
+    m->erpm_filtered_hs = biquad_process(&m->erpm_biquad_hs, m->erpm);
+    m->erpm_filtered_ls = biquad_process(&m->erpm_biquad_ls, m->erpm);
     m->abs_erpm = fabsf(m->erpm_hs_filtered);
     m->erpm_sign = sign(m->erpm_hs_filtered);
     
@@ -57,12 +57,12 @@ void motor_data_update(MotorData *m) {
        m->last_erpm_idx += ERPM_ARRAY_SIZE;
 	
     m->last_accel_hs = m->accel_hs;
-    m->accel_hs =  m->erpm_hs_filtered - m->last_erpm_hs;
-    m->last_erpm_hs = m->erpm_hs_filtered;
+    m->accel_hs =  m->erpm_filtered_hs - m->last_erpm_hs;
+    m->last_erpm_hs = m->erpm_filtered_hs;
 
     m->last_accel_ls = m->accel_ls;
-    m->accel_ls =  m->erpm_ls_filtered - m->last_erpm_ls;
-    m->last_erpm_ls = m->erpm_ls_filtered;
+    m->accel_ls =  m->erpm_filtered_ls - m->last_erpm_ls;
+    m->last_erpm_ls = m->erpm_filtered_ls;
 
     m->current = VESC_IF->mc_get_tot_current_directional_filtered();
     m->current_avg = biquad_process(&m->current_biquad, m->current);
