@@ -28,31 +28,34 @@
 typedef struct {
     float erpm;
     float abs_erpm;
-    float last_erpm;
     int8_t erpm_sign;
     float erpm_sign_soft;
     bool erpm_sign_check;
-    Biquad erpm_biquad;
-    float erpm_filtered;
+
+    Biquad erpm_biquad_ls;
+    Biquad erpm_biquad_hs;
+    float erpm_filtered_ls;
+    float erpm_filtered_hs;
+    float last_erpm_hs;
+    float last_erpm_ls;
 
     float current;
     bool braking;
 
     float duty_cycle;
 
-    float acceleration;
-    float last_acceleration;
-	
+    float accel_ls;
+    float accel_hs;
+    float last_accel_ls;
+    float last_accel_hs;
+
     float erpm_history[ERPM_ARRAY_SIZE];
     int erpm_idx;
     int last_erpm_idx;
 
-    float current_avg;
-    float current_history[CURRENT_ARRAY_SIZE];
-    int8_t current_idx;
-
     Biquad current_biquad;
     float filtered_current;
+    float current_avg;
 } MotorData;
 
 void motor_data_reset(MotorData *m);
