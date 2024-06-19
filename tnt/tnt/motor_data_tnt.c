@@ -31,15 +31,10 @@ void motor_data_reset(MotorData *m) {
     for (int i = 0; i < ERPM_ARRAY_SIZE; i++) {
         m->erpm_history[i] = 0;
     }
-    
-    m->current_avg = 0;
-    m->current_idx = 0;
-    for (int i = 0; i < CURRENT_ARRAY_SIZE; i++) {
-        m->current_history[i] = 0;
-    }
 
     biquad_reset(&m->current_biquad);
-    biquad_reset(&m->erpm_biquad);
+    biquad_reset(&m->erpm_hs_biquad);
+    biquad_reset(&m->erpm_ls_biquad);
 }
 
 void motor_data_configure(Biquad *motor_biquad, float frequency) {
@@ -50,27 +45,28 @@ void motor_data_configure(Biquad *motor_biquad, float frequency) {
 
 void motor_data_update(MotorData *m) {
     m->erpm = VESC_IF->mc_get_rpm();
-    m->erpm_filtered = biquad_process(&m->erpm_biquad, m->erpm);
-    m->abs_erpm = fabsf(m->erpm_filtered);
-    m->erpm_sign = sign(m->erpm_filtered);
+    m->erpm_hs_filtered = biquad_process(&m->erpm_hs_biquad, m->erpm);
+    m->erpm_ls_filtered = biquad_process(&m->erpm_ls_biquad, m->erpm);
+    m->abs_erpm = fabsf(m->erpm_hs_filtered);
+    m->erpm_sign = sign(m->erpm_hs_filtered);
     
-    m->erpm_history[m->erpm_idx] = m->erpm_filtered;
+    m->erpm_history[m->erpm_idx] = m->erpm_hs_filtered;
     m->erpm_idx = (m->erpm_idx + 1) % ERPM_ARRAY_SIZE;
     m->last_erpm_idx = m->erpm_idx - ERPM_ARRAY_SIZE; 
     if (m->last_erpm_idx < 0) 
        m->last_erpm_idx += ERPM_ARRAY_SIZE;
 	
-    m->last_acceleration = m->acceleration;
-    m->acceleration =  m->erpm_filtered - m->last_erpm;
-	m->last_erpm = m->erpm_filtered;
-	
+    m->last_accel_hs = m->accel_hs;
+    m->accel_hs =  m->erpm_hs_filtered - m->last_erpm_hs;
+    m->last_erpm_hs = m->erpm_hs_filtered;
+
+    m->last_accel_ls = m->accel_ls;
+    m->accel_ls =  m->erpm_ls_filtered - m->last_erpm_ls;
+    m->last_erpm_ls = m->erpm_ls_filtered;
+
     m->current = VESC_IF->mc_get_tot_current_directional_filtered();
     m->current_avg = biquad_process(&m->current_biquad, m->current);
-	m->braking = m->abs_erpm > 250 && sign(m->current) != m->erpm_sign;
+    m->braking = m->abs_erpm > 250 && sign(m->current) != m->erpm_sign;
 
     m->duty_cycle = fabsf(VESC_IF->mc_get_duty_cycle_now());
-    
-    //m->current_avg += (m->filtered_current - m->current_history[m->current_idx]) / CURRENT_ARRAY_SIZE;
-    //m->current_history[m->current_idx] = m->filtered_current;
-    //m->current_idx = (m->current_idx + 1) % CURRENT_ARRAY_SIZE;
 }
