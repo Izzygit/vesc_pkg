@@ -29,6 +29,8 @@ typedef struct {
     float erpm;
     float abs_erpm;
     int8_t erpm_sign;
+
+    float erpm_sign_factor;
     float erpm_sign_soft;
     bool erpm_sign_check;
 
@@ -59,7 +61,6 @@ typedef struct {
 } MotorData;
 
 void motor_data_reset(MotorData *m);
-
 void motor_data_configure(Biquad *motor_biquad, float frequency);
-
+void update_erpm_sign(MotorData *m);
 void motor_data_update(MotorData *m);
