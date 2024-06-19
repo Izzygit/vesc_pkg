@@ -301,6 +301,8 @@ static void configure(data *d) {
 	//Motor Data Configure
 	motor_data_configure(&d->motor.current_biquad, 3.0 / d->tnt_conf.hertz);
 	motor_data_configure(&d->motor.erpm_biquad, d->tnt_conf.pitch_filter / d->tnt_conf.hertz);
+	motor_data_configure(&d->motor.erpm_biquad, 25.0 / d->tnt_conf.hertz);
+
 
 	//initialize current and pitch arrays for acceleration
 	angle_kp_reset(&d->accel_kp);
