@@ -293,14 +293,14 @@ static void configure(data *d) {
 	configure_remote_features(&d->tnt_conf, &d->remote, &d->st_tilt);
 	
 	//Pitch Biquad Configure
-	biquad_configure(&d->pitch_biquad, BQ_LOWPASS, d->tnt_conf.pitch_filter / d->tnt_conf.hertz);
+	biquad_configure(&d->pitch_biquad, BQ_LOWPASS, 25.0 / d->tnt_conf.hertz); //d->tnt_conf.pitch_filter / d->tnt_conf.hertz);
 
 	//Pitch Kalman Configure
 	configure_kalman(&d->tnt_conf, &d->pitch_kalman);
 
 	//Motor Data Configure
 	motor_data_configure(&d->motor.current_biquad, 3.0 / d->tnt_conf.hertz);
-	motor_data_configure(&d->motor.erpm_biquad, 50.0 / d->tnt_conf.hertz);
+	motor_data_configure(&d->motor.erpm_biquad, d->tnt_conf.pitch_filter / d->tnt_conf.hertz);
 
 	//initialize current and pitch arrays for acceleration
 	angle_kp_reset(&d->accel_kp);
