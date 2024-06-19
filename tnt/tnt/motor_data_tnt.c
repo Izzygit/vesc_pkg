@@ -33,36 +33,34 @@ void motor_data_reset(MotorData *m) {
     }
 
     biquad_reset(&m->current_biquad);
-    biquad_reset(&m->erpm_biquad_hs);
-    biquad_reset(&m->erpm_biquad_ls);
+    biquad_reset(&m->erpm_biquad_fast);
+    biquad_reset(&m->erpm_biquad_slow);
 }
 
 void motor_data_configure(Biquad *motor_biquad, float frequency) {
-    if (frequency > 0) {
-        biquad_configure(motor_biquad, BQ_LOWPASS, frequency);
-    }
+    biquad_configure(motor_biquad, BQ_LOWPASS, frequency);
 }
 
 void motor_data_update(MotorData *m) {
     m->erpm = VESC_IF->mc_get_rpm();
-    m->erpm_filtered_hs = biquad_process(&m->erpm_biquad_hs, m->erpm);
-    m->erpm_filtered_ls = biquad_process(&m->erpm_biquad_ls, m->erpm);
-    m->abs_erpm = fabsf(m->erpm_hs_filtered);
-    m->erpm_sign = sign(m->erpm_hs_filtered);
+    m->erpm_filtered_fast = biquad_process(&m->erpm_biquad_fast, m->erpm);
+    m->abs_erpm = fabsf(m->erpm_filtered_fast);
+    m->erpm_sign = sign(m->erpm_filtered_fast);
     
-    m->erpm_history[m->erpm_idx] = m->erpm_hs_filtered;
+    m->erpm_history[m->erpm_idx] = m->erpm_filtered_fast;
     m->erpm_idx = (m->erpm_idx + 1) % ERPM_ARRAY_SIZE;
     m->last_erpm_idx = m->erpm_idx - ERPM_ARRAY_SIZE; 
     if (m->last_erpm_idx < 0) 
        m->last_erpm_idx += ERPM_ARRAY_SIZE;
 	
-    m->last_accel_hs = m->accel_hs;
-    m->accel_hs =  m->erpm_filtered_hs - m->last_erpm_hs;
-    m->last_erpm_hs = m->erpm_filtered_hs;
+    m->last_accel_fast = m->accel_fast;
+    m->accel_fast =  m->erpm_filtered_fast - m->last_erpm_fast;
+    m->last_erpm_fast = m->erpm_filtered_fast;
 
-    m->last_accel_ls = m->accel_ls;
-    m->accel_ls =  m->erpm_filtered_ls - m->last_erpm_ls;
-    m->last_erpm_ls = m->erpm_filtered_ls;
+    m->erpm_filtered_slow = biquad_process(&m->erpm_biquad_slow, m->erpm);
+    m->last_accel_slow = m->accel_slow;
+    m->accel_slow =  m->erpm_filtered_slow - m->last_erpm_slow;
+    m->last_erpm_slow = m->erpm_filtered_slow;
 
     m->current = VESC_IF->mc_get_tot_current_directional_filtered();
     m->current_avg = biquad_process(&m->current_biquad, m->current);
