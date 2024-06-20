@@ -57,7 +57,7 @@ void motor_data_update(MotorData *m) {
     m->erpm_filtered_fast = biquad_process(&m->erpm_biquad_fast, m->erpm);
     m->abs_erpm = fabsf(m->erpm_filtered_fast);
     m->erpm_sign = sign(m->erpm_filtered_fast);
-    update_erpm_sign(traction, m);
+    update_erpm_sign(m);
 
     m->erpm_history[m->erpm_idx] = m->erpm_filtered_fast;
     m->erpm_idx = (m->erpm_idx + 1) % ERPM_ARRAY_SIZE;
