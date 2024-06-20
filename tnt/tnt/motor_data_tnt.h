@@ -23,7 +23,6 @@
 #include <stdint.h>
 
 #define ERPM_ARRAY_SIZE 10 // For traction control erpm tracking
-#define CURRENT_ARRAY_SIZE 20 // For surge current tracking
 
 typedef struct {
     float erpm;
