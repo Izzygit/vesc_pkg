@@ -16,9 +16,8 @@
 // this program. If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
-
+#include "conf/datatypes.h"
 #include "biquad.h"
-
 #include <stdbool.h>
 #include <stdint.h>
 
