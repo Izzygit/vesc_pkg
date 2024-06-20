@@ -36,10 +36,7 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 				if (sign(traction->accelstartval) != sign(m->accel_slow)) { 
 				// First we identify that the wheel has deccelerated due to traciton control, switching the sign
 					traction->highaccelon1 = false;				
-				} else if (rt->current_time - traction->timeron > .41 && 
-				   traction->highaccelon2 ) {	// Time out at 210ms if wheel does not deccelerate
-					deactivate_traction(traction, state, rt, traction_dbg, 41);
-				}
+				} 
 			} else if (sign(m->accel_slow)!= sign(m->last_accel_slow)) { 
 			// Next we check to see if accel direction changes again from outside forces 
 				deactivate_traction(traction, state, rt, traction_dbg, 1);
@@ -54,7 +51,7 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 				    traction->highaccelon1) {					// Time out at 220ms if wheel does not deccelerate
 					deactivate_traction(traction, state, rt, traction_dbg, 42);
 				}	
-			} else if (fabsf(m->accel_slow) > 2) {	
+			} else if (fabsf(m->accel_slow) > traction->end_accel) {	
 			// Next we check to see if accel magnitude increases from outside forces 
 				deactivate_traction(traction, state, rt, traction_dbg, 2);
 			}
@@ -146,6 +143,7 @@ void deactivate_traction(TractionData *traction, State *state, RuntimeData *rt, 
 
 void configure_traction(TractionData *traction, tnt_config *config, TractionDebug *traction_dbg){
 	traction->start_accel = 1000.0 * config->wheelslip_accelstart / config->hertz; //convert from erpm/ms to erpm/cycle
-	traction->slowed_accel = 1000.0 * config->wheelslip_accelend / config->hertz;
+	traction->slowed_accel = 1000.0 * config->wheelslip_accelslowed / config->hertz;
+	traction->end_accel = 1000.0 * config->wheelslip_accelend / config->hertz;
 	traction_dbg->freq_factor = 1000.0 / config->hertz;
 }
