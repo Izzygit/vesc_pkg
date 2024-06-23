@@ -54,12 +54,11 @@ void update_erpm_sign(MotorData *m) {
 
 void motor_data_update(MotorData *m) {
     m->erpm = VESC_IF->mc_get_rpm();
-    m->erpm_filtered_fast = biquad_process(&m->erpm_biquad_fast, m->erpm);
     m->abs_erpm = fabsf(m->erpm);
     m->erpm_sign = sign(m->erpm);
     update_erpm_sign(m);
 
-    m->erpm_history[m->erpm_idx] = m->erpm_filtered_fast;
+    m->erpm_history[m->erpm_idx] = m->erpm;
     m->erpm_idx = (m->erpm_idx + 1) % ERPM_ARRAY_SIZE;
     m->last_erpm_idx = m->erpm_idx - ERPM_ARRAY_SIZE; 
     if (m->last_erpm_idx < 0) 
@@ -68,7 +67,8 @@ void motor_data_update(MotorData *m) {
     m->last_accel = m->accel;
     m->accel =  m->erpm - m->last_erpm;
     m->last_erpm = m->erpm;
-	
+
+    m->erpm_filtered_fast = biquad_process(&m->erpm_biquad_fast, m->erpm);
     m->last_accel_fast = m->accel_fast;
     m->accel_fast =  m->erpm_filtered_fast - m->last_erpm_fast;
     m->last_erpm_fast = m->erpm_filtered_fast;
