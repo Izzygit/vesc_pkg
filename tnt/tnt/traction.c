@@ -33,11 +33,11 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 		} else {
 			//This section determines if the wheel is acted on by outside forces by detecting acceleration direction change
 			if (traction->highaccelon1) { 
-				if (sign(traction->accelstartval) != sign(m->accel_slow)) { 
+				if (sign(traction->accelstartval) != sign(m->accel)) { 
 				// First we identify that the wheel has deccelerated due to traciton control, switching the sign
 					traction->highaccelon1 = false;				
 				} 
-			} else if (sign(m->accel_slow)!= sign(m->last_accel_slow)) { 
+			} else if (sign(m->accel)!= sign(m->last_accel)) { 
 			// Next we check to see if accel direction changes again from outside forces 
 				deactivate_traction(traction, state, rt, traction_dbg, 1);
 			}
