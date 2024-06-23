@@ -47,9 +47,9 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 				if (sign(traction->accelstartval) * m->accel_slow < traction->slowed_accel) {	 	
 				// First we identify that the wheel has deccelerated due to traciton control
 					traction->highaccelon2 = false;	
-				} else if ((rt->current_time - traction->timeron > .8) && 
+				} else if ((rt->current_time - traction->timeron > .3) && 
 				    traction->highaccelon1) {					// Time out at 800ms if wheel does not deccelerate
-					deactivate_traction(traction, state, rt, traction_dbg, 80);
+					deactivate_traction(traction, state, rt, traction_dbg, 30);
 				}	
 			} else if (fabsf(m->accel_slow) > traction->end_accel) {	
 			// Next we check to see if accel magnitude increases from outside forces 
@@ -73,13 +73,13 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 	
 
 	//Check motor erpm and acceleration to determine the correct detection condition to use if any
-	//Coded in this order so braking and acceleration condtions are mutually exclusive
+	//Coded in this order so braking and acceleration condtions are mutually exclusive CONSIDER CHANGING THIS BACK LATER
 	if (-inputtilt_interpolated * m->erpm_sign >= config->traction_braking_angle &&		// Check braking start condition if at the right nose down angle
 	    config->is_traction_braking_enabled) {
 		start_condition2 = (sign(m->current) * m->accel_fast > traction->start_accel * erpmfactor) &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
+		    (rt->current_time - traction->traction_braking_timer > 0.5) &&				// Do no engage from end acceleration
 		    (state->braking_pos);									// only apply for braking 
 		if (start_condition2) {
-			traction->traction_braking_timer = rt->current_time;
 			traction->traction_braking = true;
 		}
 	} else if (m->erpm_sign == sign(m->erpm_history[m->last_erpm_idx])) { 							//Check sign of the motor at the start of acceleration
@@ -154,13 +154,15 @@ void deactivate_traction(TractionData *traction, State *state, RuntimeData *rt, 
 	state->wheelslip = false;
 	traction->timeroff = rt->current_time;
 	traction->reverse_wheelslip = false;
-	traction->traction_braking = false;
 	if (traction_dbg->debug5 == 1) {
 		traction_dbg->debug8 = traction->timeroff - traction->timeron;
 		if (traction_dbg->debug4 != 0) {
 			traction_dbg->debug4 = traction_dbg->debug4 * 100 + exit;
 		} else { traction_dbg->debug4 = exit; }
 	}
+	if (traction->traction_braking)
+		traction->traction_braking_timer = rt->current_time;
+	traction->traction_braking = false;
 }
 
 void configure_traction(TractionData *traction, tnt_config *config, TractionDebug *traction_dbg){
