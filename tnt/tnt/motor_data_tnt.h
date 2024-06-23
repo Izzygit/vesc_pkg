@@ -44,6 +44,9 @@ typedef struct {
 
     float duty_cycle;
 
+    float accel;
+    float last_accel;
+    float last_erpm;
     float accel_slow;
     float accel_fast;
     float last_accel_slow;
