@@ -27,7 +27,12 @@ void motor_data_reset(MotorData *m) {
     m->erpm_sign_soft = 0;
     m->accel_slow = 0;
     m->accel_fast = 0;
-
+    m->last_accel_slow = 0;
+    m->last_accel_fast = 0;
+    m->accel = 0;
+    m->last_accel = 0;
+    m->last_erpm = 0;
+	
     m->erpm_idx = 0;
     for (int i = 0; i < ERPM_ARRAY_SIZE; i++) {
         m->erpm_history[i] = 0;
