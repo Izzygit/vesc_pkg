@@ -73,37 +73,17 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 	
 
 	//Check motor erpm and acceleration to determine the correct detection condition to use if any
-	//Coded in this order so braking and acceleration condtions are mutually exclusive CONSIDER CHANGING THIS BACK LATER
-	/*
-	if (-inputtilt_interpolated * m->erpm_sign >= config->traction_braking_angle &&		// Check braking start condition if at the right nose down angle
-	    config->is_traction_braking_enabled) {
-		start_condition2 = (sign(m->current) * m->accel_fast > traction->start_accel * erpmfactor) &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
-		    (rt->current_time - traction->traction_braking_timer > 0.5) &&				// Do no engage from end acceleration
-		    (state->braking_pos);									// only apply for braking 
-		if (start_condition2) {
-			traction->traction_braking = true;
-		}
-	} else if (m->erpm_sign == sign(m->erpm_history[m->last_erpm_idx])) { 							//Check sign of the motor at the start of acceleration
-		if (m->abs_erpm > fabsf(m->erpm_history[m->last_erpm_idx])) { 						//If signs the same check for magnitude increase
-			start_condition1 = (sign(m->current) * m->accel_fast > traction->start_accel * erpmfactor) &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
-			    (!state->braking_pos);									// Do not apply for braking 
-		}
-	} else if (sign(m->erpm_sign_soft) != sign(m->accel)) {				// If the motor is back spinning engage but don't allow wheelslip on landing
-		traction->reverse_wheelslip = true;
-		start_condition1 = (sign(m->current) * m->accel_fast > traction->start_accel * erpmfactor) &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
-	   	    (!state->braking_pos);									// Do not apply for braking 
-	}
-	*/
 	if (m->erpm_sign == sign(m->erpm_history[m->last_erpm_idx])) { 							//Check sign of the motor at the start of acceleration
 		if (m->abs_erpm > fabsf(m->erpm_history[m->last_erpm_idx])) { 						//If signs the same check for magnitude increase
 			start_condition1 = (sign(m->current) * m->accel_fast > traction->start_accel * erpmfactor) &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
 			    (!state->braking_pos);									// Do not apply for braking 
-		} else if (-inputtilt_interpolated * m->erpm_sign >= config->traction_braking_angle) {		// Check braking start condition if at the right nose down angle
+		//TODO Put working braking condition here
+		/*} else if (-inputtilt_interpolated * m->erpm_sign >= config->traction_braking_angle) {		// Check braking start condition if at the right nose down angle
 			start_condition2 = (sign(m->current) * m->accel_fast > traction->start_accel * erpmfactor) &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
     		            (rt->current_time - traction->traction_braking_timer > 0.5) &&				// Do no engage from end acceleration condition
 		   	    (state->braking_pos);									// only apply for braking 
 			if (start_condition2)
-				traction->traction_braking = true;
+				traction->traction_braking = true;*/
 		}
 	} else if (sign(m->erpm_sign_soft) != sign(m->accel)) {				// If the motor is back spinning engage but don't allow wheelslip on landing
 		traction->reverse_wheelslip = true;
@@ -112,7 +92,7 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 	}
 	
 	// Initiate traction control
-	if ((start_condition1 || start_condition2) && 			// Conditions false by default
+	if ((start_condition1) && 			// Conditions false by default
 	   (!state->wheelslip) &&					// Not in traction control
 	   (rt->current_time - traction->timeroff > .02)) {		// Did not recently wheel slip.
 		state->wheelslip = true;
