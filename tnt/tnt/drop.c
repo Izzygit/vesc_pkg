@@ -25,26 +25,23 @@ void check_drop(DropData *drop, MotorData *m, RuntimeData *rt, State *state, Dro
 	    (rt->last_accel_z >= drop->accel_z) &&  					// check that we are constantly dropping
 	    (state->sat != SAT_CENTERING) && 						// Not during startup
 	    (rt->current_time - drop->timeroff > 0.02)) {				// Don't re-enter drop state for duration 	
-		drop->count += 1;
-		if (drop->count > drop->count_limit) {					// Counter used to reduce nuisance trips
-			if (!drop->active) { 						// Set the on timer only once per drop
-				drop->timeron = rt->current_time; 	
-				drop_dbg->debug4 = drop->accel_z;
-				drop_dbg->setpoint = rt->setpoint;
-				if (rt->current_time - drop_dbg->aggregate_timer > 5) { // Aggregate the number of drop activations in 5 seconds
-					drop_dbg->aggregate_timer = rt->current_time;
-					drop_dbg->debug5 = 0;
-				}
-				drop_dbg->debug5 += 1;
+		if (!drop->active) { 						// Set the on timer only once per drop
+			drop->timeron = rt->current_time; 	
+			drop_dbg->debug4 = drop->accel_z;
+			drop_dbg->setpoint = rt->setpoint;
+			if (rt->current_time - drop_dbg->aggregate_timer > 5) { // Aggregate the number of drop activations in 5 seconds
+				drop_dbg->aggregate_timer = rt->current_time;
+				drop_dbg->debug5 = 0;
 			}
-			drop->active = true;
+			drop_dbg->debug5 += 1;
 		}
-	} else { drop->count = 0; }							// reset
+		drop->active = true;
+	}
 	
 	// Conditions to end drop
 	if (drop->active == true) {				
 		drop_dbg->debug4 = min(drop_dbg->debug4, drop->accel_z); 	//record the lowest accel
-		if (fabsf(m->acceleration) > drop->motor_limit) { 	//Fastest reaction is hall sensor
+		if (fabsf(m->accel_fast) > drop->motor_limit) { 	//Fastest reaction is hall sensor
 			drop_deactivate(drop, drop_dbg, rt);
 			drop_dbg->debug3 = m->acceleration;
 		} else if (rt->last_accel_z <= drop->accel_z) {		// for fastest landing reaction with accelerometer check that we are still dropping
@@ -55,11 +52,9 @@ void check_drop(DropData *drop, MotorData *m, RuntimeData *rt, State *state, Dro
 }
 
 void configure_drop(DropData *drop, const tnt_config *config){
-	drop->tiltback_step_size = config->tiltback_drop_speed / config->hertz;
+	//drop->tiltback_step_size = config->tiltback_drop_speed / config->hertz;
 	drop->z_limit = config->drop_z_accel;	// Value of accel z to initiate drop. A drop of about 6" / .1s produces about 0.9 accel y (normally 1)
 	drop->motor_limit = config->drop_motor_accel; //ends drop via motor acceleration
-	drop->count_limit = config->drop_count_limit;
-	drop->z_highlimit = config->drop_z_highaccel;
 }
 
 void reset_drop(DropData *drop){
@@ -72,7 +67,6 @@ void drop_deactivate(DropData *drop, DropDebug *drop_dbg, RuntimeData *rt){
 	drop->active = false;
 	drop->deactivate = true;
 	drop->timeroff = rt->current_time;
-	drop->count = 0;
 	drop_dbg->debug7 = drop->timeroff - drop->timeron;
 	drop_dbg->debug6 = drop_dbg->setpoint - rt->pitch_angle;
 }
