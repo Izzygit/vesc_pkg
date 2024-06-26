@@ -33,9 +33,7 @@ typedef struct {
 	float start_accel;		//acceleration that triggers wheelslip
 	float slowed_accel;		//Trigger that shows traction control is working
 	float end_accel;
-	float traction_braking_timer;
 	float erpm_sign_factor;
-	bool traction_braking;
 } TractionData;
 
 typedef struct {
