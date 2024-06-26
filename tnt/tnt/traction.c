@@ -22,7 +22,6 @@
 void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeData *rt, tnt_config *config, float inputtilt_interpolated, TractionDebug *traction_dbg){
 	float erpmfactor = fmaxf(1, lerp(0, config->wheelslip_scaleerpm, config->wheelslip_scaleaccel, 1, m->abs_erpm));
 	bool start_condition1 = false;
-	bool start_condition2 = false;
 	
 	// Conditions to end traction control
 	if (state->wheelslip) {
@@ -51,22 +50,15 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 				    traction->highaccelon1) {					// Time out at 800ms if wheel does not deccelerate
 					deactivate_traction(traction, state, rt, traction_dbg, 50);
 				}
-			} else if (fabsf(m->accel) > traction->end_accel) {	
+			} else if (fabsf(m->accel) > traction->end_accel) {
 			// Next we check to see if accel magnitude increases from outside forces 
 				deactivate_traction(traction, state, rt, traction_dbg, 2);
 			}
-
 
 			//If we wheelslipped backwards we just need to know the wheel is travelling forwards again
 			if (traction->reverse_wheelslip && 
 			    m->erpm_sign == m->erpm_sign_soft) {
 				deactivate_traction(traction, state, rt, traction_dbg, 3);
-			}
-
-			//If traction braking we want acceleration in the direction of motion
-			if (traction->traction_braking && 
-			    m->erpm_sign_soft == sign(m->accel)) {
-				deactivate_traction(traction, state, rt, traction_dbg, 4);
 			}
 		}
 	}
@@ -77,14 +69,7 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 		if (m->abs_erpm > fabsf(m->erpm_history[m->last_erpm_idx])) { 						//If signs the same check for magnitude increase
 			start_condition1 = (sign(m->current) * m->accel_fast > traction->start_accel * erpmfactor) &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
 			    (!state->braking_pos);									// Do not apply for braking 
-		//TODO Put working braking condition here
-		/*} else if (-inputtilt_interpolated * m->erpm_sign >= config->traction_braking_angle) {		// Check braking start condition if at the right nose down angle
-			start_condition2 = (sign(m->current) * m->accel_fast > traction->start_accel * erpmfactor) &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
-    		            (rt->current_time - traction->traction_braking_timer > 0.5) &&				// Do no engage from end acceleration condition
-		   	    (state->braking_pos);									// only apply for braking 
-			if (start_condition2)
-				traction->traction_braking = true;*/
-		}
+		} // else if (...TODO Put working braking condition here
 	} else if (sign(m->erpm_sign_soft) != sign(m->accel)) {				// If the motor is back spinning engage but don't allow wheelslip on landing
 		traction->reverse_wheelslip = true;
 		start_condition1 = (sign(m->current) * m->accel_fast > traction->start_accel * erpmfactor) &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
@@ -108,8 +93,7 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 		}
 		if (traction_dbg->debug5 == 0) {
 			traction_dbg->debug2 = erpmfactor;
-			traction_dbg->debug6 = start_condition1 ? fabsf(m->accel_fast / traction_dbg->freq_factor) : 
-						-1 * fabsf(m->accel_fast / traction_dbg->freq_factor);
+			traction_dbg->debug6 = m->accel_fast / traction_dbg->freq_factor; 
 			traction_dbg->debug9 = m->erpm;
 			traction_dbg->debug3 = m->erpm_history[m->last_erpm_idx];
 			traction_dbg->debug1 = 0;
@@ -123,7 +107,6 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 void reset_traction(TractionData *traction, State *state) {
 	state->wheelslip = false;
 	traction->reverse_wheelslip = false;
-	traction->traction_braking = false;
 }
 
 void deactivate_traction(TractionData *traction, State *state, RuntimeData *rt, TractionDebug *traction_dbg, float exit) {
@@ -136,9 +119,6 @@ void deactivate_traction(TractionData *traction, State *state, RuntimeData *rt, 
 			traction_dbg->debug4 = traction_dbg->debug4 * 100 + exit;
 		} else { traction_dbg->debug4 = exit; }
 	}
-	if (traction->traction_braking)
-		traction->traction_braking_timer = rt->current_time;
-	traction->traction_braking = false;
 }
 
 void configure_traction(TractionData *traction, tnt_config *config, TractionDebug *traction_dbg){
