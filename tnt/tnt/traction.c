@@ -47,7 +47,7 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 				if (sign(traction->accelstartval) * m->accel < traction->slowed_accel) {	 	
 				// First we identify that the wheel has deccelerated due to traciton control
 					traction->highaccelon2 = false;	
-				} else if ((rt->current_time - traction->timeron > .05) && 
+				} else if ((rt->current_time - traction->timeron > config->wheelslip_filter_freq_slow / 100.0) && 
 				    traction->highaccelon1) {					// Time out at 800ms if wheel does not deccelerate
 					deactivate_traction(traction, state, rt, traction_dbg, 50);
 				}
