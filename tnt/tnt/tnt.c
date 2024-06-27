@@ -32,6 +32,7 @@
 #include "ride_time.h"
 #include "remote_input.h"
 #include "yaw.h"
+#include "drop.h"
 
 #include "conf/datatypes.h"
 #include "conf/confparser.h"
@@ -173,6 +174,10 @@ typedef struct {
 	YawDebugData yaw_dbg;
 	float yaw_pid_mod;
 	float yaw_angle;
+
+	//Drop
+	DropData drop;
+	DropDebug drop_dbg;
 
 	//Debug
 	float debug1, debug2, debug3, debug4, debug5, debug6;
@@ -324,7 +329,10 @@ static void configure(data *d) {
 
 	//Traction Configure
 	configure_traction(&d->traction, &d->tnt_conf, &d->traction_dbg);
-
+	
+	//Drop Configure
+	configure_drop(&d->drop, &d->tnt_conf);
+	
 	if (d->state.state == STATE_DISABLED) {
 	    beep_alert(d, 3, false);
 	} else {
@@ -378,6 +386,9 @@ static void reset_vars(data *d) {
 	//Yaw Boost
 	yaw_reset(&d->yaw, &d->yaw_dbg);
 	d->yaw_pid_mod = 0;
+	
+	// Drop
+	reset_drop(&d->drop);
 	
 	state_engage(&d->state);
 }
@@ -775,6 +786,8 @@ static void tnt_thd(void *arg) {
 		d->rt.pitch_angle = rad2deg(VESC_IF->imu_get_pitch());
 		d->yaw_angle = rad2deg(VESC_IF->ahrs_get_yaw(&d->m_att_ref));
 		VESC_IF->imu_get_gyro(d->gyro);
+		VESC_IF->imu_get_accel(d->rt.accel); //Used for drop detection
+		apply_angle_drop(&d->drop, &d->rt); //corrects accel z with angles
 		
 		//Apply low pass and Kalman filters to pitch
 		if (d->tnt_conf.pitch_filter > 0) {
@@ -786,7 +799,8 @@ static void tnt_thd(void *arg) {
 
 		motor_data_update(&d->motor);
 		update_remote(&d->tnt_conf, &d->remote);
-
+		check_drop(&d->drop, &d->motor, &d->rt, &d->state, &d->drop_dbg);
+		
 		//Footpad Sensor
 	        footpad_sensor_update(&d->footpad_sensor, &d->tnt_conf);
 	        if (d->footpad_sensor.state == FS_NONE && d->state.state == STATE_RUNNING &&
@@ -1152,7 +1166,7 @@ enum {
 } Commands;
 
 static void send_realtime_data(data *d){
-	static const int bufsize = 103;
+	static const int bufsize = 107;
 	uint8_t buffer[bufsize];
 	int32_t ind = 0;
 	buffer[ind++] = 111;//Magic Number
@@ -1177,7 +1191,8 @@ static void send_realtime_data(data *d){
 	buffer_append_float32_auto(buffer, d->remote.throttle_val, &ind);
 	buffer_append_float32_auto(buffer, d->rt.current_time - d->traction.timeron , &ind); //Time since last wheelslip
 	buffer_append_float32_auto(buffer, d->rt.current_time - d->surge.timer , &ind); //Time since last surge
-
+	buffer_append_float32_auto(buffer, d->rt.current_time - d->drop.timeron , &ind); //Time since last drop
+	
 	// Trip
 	if (d->ridetimer.ride_time > 0) {
 		corr_factor =  d->rt.current_time / d->ridetimer.ride_time;
@@ -1224,6 +1239,15 @@ static void send_realtime_data(data *d){
 		buffer_append_float32_auto(buffer, d->yaw_dbg.debug4, &ind); //yaw kp scaled	
 		buffer_append_float32_auto(buffer, d->yaw_dbg.debug5, &ind); //erpm scaler
 		buffer_append_float32_auto(buffer, d->yaw_dbg.debug2, &ind); //max kp change
+	} else if (d->tnt_conf.is_dropdebug_enabled) {
+		buffer[ind++] = 5;
+		buffer_append_float32_auto(buffer, d->drop.accel_z, &ind); //accel_z
+		buffer_append_float32_auto(buffer, d->drop.applied_correction, &ind); //applied correction
+		buffer_append_float32_auto(buffer, d->drop_dbg.debug5, &ind); //number of drops
+		buffer_append_float32_auto(buffer, d->drop_dbg.debug3, &ind); //end condition
+		buffer_append_float32_auto(buffer, d->drop_dbg.debug4, &ind); //min accel z
+		buffer_append_float32_auto(buffer, d->drop_dbg.debug6, &ind); //ending prop
+		buffer_append_float32_auto(buffer, d->drop_dbg.debug7, &ind); //duration
 	} else { 
 		buffer[ind++] = 0; 
 	}
