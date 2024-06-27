@@ -983,7 +983,7 @@ static void tnt_thd(void *arg) {
 			// PID value application
 				
 			d->rt.pid_value = (d->state.wheelslip && d->tnt_conf.is_traction_enabled) ? 0 : 
-					((d->traction.traction_braking && d->tnt_conf.is_traction_braking_enabled) ? 0 : new_pid_value);
+					((d->drop.active && d->tnt_conf.is_drop_enabled) ? 0 : new_pid_value);
 			d->rt.pid_value += haptic_buzz(d, 0.3); //Apply haptic buzz
 
 			// Output to motor
