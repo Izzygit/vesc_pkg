@@ -24,21 +24,11 @@
 typedef struct {
         float accel_z;
 	bool active;				//Drop is occurring
-        bool deactivate;			//Return setpoint to normal
         float timeron;				//timer for debug info
         float timeroff;				//timer for debug info
         float applied_correction;		//Geometry compesation for the angle of the board
-	float count;				//Required code cycles below the limit before drop engages
         float z_limit;				//Required acceleration to engage drop
-        float count_limit;			//Required code cycles to engage drop
         float motor_limit;			//Required motor acceleration to end drop
-	float tiltback_step_size;		//Return speed to original setpoint after drop
-	float high_accel_timer;			//Stores the last high accel time to prevent drop in pump track situations
-	float highcount;
-	float z_highlimit;
-	//float last_angle_factor;		//Stores pitch and roll effect on accel z
-	//float roll_delay;
-	//float pitch_delay;
 } DropData;
 
 typedef struct {
