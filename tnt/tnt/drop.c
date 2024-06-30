@@ -25,16 +25,21 @@ void check_drop(DropData *drop, MotorData *m, RuntimeData *rt, State *state, Dro
 	    (rt->last_accel_z >= drop->accel_z) &&  					// check that we are constantly dropping
 	    (state->sat != SAT_CENTERING) && 						// Not during startup
 	    (rt->current_time - drop->timeroff > 0.02)) {				// Don't re-enter drop state for duration 	
+		
+		//Debug Section
 		if (!drop->active) { 						// Set the on timer only once per drop
-			drop->timeron = rt->current_time; 	
-			drop_dbg->debug4 = drop->accel_z;
+			drop->timeron = rt->current_time; 
 			drop_dbg->setpoint = rt->setpoint;
 			if (rt->current_time - drop_dbg->aggregate_timer > 5) { // Aggregate the number of drop activations in 5 seconds
-				drop_dbg->aggregate_timer = rt->current_time;
-				drop_dbg->debug5 = 0;
+				drop_dbg->aggregate_timer = rt->current_time; //reset
+				drop_dbg->debug5 = 0; //reset
+				drop_dbg->debug4 = drop->accel_z; //reset
+				drop_dbg->debug7 = 0; //reset
 			}
 			drop_dbg->debug5 += 1;
 		}
+		
+		//Activate drop mode
 		drop->active = true;
 	}
 	
@@ -52,22 +57,18 @@ void check_drop(DropData *drop, MotorData *m, RuntimeData *rt, State *state, Dro
 }
 
 void configure_drop(DropData *drop, const tnt_config *config){
-	//drop->tiltback_step_size = config->tiltback_drop_speed / config->hertz;
 	drop->z_limit = config->drop_z_accel / 100.0;	// Value of accel z to initiate drop. A drop of about 6" / .1s produces about 0.9 accel y (normally 1)
 	drop->motor_limit = 1000.0 * config->drop_motor_accel / config->hertz; //ends drop via motor acceleration
 }
 
 void reset_drop(DropData *drop){
 	drop->active = false;
-	drop->deactivate = false;
-	drop->count = 0;
 }
 
 void drop_deactivate(DropData *drop, DropDebug *drop_dbg, RuntimeData *rt){
 	drop->active = false;
-	drop->deactivate = true;
 	drop->timeroff = rt->current_time;
-	drop_dbg->debug7 = drop->timeroff - drop->timeron;
+	drop_dbg->debug7 += (drop->timeroff - drop->timeron);
 	drop_dbg->debug6 = drop_dbg->setpoint - rt->pitch_angle;
 }
 
