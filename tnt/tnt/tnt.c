@@ -341,7 +341,8 @@ static void configure(data *d) {
 }
 
 static void reset_vars(data *d) {
-	motor_data_reset(&d->motor);
+	if (d->rt.current_time - d->disengage_timer > 1) //Delay motor reset in case there is a minor disengagement
+		motor_data_reset(&d->motor);
 	
 	// Set values for startup
 	d->rt.setpoint = d->rt.pitch_angle;
