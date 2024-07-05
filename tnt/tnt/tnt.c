@@ -341,56 +341,56 @@ static void configure(data *d) {
 }
 
 static void reset_vars(data *d) {
-	if (d->rt.current_time - d->disengage_timer > 1) //Delay motor reset in case there is a minor disengagement
+	if (d->rt.current_time - d->disengage_timer > 1) {//Delay reset in case there is a minor disengagement
 		motor_data_reset(&d->motor);
 	
-	// Set values for startup
-	d->rt.setpoint = d->rt.pitch_angle;
-	d->setpoint_target_interpolated = d->rt.pitch_angle;
-	d->setpoint_target = 0;
-	d->brake_timeout = 0;
-	d->softstart_pid_limit = 0;
-	d->startup_pitch_tolerance = d->tnt_conf.startup_pitch_tolerance;
+		// Set values for startup
+		d->rt.setpoint = d->rt.pitch_angle;
+		d->setpoint_target_interpolated = d->rt.pitch_angle;
+		d->setpoint_target = 0;
+		d->brake_timeout = 0;
+		d->softstart_pid_limit = 0;
+		d->startup_pitch_tolerance = d->tnt_conf.startup_pitch_tolerance;
+		
+		//Control variables
+		d->rt.pid_value = 0;
+		d->pid_mod = 0;
+		d->roll_pid_mod = 0;
 	
-	//Control variables
-	d->rt.pid_value = 0;
-	d->pid_mod = 0;
-	d->roll_pid_mod = 0;
-
-	//Remote
-	reset_remote(&d->remote, &d->st_tilt);
-
-	// Surge
-	reset_surge(&d->surge);
-
-	// Traction Control
-	reset_traction(&d->traction, &d->state);
+		//Remote
+		reset_remote(&d->remote, &d->st_tilt);
 	
-	//Low pass pitch filter
-	d->prop_smooth = 0;
-	d->abs_prop_smooth = 0;
-	d->pitch_smooth = d->rt.pitch_angle;
-	biquad_reset(&d->pitch_biquad);
+		// Surge
+		reset_surge(&d->surge);
 	
-	//Kalman filter
-	reset_kalman(&d->pitch_kalman);
-	d->pitch_smooth_kalman = d->rt.pitch_angle;
-
-	//Stability
-	d->stabl = 0;
-
-	// Haptic Buzz:
-	d->haptic_tone_in_progress = false;
-	d->haptic_timer = d->rt.current_time;
-	d->applied_haptic_current = 0;
-
-	//Yaw Boost
-	yaw_reset(&d->yaw, &d->yaw_dbg);
-	d->yaw_pid_mod = 0;
+		// Traction Control
+		reset_traction(&d->traction, &d->state);
+		
+		//Low pass pitch filter
+		d->prop_smooth = 0;
+		d->abs_prop_smooth = 0;
+		d->pitch_smooth = d->rt.pitch_angle;
+		biquad_reset(&d->pitch_biquad);
+		
+		//Kalman filter
+		reset_kalman(&d->pitch_kalman);
+		d->pitch_smooth_kalman = d->rt.pitch_angle;
 	
-	// Drop
-	reset_drop(&d->drop);
+		//Stability
+		d->stabl = 0;
 	
+		// Haptic Buzz:
+		d->haptic_tone_in_progress = false;
+		d->haptic_timer = d->rt.current_time;
+		d->applied_haptic_current = 0;
+	
+		//Yaw Boost
+		yaw_reset(&d->yaw, &d->yaw_dbg);
+		d->yaw_pid_mod = 0;
+		
+		// Drop
+		reset_drop(&d->drop);
+	}
 	state_engage(&d->state);
 }
 
