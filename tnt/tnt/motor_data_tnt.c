@@ -50,12 +50,12 @@ void motor_data_configure(MotorData *m, tnt_config *config) {
     biquad_configure(&m->erpm_biquad, BQ_LOWPASS, 1.0 * config->wheelslip_filter_freq_fast / config->hertz);
     //biquad_configure(&m->erpm_biquad_slow, BQ_LOWPASS, 1.0 * config->wheelslip_filter_freq_slow / config->hertz);
    
-    m->erpm_sign_factor = 0.0008 * 832.0 / config->hertz; //originally configured for 832 hz to delay an erpm sign change for 1 second
+    m->erpm_sign_factor = 0.9984 / config->hertz; //originally configured for 832 hz to delay an erpm sign change for 1 second (0.0012 factor)
 }
 
 void update_erpm_sign(MotorData *m) {
 	// Monitors erpm direction with a delay to prevent nuisance trips to surge and traction control
-	m->erpm_sign_soft = (1 - m->erpm_sign_factor) * m->erpm_sign_soft + m->erpm_sign_factor * m->erpm_sign;
+	m->erpm_sign_soft = max(-1, min( 1, m->erpm_sign_soft + m->erpm_sign_factor * m->erpm_sign));
 	m->erpm_sign_check = m->erpm_sign == sign(m->erpm_sign_soft);
 }
 
