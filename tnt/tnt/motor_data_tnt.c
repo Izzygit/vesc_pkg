@@ -25,10 +25,10 @@
 
 void motor_data_reset(MotorData *m) {
     m->erpm_sign_soft = 0;
-    m->accel_slow = 0;
-    m->accel_fast = 0;
-    m->last_accel_slow = 0;
-    m->last_accel_fast = 0;
+    m->accel_filtered = 0;
+    m->last_accel_filtered = 0;
+    m->erpm_filtered = 0;
+    m->last_erpm_filtered = 0;
     m->accel = 0;
     m->last_accel = 0;
     m->last_erpm = 0;
@@ -37,16 +37,18 @@ void motor_data_reset(MotorData *m) {
     for (int i = 0; i < ERPM_ARRAY_SIZE; i++) {
         m->erpm_history[i] = 0;
     }
-
+    m->accel_idx = 0;
+    for (int i = 0; i < ACCEL_ARRAY_SIZE; i++) {
+        m->accel_history[i] = 0;
+    }
     biquad_reset(&m->current_biquad);
-    biquad_reset(&m->erpm_biquad_fast);
-    biquad_reset(&m->erpm_biquad_slow);
+    biquad_reset(&m->erpm_biquad);
 }
 
 void motor_data_configure(MotorData *m, tnt_config *config) {
     biquad_configure(&m->current_biquad, BQ_LOWPASS, 3.0 / config->hertz);
-    biquad_configure(&m->erpm_biquad_fast, BQ_LOWPASS, 1.0 * config->wheelslip_filter_freq_fast / config->hertz);
-    biquad_configure(&m->erpm_biquad_slow, BQ_LOWPASS, 1.0 * config->wheelslip_filter_freq_slow / config->hertz);
+    biquad_configure(&m->erpm_biquad, BQ_LOWPASS, 1.0 * config->wheelslip_filter_freq_fast / config->hertz);
+    //biquad_configure(&m->erpm_biquad_slow, BQ_LOWPASS, 1.0 * config->wheelslip_filter_freq_slow / config->hertz);
    
     m->erpm_sign_factor = 0.0008 * 832.0 / config->hertz; //originally configured for 832 hz to delay an erpm sign change for 1 second
 }
@@ -65,23 +67,20 @@ void motor_data_update(MotorData *m) {
 
     m->erpm_history[m->erpm_idx] = m->erpm;
     m->erpm_idx = (m->erpm_idx + 1) % ERPM_ARRAY_SIZE;
-    m->last_erpm_idx = m->erpm_idx - ERPM_ARRAY_SIZE; 
+    m->last_erpm_idx = m->erpm_idx - ACCEL_ARRAY_SIZE; 
     if (m->last_erpm_idx < 0) 
        m->last_erpm_idx += ERPM_ARRAY_SIZE;
-
-    m->last_accel = m->accel;
-    m->accel =  m->erpm - m->last_erpm;
+	
+    float acceleration = m->erpm - m->last_erpm;
+    m->accel += (acceleration - m->accel_history[m->accel_idx]) / ACCEL_ARRAY_SIZE;
+    m->accel_history[m->accel_idx] = acceleration;
+    m->accel_idx = (m->accel_idx + 1) % ACCEL_ARRAY_SIZE;
     m->last_erpm = m->erpm;
-
-    m->erpm_filtered_fast = biquad_process(&m->erpm_biquad_fast, m->erpm);
-    m->last_accel_fast = m->accel_fast;
-    m->accel_fast =  m->erpm_filtered_fast - m->last_erpm_fast;
-    m->last_erpm_fast = m->erpm_filtered_fast;
-
-    m->erpm_filtered_slow = biquad_process(&m->erpm_biquad_slow, m->erpm);
-    m->last_accel_slow = m->accel_slow;
-    m->accel_slow =  m->erpm_filtered_slow - m->last_erpm_slow;
-    m->last_erpm_slow = m->erpm_filtered_slow;
+	
+    m->erpm_filtered = biquad_process(&m->erpm_biquad, m->erpm);
+    m->last_accel_filtered = m->accel_filtered;
+    m->accel_filtered =  m->erpm_filtered - m->last_erpm_filtered;
+    m->last_erpm_filtered = m->erpm_filtered;
 
     m->current = VESC_IF->mc_get_tot_current_directional_filtered();
     m->current_avg = biquad_process(&m->current_biquad, m->current);
