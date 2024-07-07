@@ -32,25 +32,25 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 		} else {
 			//This section determines if the wheel is acted on by outside forces by detecting acceleration direction change
 			if (traction->highaccelon1) { 
-				if (sign(traction->accelstartval) != sign(m->accel_fast)) { 
+				if (sign(traction->accelstartval) != sign(m->accel_filtered)) { 
 				// First we identify that the wheel has deccelerated due to traciton control, switching the sign
 					traction->highaccelon1 = false;				
 				} 
-			} else if (sign(m->accel_fast)!= sign(m->last_accel_fast)) { 
+			} else if (sign(m->accel_filtered)!= sign(m->last_accel_filtered)) { 
 			// Next we check to see if accel direction changes again from outside forces 
 				deactivate_traction(traction, state, rt, traction_dbg, 1);
 			}
 			
 			//This section determines if the wheel is acted on by outside forces by detecting acceleration magnitude
 			if (traction->highaccelon2) {
-				if (sign(traction->accelstartval) * m->accel_fast < traction->slowed_accel) {	 	
+				if (sign(traction->accelstartval) * m->accel_filtered < traction->slowed_accel) {	 	
 				// First we identify that the wheel has deccelerated due to traciton control
 					traction->highaccelon2 = false;	
 				} else if ((rt->current_time - traction->timeron > config->wheelslip_filter_freq_slow / 100.0) && 
 				    traction->highaccelon1) {					// Time out at 800ms if wheel does not deccelerate
 					deactivate_traction(traction, state, rt, traction_dbg, 50);
 				}
-			} else if (fabsf(m->accel_fast) > traction->end_accel) {
+			} else if (fabsf(m->accel_filtered) > traction->end_accel) {
 			// Next we check to see if accel magnitude increases from outside forces 
 				deactivate_traction(traction, state, rt, traction_dbg, 2);
 			}
@@ -67,21 +67,21 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 	//Check motor erpm and acceleration to determine the correct detection condition to use if any
 	if (m->erpm_sign == sign(m->erpm_history[m->last_erpm_idx])) { 							//Check sign of the motor at the start of acceleration
 		if (m->abs_erpm > fabsf(m->erpm_history[m->last_erpm_idx])) { 						//If signs the same check for magnitude increase
-			start_condition1 = (sign(m->current) * m->accel_fast > traction->start_accel * erpmfactor) &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
+			start_condition1 = (sign(m->current) * m->accel > traction->start_accel * erpmfactor) &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
 			    (!state->braking_pos);									// Do not apply for braking 
 		} // else if (...TODO Put working braking condition here
 	} else if (sign(m->erpm_sign_soft) != sign(m->accel)) {				// If the motor is back spinning engage but don't allow wheelslip on landing
 		traction->reverse_wheelslip = true;
-		start_condition1 = (sign(m->current) * m->accel_fast > traction->start_accel * erpmfactor) &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
+		start_condition1 = (sign(m->current) * m->accel > traction->start_accel * erpmfactor) &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
 	   	    (!state->braking_pos);									// Do not apply for braking 
 	}
 	
 	// Initiate traction control
 	if ((start_condition1) && 			// Conditions false by default
 	   (!state->wheelslip) &&					// Not in traction control
-	   (rt->current_time - traction->timeroff > .02)) {		// Did not recently wheel slip.
+	   (rt->current_time - traction->timeroff > .05)) {		// Did not recently wheel slip.
 		state->wheelslip = true;
-		traction->accelstartval = m->accel_fast;
+		traction->accelstartval = m->accel;
 		traction->highaccelon1 = true;
 		traction->highaccelon2 = true;
 		traction->timeron = rt->current_time;
@@ -92,8 +92,8 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 			traction_dbg->debug5 = 0;
 		}
 		if (traction_dbg->debug5 == 0) {
-			traction_dbg->debug2 = erpmfactor;
-			traction_dbg->debug6 = m->accel_fast / traction_dbg->freq_factor; 
+			traction_dbg->debug2 = m->erpm_sign_soft;
+			traction_dbg->debug6 = m->accel / traction_dbg->freq_factor; 
 			traction_dbg->debug9 = m->erpm;
 			traction_dbg->debug3 = m->erpm_history[m->last_erpm_idx];
 			traction_dbg->debug1 = 0;
