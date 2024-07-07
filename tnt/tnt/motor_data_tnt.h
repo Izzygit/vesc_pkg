@@ -32,12 +32,9 @@ typedef struct {
     float erpm_sign_soft;
     bool erpm_sign_check;
 
-    Biquad erpm_biquad_slow;
-    Biquad erpm_biquad_fast;
-    float erpm_filtered_slow;
-    float erpm_filtered_fast;
-    float last_erpm_fast;
-    float last_erpm_slow;
+    Biquad erpm_biquad;
+    float erpm_filtered;
+    float last_erpm_filtered;
 
     float current;
     bool braking;
@@ -47,10 +44,8 @@ typedef struct {
     float accel;
     float last_accel;
     float last_erpm;
-    float accel_slow;
-    float accel_fast;
-    float last_accel_slow;
-    float last_accel_fast;
+    float accel_filtered;
+    float last_accel_filtered;
 
     float erpm_history[ERPM_ARRAY_SIZE];
     int erpm_idx;
