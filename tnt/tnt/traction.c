@@ -46,7 +46,7 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 				if (sign(traction->accelstartval) * m->accel_filtered < traction->slowed_accel) {	 	
 				// First we identify that the wheel has deccelerated due to traciton control
 					traction->highaccelon2 = false;	
-				} else if ((rt->current_time - traction->timeron > config->wheelslip_filter_freq_slow / 100.0) && 
+				} else if ((rt->current_time - traction->timeron > 0.5) && 
 				    traction->highaccelon1) {					// Time out at 800ms if wheel does not deccelerate
 					deactivate_traction(traction, state, rt, m, traction_dbg, 50, erpmfactor);
 				}
@@ -64,7 +64,7 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 	}
 
 	if (traction->end_accel_hold) { //Do not allow start conditions if we are in hold
-		traction->end_accel_hold = fabsf(m->accel_filtered) < traction->start_accel * erpmfactor; //deactivate hold when below the threshold acceleration
+		traction->end_accel_hold = fabsf(m->accel_filtered) > traction->start_accel * erpmfactor; //deactivate hold when below the threshold acceleration
 	} else {
 		//Check motor erpm and acceleration to determine the correct detection condition to use if any
 		if (m->erpm_sign == sign(m->erpm_history[m->last_erpm_idx])) { 							//Check sign of the motor at the start of acceleration
@@ -82,7 +82,7 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 	// Initiate traction control
 	if ((start_condition1) && 			// Conditions false by default
 	   (!state->wheelslip) &&					// Not in traction control
-	   (rt->current_time - traction->timeroff > .05)) {		// Did not recently wheel slip.
+	   (rt->current_time - traction->timeroff > config->wheelslip_filter_freq_slow / 100.0)) {		// Did not recently wheel slip.
 		state->wheelslip = true;
 		traction->accelstartval = m->accel;
 		traction->highaccelon1 = true;
