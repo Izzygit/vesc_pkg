@@ -34,6 +34,7 @@ typedef struct {
 	float slowed_accel;		//Trigger that shows traction control is working
 	float end_accel;
 	float erpm_sign_factor;
+	bool end_accel_hold;
 } TractionData;
 
 typedef struct {
@@ -52,5 +53,5 @@ typedef struct {
 
 void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeData *rt, tnt_config *config, TractionDebug *traction_dbg);
 void reset_traction(TractionData *traction, State *state);
-void deactivate_traction(TractionData *traction, State *state, RuntimeData *rt, TractionDebug *traction_dbg, float exit);
+void deactivate_traction(TractionData *traction, State *state, RuntimeData *rt, MotorData *m TractionDebug *traction_dbg, float exit, float erpmfactor);
 void configure_traction(TractionData *traction, tnt_config *config, TractionDebug *traction_dbg);
