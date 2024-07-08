@@ -38,7 +38,7 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 				} 
 			} else if (sign(m->accel_filtered)!= sign(m->last_accel_filtered)) { 
 			// Next we check to see if accel direction changes again from outside forces 
-				deactivate_traction(traction, state, rt, traction_dbg, 1);
+				deactivate_traction(traction, state, rt, m, traction_dbg, 1, erpmfactor);
 			}
 			
 			//This section determines if the wheel is acted on by outside forces by detecting acceleration magnitude
@@ -48,32 +48,35 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 					traction->highaccelon2 = false;	
 				} else if ((rt->current_time - traction->timeron > config->wheelslip_filter_freq_slow / 100.0) && 
 				    traction->highaccelon1) {					// Time out at 800ms if wheel does not deccelerate
-					deactivate_traction(traction, state, rt, traction_dbg, 50);
+					deactivate_traction(traction, state, rt, m, traction_dbg, 50, erpmfactor);
 				}
 			} else if (fabsf(m->accel_filtered) > traction->end_accel) {
 			// Next we check to see if accel magnitude increases from outside forces 
-				deactivate_traction(traction, state, rt, traction_dbg, 2);
+				deactivate_traction(traction, state, rt, m, traction_dbg, 2, erpmfactor);
 			}
 
 			//If we wheelslipped backwards we just need to know the wheel is travelling forwards again
 			if (traction->reverse_wheelslip && 
 			    m->erpm_sign == m->erpm_sign_soft) {
-				deactivate_traction(traction, state, rt, traction_dbg, 3);
+				deactivate_traction(traction, state, rt, m, traction_dbg, 3, erpmfactor);
 			}
 		}
 	}
-	
 
-	//Check motor erpm and acceleration to determine the correct detection condition to use if any
-	if (m->erpm_sign == sign(m->erpm_history[m->last_erpm_idx])) { 							//Check sign of the motor at the start of acceleration
-		if (m->abs_erpm > fabsf(m->erpm_history[m->last_erpm_idx])) { 						//If signs the same check for magnitude increase
+	if (traction->end_accel_hold) { //Do not allow start conditions if we are in hold
+		traction->end_accel_hold = fabsf(m->accel_filtered) < traction->start_accel * erpmfactor; //deactivate hold when below the threshold acceleration
+	} else {
+		//Check motor erpm and acceleration to determine the correct detection condition to use if any
+		if (m->erpm_sign == sign(m->erpm_history[m->last_erpm_idx])) { 							//Check sign of the motor at the start of acceleration
+			if (m->abs_erpm > fabsf(m->erpm_history[m->last_erpm_idx])) { 						//If signs the same check for magnitude increase
+				start_condition1 = (sign(m->current) * m->accel > traction->start_accel * erpmfactor) &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
+				    (!state->braking_pos);									// Do not apply for braking 
+			} // else if (...TODO Put working braking condition here
+		} else if (sign(m->erpm_sign_soft) != sign(m->accel)) {				// If the motor is back spinning engage but don't allow wheelslip on landing
+			traction->reverse_wheelslip = true;
 			start_condition1 = (sign(m->current) * m->accel > traction->start_accel * erpmfactor) &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
-			    (!state->braking_pos);									// Do not apply for braking 
-		} // else if (...TODO Put working braking condition here
-	} else if (sign(m->erpm_sign_soft) != sign(m->accel)) {				// If the motor is back spinning engage but don't allow wheelslip on landing
-		traction->reverse_wheelslip = true;
-		start_condition1 = (sign(m->current) * m->accel > traction->start_accel * erpmfactor) &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
-	   	    (!state->braking_pos);									// Do not apply for braking 
+		   	    (!state->braking_pos);									// Do not apply for braking 
+		}
 	}
 	
 	// Initiate traction control
@@ -107,12 +110,14 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 void reset_traction(TractionData *traction, State *state) {
 	state->wheelslip = false;
 	traction->reverse_wheelslip = false;
+	traction->end_accel_hold = false;
 }
 
-void deactivate_traction(TractionData *traction, State *state, RuntimeData *rt, TractionDebug *traction_dbg, float exit) {
+void deactivate_traction(TractionData *traction, State *state, RuntimeData *rt, MotorData *m, TractionDebug *traction_dbg, float exit, float erpmfactor) {
 	state->wheelslip = false;
 	traction->timeroff = rt->current_time;
 	traction->reverse_wheelslip = false;
+	traction->end_accel_hold = fabsf(m->accel_filtered) > traction->start_accel * erpmfactor;
 	if (traction_dbg->debug5 == 1) {
 		traction_dbg->debug8 = traction->timeroff - traction->timeron;
 		if (traction_dbg->debug4 != 0) {
