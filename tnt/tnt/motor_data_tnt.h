@@ -21,6 +21,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#define ACCEL_ARRAY_SIZE 10 // For traction control erpm tracking
 #define ERPM_ARRAY_SIZE 10 // For traction control erpm tracking
 
 typedef struct {
