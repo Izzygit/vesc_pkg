@@ -26,9 +26,9 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 	// Conditions to end traction control
 	if (state->wheelslip) {
 		if (rt->current_time - traction->timeron > .8) {		// Time out at 500ms
-			deactivate_traction(traction, state, rt, traction_dbg, 80);
+					deactivate_traction(traction, state, rt, m, traction_dbg, 80, erpmfactor);
 		} else if (fabsf(rt->proportional) > config->wheelslip_max_angle) {
-			deactivate_traction(traction, state, rt, traction_dbg, 10);
+					deactivate_traction(traction, state, rt, m, traction_dbg, 10, erpmfactor);
 		} else {
 			//This section determines if the wheel is acted on by outside forces by detecting acceleration direction change
 			if (traction->highaccelon1) { 
@@ -38,7 +38,7 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 				} 
 			} else if (sign(m->accel_filtered)!= sign(m->last_accel_filtered)) { 
 			// Next we check to see if accel direction changes again from outside forces 
-				deactivate_traction(traction, state, rt, m, traction_dbg, 1, erpmfactor);
+					deactivate_traction(traction, state, rt, m, traction_dbg, 1, erpmfactor);
 			}
 			
 			//This section determines if the wheel is acted on by outside forces by detecting acceleration magnitude
