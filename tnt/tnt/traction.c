@@ -27,9 +27,9 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 	// Conditions to end traction control
 	if (state->wheelslip) {
 		if (rt->current_time - traction->timeron > .8) {		// Time out at 500ms
-					deactivate_traction(traction, state, rt, m, traction_dbg, 80, erpmfactor);
+					deactivate_traction(traction, state, rt, traction_dbg, 80);
 		} else if (fabsf(rt->proportional) > config->wheelslip_max_angle) {
-					deactivate_traction(traction, state, rt, m, traction_dbg, 10, erpmfactor);
+					deactivate_traction(traction, state, rt, traction_dbg, 10);
 		} else {
 			//This section determines if the wheel is acted on by outside forces by detecting acceleration direction change
 			if (traction->highaccelon1) { 
@@ -39,7 +39,7 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 				} 
 			} else if (sign(m->accel_filtered)!= sign(m->last_accel_filtered)) { 
 			// Next we check to see if accel direction changes again from outside forces 
-					deactivate_traction(traction, state, rt, m, traction_dbg, 1, erpmfactor);
+					deactivate_traction(traction, state, rt, traction_dbg, 1);
 			}
 			
 			//This section determines if the wheel is acted on by outside forces by detecting acceleration magnitude
@@ -49,17 +49,17 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 					traction->highaccelon2 = false;	
 				} else if ((rt->current_time - traction->timeron > 0.5) && 
 				    traction->highaccelon1) {					// Time out at 800ms if wheel does not deccelerate
-					deactivate_traction(traction, state, rt, m, traction_dbg, 50, erpmfactor);
+					deactivate_traction(traction, state, rt, traction_dbg, 50);
 				}
 			} else if (fabsf(m->accel_filtered) > traction->end_accel) {
 			// Next we check to see if accel magnitude increases from outside forces 
-				deactivate_traction(traction, state, rt, m, traction_dbg, 2, erpmfactor);
+				deactivate_traction(traction, state, rt, traction_dbg, 2);
 			}
 
 			//If we wheelslipped backwards we just need to know the wheel is travelling forwards again
 			if (traction->reverse_wheelslip && 
 			    m->erpm_sign == m->erpm_sign_soft) {
-				deactivate_traction(traction, state, rt, m, traction_dbg, 3, erpmfactor);
+				deactivate_traction(traction, state, rt, traction_dbg, 3);
 			}
 		}
 	} else {
@@ -116,7 +116,7 @@ void reset_traction(TractionData *traction, State *state) {
 	traction->end_accel_hold = false;
 }
 
-void deactivate_traction(TractionData *traction, State *state, RuntimeData *rt, MotorData *m, TractionDebug *traction_dbg, float exit, float erpmfactor) {
+void deactivate_traction(TractionData *traction, State *state, RuntimeData *rt, TractionDebug *traction_dbg, float exit) {
 	state->wheelslip = false;
 	traction->timeroff = rt->current_time;
 	traction->reverse_wheelslip = false;
