@@ -79,6 +79,8 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 		}
 	}
 	
+	traction_dbg->debug2 = m->erpm_sign_soft;
+
 	// Initiate traction control
 	if ((start_condition1) && 			// Conditions false by default
 	   (!state->wheelslip) &&					// Not in traction control
@@ -95,7 +97,7 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 			traction_dbg->debug5 = 0;
 		}
 		if (traction_dbg->debug5 == 0) {
-			traction_dbg->debug2 = m->erpm_sign_soft;
+			//traction_dbg->debug2 = m->erpm_sign_soft;
 			traction_dbg->debug6 = m->accel / traction_dbg->freq_factor; 
 			traction_dbg->debug9 = m->erpm;
 			traction_dbg->debug3 = m->erpm_history[m->last_erpm_idx];
@@ -117,7 +119,7 @@ void deactivate_traction(TractionData *traction, State *state, RuntimeData *rt, 
 	state->wheelslip = false;
 	traction->timeroff = rt->current_time;
 	traction->reverse_wheelslip = false;
-	traction->end_accel_hold = fabsf(m->accel_filtered) > traction->start_accel * erpmfactor;
+	traction->end_accel_hold = true;
 	if (traction_dbg->debug5 == 1) {
 		traction_dbg->debug8 = traction->timeroff - traction->timeron;
 		if (traction_dbg->debug4 != 0) {
