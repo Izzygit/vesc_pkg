@@ -42,6 +42,9 @@ typedef struct {
     float duty_cycle;
 
     float accel;
+    float accel_history[ACCEL_ARRAY_SIZE];
+    uint8_t accel_idx;
+    uint8_t last_accel_idx;
     float last_accel;
     float last_erpm;
     float accel_filtered;
