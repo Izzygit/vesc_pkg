@@ -22,7 +22,8 @@
 void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeData *rt, tnt_config *config, TractionDebug *traction_dbg){
 	float erpmfactor = fmaxf(1, lerp(0, config->wheelslip_scaleerpm, config->wheelslip_scaleaccel, 1, m->abs_erpm));
 	bool start_condition1 = false;
-	
+	bool start_condition2 = false;
+
 	// Conditions to end traction control
 	if (state->wheelslip) {
 		if (rt->current_time - traction->timeron > .8) {		// Time out at 500ms
@@ -61,51 +62,51 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 				deactivate_traction(traction, state, rt, m, traction_dbg, 3, erpmfactor);
 			}
 		}
-	}
-
-	if (traction->end_accel_hold) { //Do not allow start conditions if we are in hold
-		traction->end_accel_hold = fabsf(m->accel_filtered) > traction->start_accel * erpmfactor; //deactivate hold when below the threshold acceleration
 	} else {
-		//Check motor erpm and acceleration to determine the correct detection condition to use if any
-		if (m->erpm_sign == sign(m->erpm_history[m->last_erpm_idx])) { 							//Check sign of the motor at the start of acceleration
-			if (m->abs_erpm > fabsf(m->erpm_history[m->last_erpm_idx])) { 						//If signs the same check for magnitude increase
-				start_condition1 = (sign(m->current) * m->accel > traction->start_accel * erpmfactor) &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
-				    (!state->braking_pos);									// Do not apply for braking 
-			} // else if (...TODO Put working braking condition here
-		} else if (sign(m->erpm_sign_soft) != sign(m->accel)) {				// If the motor is back spinning engage but don't allow wheelslip on landing
-			traction->reverse_wheelslip = true;
-			start_condition1 = (sign(m->current) * m->accel > traction->start_accel * erpmfactor) &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
-		   	    (!state->braking_pos);									// Do not apply for braking 
+		if (traction->end_accel_hold) { //Do not allow start conditions if we are in hold
+			traction->end_accel_hold = fabsf(m->accel_filtered) > traction->end_accel; //deactivate hold when below the threshold acceleration
+		} else { //Start conditions
+			//Check motor erpm and acceleration to determine the correct detection condition to use if any
+			if (m->erpm_sign == sign(m->erpm_history[m->last_erpm_idx])) { 							//Check sign of the motor at the start of acceleration
+				if (m->abs_erpm > fabsf(m->erpm_history[m->last_erpm_idx])) { 						//If signs the same check for magnitude increase
+					start_condition1 = (sign(m->current) * m->accel > traction->start_accel * erpmfactor) &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
+					    (!state->braking_pos);									// Do not apply for braking 
+				} // else if (...TODO Put working braking condition here
+			} else if (sign(m->erpm_sign_soft) != sign(m->accel)) {				// If the motor is back spinning engage but don't allow wheelslip on landing
+				start_condition2 = (sign(m->current) * m->accel > traction->start_accel * erpmfactor) &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
+			   	    (!state->braking_pos);									// Do not apply for braking 
+			}
 		}
-	}
 	
-	traction_dbg->debug2 = m->erpm_sign_soft;
+		traction_dbg->debug2 = m->erpm_sign_soft;
+	
+		// Initiate traction control
+		if ((start_condition1 || start_condition2) && 			// Conditions false by default
+		   (rt->current_time - traction->timeroff > config->wheelslip_filter_freq_slow / 100.0)) {		// Did not recently wheel slip.
+			state->wheelslip = true;
+			traction->accelstartval = m->accel;
+			traction->highaccelon1 = true;
+			traction->highaccelon2 = true;
+			traction->timeron = rt->current_time;
+			if (start_condition2)
+				traction->reverse_wheelslip = true;
 
-	// Initiate traction control
-	if ((start_condition1) && 			// Conditions false by default
-	   (!state->wheelslip) &&					// Not in traction control
-	   (rt->current_time - traction->timeroff > config->wheelslip_filter_freq_slow / 100.0)) {		// Did not recently wheel slip.
-		state->wheelslip = true;
-		traction->accelstartval = m->accel;
-		traction->highaccelon1 = true;
-		traction->highaccelon2 = true;
-		traction->timeron = rt->current_time;
-		
-		//Debug Section
-		if (rt->current_time - traction_dbg->aggregate_timer > 5) { // Aggregate the number of drop activations in 5 seconds
-			traction_dbg->aggregate_timer = rt->current_time;
-			traction_dbg->debug5 = 0;
+			//Debug Section
+			if (rt->current_time - traction_dbg->aggregate_timer > 5) { // Aggregate the number of drop activations in 5 seconds
+				traction_dbg->aggregate_timer = rt->current_time;
+				traction_dbg->debug5 = 0;
+			}
+			if (traction_dbg->debug5 == 0) {
+				//traction_dbg->debug2 = m->erpm_sign_soft;
+				traction_dbg->debug6 = m->accel / traction_dbg->freq_factor; 
+				traction_dbg->debug9 = m->erpm;
+				traction_dbg->debug3 = m->erpm_history[m->last_erpm_idx];
+				traction_dbg->debug1 = 0;
+				traction_dbg->debug4 = 0;
+				traction_dbg->debug8 = 0;
+			}
+			traction_dbg->debug5 += 1;
 		}
-		if (traction_dbg->debug5 == 0) {
-			//traction_dbg->debug2 = m->erpm_sign_soft;
-			traction_dbg->debug6 = m->accel / traction_dbg->freq_factor; 
-			traction_dbg->debug9 = m->erpm;
-			traction_dbg->debug3 = m->erpm_history[m->last_erpm_idx];
-			traction_dbg->debug1 = 0;
-			traction_dbg->debug4 = 0;
-			traction_dbg->debug8 = 0;
-		}
-		traction_dbg->debug5 += 1;
 	}
 }
 
