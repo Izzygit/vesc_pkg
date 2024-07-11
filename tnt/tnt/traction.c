@@ -44,14 +44,14 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 			
 			//This section determines if the wheel is acted on by outside forces by detecting acceleration magnitude
 			if (traction->highaccelon2) {
-				if (sign(traction->accelstartval) * m->accel_filtered < traction->slowed_accel) {	 	
+				if (sign(traction->accelstartval) * m->accel < traction->slowed_accel) {	 	
 				// First we identify that the wheel has deccelerated due to traciton control
 					traction->highaccelon2 = false;	
 				} else if ((rt->current_time - traction->timeron > 0.5) && 
 				    traction->highaccelon1) {					// Time out at 800ms if wheel does not deccelerate
 					deactivate_traction(traction, state, rt, traction_dbg, 50);
 				}
-			} else if (fabsf(m->accel_filtered) > traction->end_accel) {
+			} else if (fabsf(m->accel) > traction->end_accel) {
 			// Next we check to see if accel magnitude increases from outside forces 
 				deactivate_traction(traction, state, rt, traction_dbg, 2);
 			}
@@ -64,7 +64,7 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 		}
 	} else {
 		if (traction->end_accel_hold) { //Do not allow start conditions if we are in hold
-			traction->end_accel_hold = fabsf(m->accel_filtered) > traction->end_accel; //deactivate hold when below the threshold acceleration
+			traction->end_accel_hold = fabsf(m->accel) > traction->end_accel; //deactivate hold when below the threshold acceleration
 		} else { //Start conditions
 			//Check motor erpm and acceleration to determine the correct detection condition to use if any
 			if (m->erpm_sign == sign(m->erpm_history[m->last_erpm_idx])) { 							//Check sign of the motor at the start of acceleration
