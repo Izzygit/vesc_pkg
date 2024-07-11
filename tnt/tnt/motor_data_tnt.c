@@ -71,17 +71,16 @@ void motor_data_update(MotorData *m) {
     m->last_erpm_idx = m->erpm_idx - ACCEL_ARRAY_SIZE; 
     if (m->last_erpm_idx < 0) 
        m->last_erpm_idx += ERPM_ARRAY_SIZE;
-	
-    float acceleration = m->erpm - m->last_erpm;
-    m->accel += (acceleration - m->accel_history[m->accel_idx]) / ACCEL_ARRAY_SIZE;
-    m->accel_history[m->accel_idx] = acceleration;
-    m->accel_idx = (m->accel_idx + 1) % ACCEL_ARRAY_SIZE;
-    m->last_erpm = m->erpm;
-	
+
     m->erpm_filtered = biquad_process(&m->erpm_biquad, m->erpm);
     m->last_accel_filtered = m->accel_filtered;
     m->accel_filtered =  m->erpm_filtered - m->last_erpm_filtered;
     m->last_erpm_filtered = m->erpm_filtered;
+
+    m->accel += (m->accel_filtered - m->accel_history[m->accel_idx]) / ACCEL_ARRAY_SIZE;
+    m->accel_history[m->accel_idx] = m->accel_filtered;
+    m->accel_idx = (m->accel_idx + 1) % ACCEL_ARRAY_SIZE;
+    m->last_erpm = m->erpm;
 
     m->current = VESC_IF->mc_get_tot_current_directional_filtered();
     m->current_avg = biquad_process(&m->current_biquad, m->current);
