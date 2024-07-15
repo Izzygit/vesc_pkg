@@ -22,7 +22,11 @@
 void check_drop(DropData *drop, MotorData *m, RuntimeData *rt, State *state, DropDebug *drop_dbg){
 	//Conditions to engage drop
 	if ((drop->accel_z < drop->z_limit) && 						// Compare accel z to drop limit with reduction for pitch and roll.
-	    (rt->last_accel_z >= drop->accel_z) &&  					// check that we are constantly dropping
+	    (rt->last_accel_z >= drop->accel_z)) {  					// check that we are constantly dropping
+		drop->count += 1;
+	} else { drop-> count = 0; }
+
+	if ((drop->count > 10) &&	
 	    (state->sat != SAT_CENTERING) && 						// Not during startup
 	    (rt->current_time - drop->timeroff > 0.02)) {				// Don't re-enter drop state for duration 	
 		
