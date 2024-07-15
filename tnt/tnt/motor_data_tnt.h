@@ -41,6 +41,8 @@ typedef struct {
     bool braking;
 
     float duty_cycle;
+    float duty_filtered;
+    Biquad duty_biquad;
 
     float accel;
     float accel_history[ACCEL_ARRAY_SIZE];
@@ -56,7 +58,6 @@ typedef struct {
     int last_erpm_idx;
 
     Biquad current_biquad;
-    float filtered_current;
     float current_avg;
 } MotorData;
 
