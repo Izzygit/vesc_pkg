@@ -742,6 +742,12 @@ static void set_dutycycle(data *d, float dutycycle){
 	VESC_IF->mc_set_duty(dutycycle); 
 }
 
+static void set_brake(data *d, float current) {
+    VESC_IF->timeout_reset();
+    VESC_IF->mc_set_current_off_delay(d->motor_timeout_s);
+    VESC_IF->mc_set_brake_current(current);
+}
+
 static void apply_stability(data *d) {
 	float speed_stabl_mod = 0;
 	float throttle_stabl_mod = 0;	
@@ -980,7 +986,9 @@ static void tnt_thd(void *arg) {
 			check_traction(&d->motor, &d->traction, &d->state, &d->rt, &d->tnt_conf, &d->traction_dbg);
 			if (d->tnt_conf.is_surge_enabled)
 				check_surge(&d->motor, &d->surge, &d->state, &d->rt, &d->tnt_conf, &d->surge_dbg);
-
+			if (d->tnt_conf.is_traction_braking_enabled)
+				check_traction_braking(&d->motor, &d->traction, &d->state, &d->rt, &d->tnt_conf, d->remote.inputtilt_interpolated, &d->traction_dbg);
+			
 			// PID value application
 				
 			d->rt.pid_value = (d->state.wheelslip && d->tnt_conf.is_traction_enabled) ? 0 : 
@@ -990,6 +998,8 @@ static void tnt_thd(void *arg) {
 			// Output to motor
 			if (d->surge.active) { 	
 				set_dutycycle(d, d->surge.new_duty_cycle); 		// Set the duty to surge
+			} else if (d->traction.traction_braking) {
+				set_brake(d, d->rt.pid_value);				// Use braking function for traction control
 			} else {
 				set_current(d, d->rt.pid_value); 			// Set current as normal.
 			}
