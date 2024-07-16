@@ -35,6 +35,8 @@ typedef struct {
 	float end_accel;
 	float erpm_sign_factor;
 	bool end_accel_hold;
+	bool traction_braking;
+	bool traction_braking_last;
 } TractionData;
 
 typedef struct {
