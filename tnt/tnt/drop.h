@@ -29,6 +29,7 @@ typedef struct {
         float applied_correction;		//Geometry compesation for the angle of the board
         float z_limit;				//Required acceleration to engage drop
         float motor_limit;			//Required motor acceleration to end drop
+	int count;
 } DropData;
 
 typedef struct {
