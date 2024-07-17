@@ -37,6 +37,7 @@ typedef struct {
 	bool end_accel_hold;
 	bool traction_braking;
 	bool traction_braking_last;
+	float brake_delay;
 } TractionData;
 
 typedef struct {
