@@ -44,14 +44,14 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 			
 			//This section determines if the wheel is acted on by outside forces by detecting acceleration magnitude
 			if (traction->highaccelon2) {
-				if (sign(traction->accelstartval) * m->accel < traction->slowed_accel) {	 	
+				if (sign(traction->accelstartval) * m->accel_avg < traction->slowed_accel) {	 	
 				// First we identify that the wheel has deccelerated due to traciton control
 					traction->highaccelon2 = false;	
 				} else if ((rt->current_time - traction->timeron > 0.5) && 
 				    traction->highaccelon1) {					// Time out at 800ms if wheel does not deccelerate
 					deactivate_traction(traction, state, rt, traction_dbg, 50);
 				}
-			} else if (fabsf(m->accel) > traction->end_accel) {
+			} else if (fabsf(m->accel_avg) > traction->end_accel) {
 			// Next we check to see if accel magnitude increases from outside forces 
 				deactivate_traction(traction, state, rt, traction_dbg, 2);
 			}
@@ -64,16 +64,16 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 		}
 	} else {
 		if (traction->end_accel_hold) { //Do not allow start conditions if we are in hold
-			traction->end_accel_hold = fabsf(m->accel) > traction->end_accel; //deactivate hold when below the threshold acceleration
+			traction->end_accel_hold = fabsf(m->accel_avg) > traction->end_accel; //deactivate hold when below the threshold acceleration
 		} else { //Start conditions
 			//Check motor erpm and acceleration to determine the correct detection condition to use if any
 			if (m->erpm_sign == sign(m->erpm_history[m->last_erpm_idx])) { 							//Check sign of the motor at the start of acceleration
 				if (m->abs_erpm > fabsf(m->erpm_history[m->last_erpm_idx])) { 						//If signs the same check for magnitude increase
-					start_condition1 = (sign(m->current) * m->accel > traction->start_accel * erpmfactor) &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
+					start_condition1 = (sign(m->current) * m->accel_avg > traction->start_accel * erpmfactor) &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
 					    (!state->braking_pos);									// Do not apply for braking 
 				} // else if (...TODO Put working braking condition here
-			} else if (sign(m->erpm_sign_soft) != sign(m->accel)) {				// If the motor is back spinning engage but don't allow wheelslip on landing
-				start_condition2 = (sign(m->current) * m->accel > traction->start_accel * erpmfactor) &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
+			} else if (sign(m->erpm_sign_soft) != sign(m->accel_avg)) {				// If the motor is back spinning engage but don't allow wheelslip on landing
+				start_condition2 = (sign(m->current) * m->accel_avg > traction->start_accel * erpmfactor) &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
 			   	    (!state->braking_pos);									// Do not apply for braking 
 			}
 		}
@@ -84,7 +84,7 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 		if ((start_condition1 || start_condition2) && 			// Conditions false by default
 		   (rt->current_time - traction->timeroff > 0.02)) {		// Did not recently wheel slip.
 			state->wheelslip = true;
-			traction->accelstartval = m->accel;
+			traction->accelstartval = m->accel_avg;
 			traction->highaccelon1 = true;
 			traction->highaccelon2 = true;
 			traction->timeron = rt->current_time;
@@ -98,7 +98,7 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 			}
 			if (traction_dbg->debug5 == 0) {
 				//traction_dbg->debug2 = m->erpm_sign_soft;
-				traction_dbg->debug6 = m->accel / traction_dbg->freq_factor; 
+				traction_dbg->debug6 = m->accel_avg / traction_dbg->freq_factor; 
 				traction_dbg->debug9 = m->erpm;
 				traction_dbg->debug3 = m->erpm_history[m->last_erpm_idx];
 				traction_dbg->debug1 = 0;
