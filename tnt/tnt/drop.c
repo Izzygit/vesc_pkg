@@ -63,6 +63,7 @@ void check_drop(DropData *drop, MotorData *m, RuntimeData *rt, State *state, Dro
 void configure_drop(DropData *drop, const tnt_config *config){
 	drop->z_limit = config->drop_z_accel / 100.0;	// Value of accel z to initiate drop. A drop of about 6" / .1s produces about 0.9 accel y (normally 1)
 	drop->motor_limit = 1000.0 * 2.0 / config->hertz; //ends drop via motor acceleration config->drop_motor_accel
+	drop->count = config->drop_count;
 }
 
 void reset_drop(DropData *drop){
