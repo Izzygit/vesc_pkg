@@ -51,7 +51,8 @@ typedef struct {
 	float debug7;
 	float debug8;
 	float debug9;
-	float aggregate_timer;
+	float aggregate_timer1;
+	float aggregate_timer2;
 	float freq_factor;
 } TractionDebug;
 
