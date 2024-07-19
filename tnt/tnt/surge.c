@@ -23,7 +23,7 @@
 void check_surge(MotorData *m, SurgeData *surge, State *state, RuntimeData *rt, tnt_config *config, SurgeDebug *surge_dbg){
 	//Start Surge Code
 	//Initialize Surge Cycle
-	if ((m->current_avg * m->erpm_sign > surge->start_current) && 	//High current condition 
+	if ((m->current_filtered * m->erpm_sign > surge->start_current) && 	//High current condition 
 	     (surge->high_current) && 							//If overcurrent is triggered this satifies traction control, min erpm, braking, centering and direction
 	     (m->duty_cycle < 0.8) &&						//Prevent surge when pushing top speed
 	     (rt->current_time - surge->timer > 0.7)) {					//Not during an active surge period			
@@ -34,7 +34,7 @@ void check_surge(MotorData *m, SurgeData *surge, State *state, RuntimeData *rt, 
 		
 		//Debug Data Section
 		surge_dbg->debug1 = rt->proportional;				
-		surge_dbg->debug2 = m->current_avg;
+		surge_dbg->debug2 = m->current_filtered;
 		surge_dbg->debug3 = surge->start_current;
 		surge_dbg->debug4 = m->duty_cycle;
 		surge_dbg->debug5 = 0;
@@ -71,7 +71,7 @@ void check_surge(MotorData *m, SurgeData *surge, State *state, RuntimeData *rt, 
 void check_current(MotorData *m, SurgeData *surge, State *state, RuntimeData *rt, tnt_config *config) {
 	float scale_start_current = lerp(1.0 * config->surge_scaleduty / 100.0, .95, config->surge_startcurrent, config->surge_start_hd_current, m->duty_cycle);
 	surge->start_current = fminf(config->surge_startcurrent, scale_start_current); 
-	if ((m->current_avg * m->erpm_sign > surge->start_current - config->overcurrent_margin) && 	//High current condition 
+	if ((m->current_filtered * m->erpm_sign > surge->start_current - config->overcurrent_margin) && 	//High current condition 
 	     (!state->braking_pos) && 								//Not braking
 	     (!state->wheelslip) &&									//Not during traction control
 	     (m->abs_erpm > config->surge_minerpm) &&								//Above the min erpm threshold
