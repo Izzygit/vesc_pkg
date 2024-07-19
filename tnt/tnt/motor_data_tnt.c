@@ -50,7 +50,7 @@ void motor_data_reset(MotorData *m) {
 void motor_data_configure(MotorData *m, tnt_config *config) {
     biquad_configure(&m->current_biquad, BQ_LOWPASS, 3.0 / config->hertz);
     biquad_configure(&m->erpm_biquad, BQ_LOWPASS, 1.0 * config->wheelslip_filter_freq / config->hertz);
-    biquad_configure(&m->duty_biquad, BQ_LOWPASS, config->kalman_factor1 / config->hertz);
+    biquad_configure(&m->duty_biquad, BQ_LOWPASS, config->duty_filter_freq / config->hertz);
    
     m->erpm_sign_factor = 0.9984 / config->hertz; //originally configured for 832 hz to delay an erpm sign change for 1 second (0.0012 factor)
 }
