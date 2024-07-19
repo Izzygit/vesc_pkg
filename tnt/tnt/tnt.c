@@ -874,7 +874,7 @@ static void tnt_thd(void *arg) {
 			//Apply Remote Tilt
 			float input_tiltback_target = d->remote.throttle_val * d->tnt_conf.inputtilt_angle_limit;
 			if (d->tnt_conf.is_stickytilt_enabled) { 
-				apply_stickytilt(&d->remote, &d->st_tilt, d->motor.current_avg, &input_tiltback_target);
+				apply_stickytilt(&d->remote, &d->st_tilt, d->motor.current_filtered, &input_tiltback_target);
 			}
 			apply_inputtilt(&d->remote, input_tiltback_target); //produces output d->remote.inputtilt_interpolated
 			d->rt.setpoint += d->tnt_conf.enable_throttle_stability ? 0 : d->remote.inputtilt_interpolated; //Don't apply if we are using the throttle for stability
@@ -1192,7 +1192,7 @@ static void send_realtime_data(data *d){
 	buffer_append_float32_auto(buffer, d->footpad_sensor.adc1, &ind);
 	buffer_append_float32_auto(buffer, d->footpad_sensor.adc2, &ind);
 	buffer_append_float32_auto(buffer, VESC_IF->mc_get_input_voltage_filtered(), &ind);
-	buffer_append_float32_auto(buffer, d->motor.current_avg, &ind); // current atr_filtered_current
+	buffer_append_float32_auto(buffer, d->motor.current_filtered, &ind); // current atr_filtered_current
 	buffer_append_float32_auto(buffer, d->rt.pitch_angle, &ind);
 	buffer_append_float32_auto(buffer, d->rt.roll_angle, &ind);
 
