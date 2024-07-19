@@ -29,11 +29,9 @@ void motor_data_reset(MotorData *m) {
     m->last_accel_filtered = 0;
     m->erpm_filtered = 0;
     m->last_erpm_filtered = 0;
-    m->accel = 0;
-    m->last_accel = 0;
-    m->last_erpm = 0;
-    m->erpm_sign_soft = 0;
+    m->accel_avg = 0;
     m->duty_filtered = 0;
+    m->current_filtered = 0;	
 	    
     m->erpm_idx = 0;
     for (int i = 0; i < ERPM_ARRAY_SIZE; i++) {
@@ -68,25 +66,24 @@ void motor_data_update(MotorData *m) {
     m->abs_erpm = fabsf(m->erpm);
     m->erpm_sign = sign(m->erpm);
     update_erpm_sign(m);
-
-    m->erpm_history[m->erpm_idx] = m->erpm;
-    m->erpm_idx = (m->erpm_idx + 1) % ERPM_ARRAY_SIZE;
+	
+    m->erpm_filtered = biquad_process(&m->erpm_biquad, m->erpm);
+    m->erpm_history[m->erpm_idx] = m->erpm_filtered;
     m->last_erpm_idx = m->erpm_idx - ACCEL_ARRAY_SIZE; 
     if (m->last_erpm_idx < 0) 
        m->last_erpm_idx += ERPM_ARRAY_SIZE;
-
-    m->erpm_filtered = biquad_process(&m->erpm_biquad, m->erpm);
+    m->erpm_idx = (m->erpm_idx + 1) % ERPM_ARRAY_SIZE; 
+	
     m->last_accel_filtered = m->accel_filtered;
     m->accel_filtered =  m->erpm_filtered - m->last_erpm_filtered;
     m->last_erpm_filtered = m->erpm_filtered;
 
-    m->accel += (m->accel_filtered - m->accel_history[m->accel_idx]) / ACCEL_ARRAY_SIZE;
+    m->accel_avg += (m->accel_filtered - m->accel_history[m->accel_idx]) / ACCEL_ARRAY_SIZE;
     m->accel_history[m->accel_idx] = m->accel_filtered;
     m->accel_idx = (m->accel_idx + 1) % ACCEL_ARRAY_SIZE;
-    m->last_erpm = m->erpm;
 
     m->current = VESC_IF->mc_get_tot_current_directional_filtered();
-    m->current_avg = biquad_process(&m->current_biquad, m->current);
+    m->current_filtered = biquad_process(&m->current_biquad, m->current);
     m->braking = m->abs_erpm > 250 && sign(m->current) != m->erpm_sign;
 
     m->duty_cycle = fabsf(VESC_IF->mc_get_duty_cycle_now());
