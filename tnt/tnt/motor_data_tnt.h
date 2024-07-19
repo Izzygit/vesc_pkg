@@ -39,26 +39,23 @@ typedef struct {
 
     float current;
     bool braking;
+    Biquad current_biquad;
+    float current_filtered;
 
     float duty_cycle;
     float duty_filtered;
     Biquad duty_biquad;
 
-    float accel;
+    float accel_avg;
     float accel_history[ACCEL_ARRAY_SIZE];
     uint8_t accel_idx;
     uint8_t last_accel_idx;
-    float last_accel;
-    float last_erpm;
     float accel_filtered;
     float last_accel_filtered;
 
     float erpm_history[ERPM_ARRAY_SIZE];
     int erpm_idx;
     int last_erpm_idx;
-
-    Biquad current_biquad;
-    float current_avg;
 } MotorData;
 
 void motor_data_reset(MotorData *m);
