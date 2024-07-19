@@ -90,8 +90,8 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 				traction->reverse_wheelslip = true;
 
 			//Debug Section
-			if (rt->current_time - traction_dbg->aggregate_timer > 5) { // Aggregate the number of drop activations in 5 seconds
-				traction_dbg->aggregate_timer = rt->current_time;
+			if (rt->current_time - traction_dbg->aggregate_timer1 > 5) { // Aggregate the number of drop activations in 5 seconds
+				traction_dbg->aggregate_timer1 = rt->current_time;
 				traction_dbg->debug5 = 0;
 			}
 			if (traction_dbg->debug5 == 0) {
@@ -161,8 +161,8 @@ void check_traction_braking(MotorData *m, TractionData *traction, State *state, 
 		traction_dbg->debug9 = max(fabsf(traction_dbg->debug9), m->abs_erpm) * sign(m->erpm);
 		traction_dbg->debug3 = min(fabsf(traction_dbg->debug3), m->abs_erpm) * sign(m->erpm);	
 		traction_dbg->debug8 = rt->current_time - traction->timeron;
-		if (rt->current_time - traction_dbg->aggregate_timer > 10) { // Aggregate the number of drop activations in 10 seconds
-			traction_dbg->aggregate_timer = rt->current_time;
+		if (rt->current_time - traction_dbg->aggregate_timer2 > 10) { // Aggregate the number of drop activations in 10 seconds
+			traction_dbg->aggregate_timer2 = rt->current_time;
 			traction_dbg->debug5 = 0;
 			traction_dbg->debug8 = 0;
 		}
