@@ -136,11 +136,11 @@ void configure_traction(TractionData *traction, tnt_config *config, TractionDebu
 }
 
 void check_traction_braking(MotorData *m, TractionData *traction, State *state, RuntimeData *rt, tnt_config *config, float inputtilt_interpolated, TractionDebug *traction_dbg){
-	bool check_last = traction->traction_braking_last ||  rt->current_time - traction->brake_delay > config->kalman_factor3; //we were just traction braking or we are beyond the brake delay
+	bool check_last = traction->traction_braking_last ||  rt->current_time - traction->brake_delay > config->tc_braking_delay; //we were just traction braking or we are beyond the brake delay
 	
 	if (-inputtilt_interpolated * m->erpm_sign >= config->tc_braking_angle &&
 	    state->braking_pos &&
-	    m->duty_filtered > config->kalman_factor2) {
+	    m->duty_filtered > config->tc_braking_duty_limit) {
 		traction->count +=1;
 	} else { traction->count = 0; }
 
@@ -180,7 +180,7 @@ void check_traction_braking(MotorData *m, TractionData *traction, State *state, 
 				traction_dbg->debug4 = 1;
 			} else if (!state->braking_pos) {
 				traction_dbg->debug4 = 2;
-			} else if (m->duty_filtered < config->kalman_factor2) {
+			} else if (m->duty_filtered < config->tc_braking_duty_limit) {
 				traction_dbg->debug4 = 3;
 			}
 		}
