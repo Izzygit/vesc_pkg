@@ -68,7 +68,7 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 		} else { //Start conditions
 			//Check motor erpm and acceleration to determine the correct detection condition to use if any
 			if (m->erpm_sign == sign(m->erpm_history[m->last_erpm_idx])) { 							//Check sign of the motor at the start of acceleration
-				if (m->abs_erpm > fabsf(m->erpm_history[m->last_erpm_idx])) { 						//If signs the same check for magnitude increase
+				if (fabsf(m->erpm_filtered) > fabsf(m->erpm_history[m->last_erpm_idx])) { 						//If signs the same check for magnitude increase
 					start_condition1 = (sign(m->current) * m->accel_avg > traction->start_accel * erpmfactor) &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
 					    (!state->braking_pos);									// Do not apply for braking 
 				} // else if (...TODO Put working braking condition here
@@ -77,9 +77,7 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 			   	    (!state->braking_pos);									// Do not apply for braking 
 			}
 		}
-	
-		traction_dbg->debug2 = m->erpm_sign_soft;
-	
+		
 		// Initiate traction control
 		if ((start_condition1 || start_condition2) && 			// Conditions false by default
 		   (rt->current_time - traction->timeroff > 0.02)) {		// Did not recently wheel slip.
@@ -97,11 +95,10 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 				traction_dbg->debug5 = 0;
 			}
 			if (traction_dbg->debug5 == 0) {
-				//traction_dbg->debug2 = m->erpm_sign_soft;
+				traction_dbg->debug2 = erpmfactor;
 				traction_dbg->debug6 = m->accel_avg / traction_dbg->freq_factor; 
-				traction_dbg->debug9 = m->erpm;
+				traction_dbg->debug9 = m->erpm_filtered;
 				traction_dbg->debug3 = m->erpm_history[m->last_erpm_idx];
-				traction_dbg->debug1 = 0;
 				traction_dbg->debug4 = 0;
 				traction_dbg->debug8 = 0;
 			}
@@ -114,6 +111,8 @@ void reset_traction(TractionData *traction, State *state) {
 	state->wheelslip = false;
 	traction->reverse_wheelslip = false;
 	traction->end_accel_hold = false;
+	traction->traction_braking = false; 
+	traction->traction_braking_last = false; 
 }
 
 void deactivate_traction(TractionData *traction, State *state, RuntimeData *rt, TractionDebug *traction_dbg, float exit) {
@@ -141,35 +140,49 @@ void check_traction_braking(MotorData *m, TractionData *traction, State *state, 
 	
 	if (-inputtilt_interpolated * m->erpm_sign >= config->tc_braking_angle &&
 	    state->braking_pos &&
-	    check_last &&
 	    m->duty_filtered > config->kalman_factor2) {
+		traction->count +=1;
+	} else { traction->count = 0; }
+
+	if (traction->count > config->tc_braking_count &&
+	    check_last) {
 		traction->traction_braking = true;
 		traction->brake_delay = rt->current_time;
 		
 		//Debug Section
-		traction_dbg->debug2 = 0;
-		traction_dbg->debug6 = 666;
-		traction_dbg->debug9 = 0;
-		traction_dbg->debug3 = 0;
-		traction_dbg->debug1 = 0;
+		traction_dbg->debug2 = 666;
+		traction_dbg->debug6 = max(traction_dbg->debug6, fabsf(m->accel_avg / traction_dbg->freq_factor));
 		traction_dbg->debug4 = 0;
-		if (!traction->traction_braking_last) // Just entered traction braking, reset
+		if (!traction->traction_braking_last) {// Just entered traction braking, reset
 			traction->timeron = rt->current_time;
-		
+			traction_dbg->debug9 = m->erpm;
+			traction_dbg->debug3 = m->erpm;
+		}
+		traction_dbg->debug9 = max(fabsf(traction_dbg->debug9), m->abs_erpm) * sign(m->erpm);
+		traction_dbg->debug3 = min(fabsf(traction_dbg->debug3), m->abs_erpm) * sign(m->erpm);	
 		traction_dbg->debug8 = rt->current_time - traction->timeron;
+		if (rt->current_time - traction_dbg->aggregate_timer > 10) { // Aggregate the number of drop activations in 10 seconds
+			traction_dbg->aggregate_timer = rt->current_time;
+			traction_dbg->debug5 = 0;
+			traction_dbg->debug8 = 0;
+		}
 	} else { 
 		traction->traction_braking = false; 
 
 		//Debug Section
 		if (traction->traction_braking_last) {
 			traction->timeroff = rt->current_time;
-			traction_dbg->debug8 = traction->timeroff - traction->timeron;
+			traction_dbg->debug8 += traction->timeroff - traction->timeron;
 
-			if (rt->current_time - traction_dbg->aggregate_timer > 10) { // Aggregate the number of drop activations in 10 seconds
-				traction_dbg->aggregate_timer = rt->current_time;
-				traction_dbg->debug5 = 0;
-			}
 			traction_dbg->debug5 += 1;
+
+			if (-inputtilt_interpolated * m->erpm_sign <= config->tc_braking_angle) {
+				traction_dbg->debug4 = 1;
+			} else if (!state->braking_pos) {
+				traction_dbg->debug4 = 2;
+			} else if (m->duty_filtered < config->kalman_factor2) {
+				traction_dbg->debug4 = 3;
+			}
 		}
 	}
 	traction->traction_braking_last = traction->traction_braking;
