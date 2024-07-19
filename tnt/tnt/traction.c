@@ -140,7 +140,7 @@ void check_traction_braking(MotorData *m, TractionData *traction, State *state, 
 	
 	if (-inputtilt_interpolated * m->erpm_sign >= config->tc_braking_angle &&
 	    state->braking_pos &&
-	    m->duty_filtered > config->tc_braking_duty_limit) {
+	    m->duty_filtered > config->tc_braking_duty_limit / 100.0) {
 		traction->count +=1;
 	} else { traction->count = 0; }
 
@@ -180,7 +180,7 @@ void check_traction_braking(MotorData *m, TractionData *traction, State *state, 
 				traction_dbg->debug4 = 1;
 			} else if (!state->braking_pos) {
 				traction_dbg->debug4 = 2;
-			} else if (m->duty_filtered < config->tc_braking_duty_limit) {
+			} else if (m->duty_filtered < config->tc_braking_duty_limit / 100.0) {
 				traction_dbg->debug4 = 3;
 			}
 		}
