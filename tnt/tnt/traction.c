@@ -113,6 +113,8 @@ void reset_traction(TractionData *traction, State *state) {
 	traction->end_accel_hold = false;
 	traction->traction_braking = false; 
 	traction->traction_braking_last = false; 
+	traction->brake_delay = 0;
+	traction->count = 0; 
 }
 
 void deactivate_traction(TractionData *traction, State *state, RuntimeData *rt, TractionDebug *traction_dbg, float exit) {
