@@ -50,7 +50,7 @@ void motor_data_reset(MotorData *m) {
 void motor_data_configure(MotorData *m, tnt_config *config) {
     biquad_configure(&m->current_biquad, BQ_LOWPASS, 3.0 / config->hertz);
     biquad_configure(&m->erpm_biquad, BQ_LOWPASS, 1.0 * config->wheelslip_filter_freq / config->hertz);
-    biquad_configure(&m->duty_biquad, BQ_LOWPASS, config->duty_filter_freq / config->hertz);
+    biquad_configure(&m->duty_biquad, BQ_LOWPASS, 1.0 * config->duty_filter_freq / config->hertz);
    
     m->erpm_sign_factor = 0.9984 / config->hertz; //originally configured for 832 hz to delay an erpm sign change for 1 second (0.0012 factor)
 }
@@ -69,11 +69,11 @@ void motor_data_update(MotorData *m) {
 	
     m->erpm_filtered = biquad_process(&m->erpm_biquad, m->erpm);
     m->erpm_history[m->erpm_idx] = m->erpm_filtered;
+    m->erpm_idx = (m->erpm_idx + 1) % ERPM_ARRAY_SIZE; 
     m->last_erpm_idx = m->erpm_idx - ACCEL_ARRAY_SIZE; 
     if (m->last_erpm_idx < 0) 
        m->last_erpm_idx += ERPM_ARRAY_SIZE;
-    m->erpm_idx = (m->erpm_idx + 1) % ERPM_ARRAY_SIZE; 
-	
+
     m->last_accel_filtered = m->accel_filtered;
     m->accel_filtered =  m->erpm_filtered - m->last_erpm_filtered;
     m->last_erpm_filtered = m->erpm_filtered;
