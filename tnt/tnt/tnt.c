@@ -137,7 +137,9 @@ typedef struct {
 	//Traction Control
 	TractionData traction;
 	TractionDebug traction_dbg;
-	
+	BrakingData braking;
+	BrakingDebug braking_dbg;
+
 	// Low Pass Filter
 	float pitch_smooth; 
 	Biquad pitch_biquad;
@@ -987,7 +989,7 @@ static void tnt_thd(void *arg) {
 			if (d->tnt_conf.is_surge_enabled)
 				check_surge(&d->motor, &d->surge, &d->state, &d->rt, &d->tnt_conf, &d->surge_dbg);
 			if (d->tnt_conf.is_tc_braking_enabled)
-				check_traction_braking(&d->motor, &d->traction, &d->state, &d->rt, &d->tnt_conf, d->remote.inputtilt_interpolated, &d->traction_dbg);
+				check_traction_braking(&d->motor, &d->braking, &d->state, &d->rt, &d->tnt_conf, d->remote.inputtilt_interpolated, &d->braking_dbg);
 			
 			// PID value application
 				
@@ -998,7 +1000,7 @@ static void tnt_thd(void *arg) {
 			// Output to motor
 			if (d->surge.active) { 	
 				set_dutycycle(d, d->surge.new_duty_cycle); 		// Set the duty to surge
-			} else if (d->traction.traction_braking) {
+			} else if (d->braking.active) {
 				set_brake(d, d->rt.pid_value);				// Use braking function for traction control
 			} else {
 				set_current(d, d->rt.pid_value); 			// Set current as normal.
