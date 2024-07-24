@@ -90,8 +90,8 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 				traction->reverse_wheelslip = true;
 
 			//Debug Section
-			if (rt->current_time - traction_dbg->aggregate_timer1 > 5) { // Aggregate the number of drop activations in 5 seconds
-				traction_dbg->aggregate_timer1 = rt->current_time;
+			if (rt->current_time - traction_dbg->aggregate_timer > 5) { // Aggregate the number of drop activations in 5 seconds
+				traction_dbg->aggregate_timer = rt->current_time;
 				traction_dbg->debug5 = 0;
 				traction_dbg->debug4 = 0;
 			}
