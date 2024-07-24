@@ -164,6 +164,14 @@ Item {
                     var debug4 = dv.getFloat32(ind); ind += 4; //min accel z 
                     var debug6 = dv.getFloat32(ind); ind += 4; //ending pitch 
                     var debug7 = dv.getFloat32(ind); ind += 4; //duration
+                } else if (debug_state == 6) {
+                    var debug1 = dv.getFloat32(ind); ind += 4; // duty
+                    var debug2 = dv.getFloat32(ind); ind += 4; // accel
+                    var debug3 = dv.getFloat32(ind); ind += 4; // min erpm 
+                    var debug4 = dv.getFloat32(ind); ind += 4; // max erpm 
+                    var debug5 = dv.getFloat32(ind); ind += 4; // debug 
+                    var debug6 = dv.getFloat32(ind); ind += 4; // duration 
+                    var debug7 = dv.getFloat32(ind); ind += 4; // count 
 		} else {
 		    //space for temporary debugs
                 }
@@ -300,7 +308,7 @@ Item {
 			if (debug_state == 1) {
 				debug.text =
 				"Start ERPM Factor   : " + debug1.toFixed(1) + "\n" +  
-				"Start Accleration   : " + debug2.toFixed(1) + " ERPM/ms\n" +
+				"Start Acceleration  : " + debug2.toFixed(1) + " ERPM/ms\n" +
 				"Start ERPM          : " + debug4.toFixed(0) + " ERPM\n" +
 				"Last ERPM           : " + debug3.toFixed(0) + " ERPM\n" +
 				"End Condition       : " + debug5.toFixed(0) + "\n" +
@@ -340,7 +348,16 @@ Item {
 				"Min Accel Z         : " + debug4.toFixed(2) + " \n" + 
 				"Ending Proportional : " + debug6.toFixed(1) + "°\n" +
     				"Drop Duration       : " + debug7.toFixed(3) + " s\n" 
-			} else { 
+    			} else if (debug_state == 6) {
+				debug.text =
+				"Duty Filtered       : " + debug1.toFixed(2) + "\n" +  
+				"Max Acceleration    : " + debug2.toFixed(1) + " ERPM/ms\n" +
+				"Min ERPM            : " + debug3.toFixed(0) + " ERPM\n" +
+				"Max ERPM            : " + debug4.toFixed(0) + " ERPM\n" +
+				"End Condition       : " + debug5.toFixed(0) + "\n" +
+				"Total Duration      : " + debug6.toFixed(1) + " s\n" +
+				"Brake Count         : " + debug7.toFixed(0) + "\n" 
+    			} else { 
 				debug.text = 
 				"-- n/a --"       
 	  		}
