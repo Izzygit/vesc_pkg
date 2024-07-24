@@ -35,7 +35,7 @@ typedef struct {
 typedef struct {
 	float debug1;		//last high accel prevention time
 	float debug2;		//
-	float debug3;		//end condition
+	int debug3;		//end condition
 	float debug4;		//min accel z
 	float debug5;		// number of drops in 5 seconds
 	float debug6;		// end porp
