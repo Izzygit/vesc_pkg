@@ -27,37 +27,53 @@ typedef struct {
 	float accelstartval;		//Starting value to engage wheelslip
 	bool highaccelon1;		//Flag that indicates acceleration direction has changed
 	bool highaccelon2;		//Flag that indicates acceleration direction has changed
-	float lasterpm;			//ERPM before wheelslip
-	float erpm;			//ERPM once wheelslip engaged
 	bool reverse_wheelslip; 	//Wheelslip in the braking position
 	float start_accel;		//acceleration that triggers wheelslip
 	float slowed_accel;		//Trigger that shows traction control is working
 	float end_accel;
 	float erpm_sign_factor;
 	bool end_accel_hold;
-	bool traction_braking;
-	bool traction_braking_last;
-	float brake_delay;
-	int count;
 } TractionData;
 
 typedef struct {
 	float debug1;
 	float debug2;
 	float debug3;
-	float debug4;
+	int debug4;
 	float debug5;
 	float debug6;
 	float debug7;
 	float debug8;
 	float debug9;
-	float aggregate_timer1;
-	float aggregate_timer2;
+	float aggregate_timer;
 	float freq_factor;
 } TractionDebug;
+
+typedef struct {
+	float timeron;       	 	
+	float timeroff;      		
+	bool active;
+	bool last_active;
+	float brake_delay;
+	int count;
+} BrakingData;
+
+typedef struct {
+	float debug1;
+	float debug2;
+	float debug3;
+	int debug4;
+	float debug5;
+	float debug6;
+	float debug7;
+	float debug8;
+	float debug9;
+	float aggregate_timer;
+	float freq_factor;
+} BrakingDebug;
 
 void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeData *rt, tnt_config *config, TractionDebug *traction_dbg);
 void reset_traction(TractionData *traction, State *state);
 void deactivate_traction(TractionData *traction, State *state, RuntimeData *rt, TractionDebug *traction_dbg, float exit);
 void configure_traction(TractionData *traction, tnt_config *config, TractionDebug *traction_dbg);
-void check_traction_braking(MotorData *m, TractionData *traction, State *state, RuntimeData *rt, tnt_config *config, float inputtilt_interpolated, TractionDebug *traction_dbg);
+void check_traction_braking(MotorData *m, BrakingData *braking, State *state, RuntimeData *rt, tnt_config *config, float inputtilt_interpolated, BrakingDebug *braking_dbg);
