@@ -128,25 +128,26 @@ void deactivate_traction(TractionData *traction, State *state, RuntimeData *rt, 
 	traction_dbg->debug4 = traction_dbg->debug4 * 10 + exit; //aggregate the last traction deactivations
 }
 
-void configure_traction(TractionData *traction, tnt_config *config, TractionDebug *traction_dbg){
+void configure_traction(TractionData *traction, tnt_config *config, TractionDebug *traction_dbg, BrakingDebug *braking_dbg){
 	traction->start_accel = 1000.0 * config->wheelslip_accelstart / config->hertz; //convert from erpm/ms to erpm/cycle
 	traction->slowed_accel = 1000.0 * config->wheelslip_accelslowed / config->hertz;
 	traction->end_accel = 1000.0 * config->wheelslip_accelend / config->hertz;
 	traction_dbg->freq_factor = 1000.0 / config->hertz;
+	braking_dbg->freq_factor = traction_dbg->freq_factor;
 }
 
 void check_traction_braking(MotorData *m, BrakingData *braking, State *state, RuntimeData *rt, tnt_config *config, float inputtilt_interpolated, BrakingDebug *braking_dbg){
 	bool check_last = braking->last_active ||  rt->current_time - braking->brake_delay > config->tc_braking_delay; //we were just traction braking or we are beyond the brake delay
 
 	//Check that conditions for traciton braking are satified and add to counter
-	if (-inputtilt_interpolated * m->erpm_sign >= config->tc_braking_angle &&
-	    state->braking_pos &&
-	    m->duty_filtered > config->tc_braking_duty_limit / 100.0) {
+	if (-inputtilt_interpolated * m->erpm_sign >= config->tc_braking_angle && //Minimum nose down angle from remote, can be 0
+	    state->braking_pos &&						// braking position active
+	    m->duty_filtered > config->tc_braking_duty_limit / 100.0) {		// above the minimum duty
 		braking->count +=1;
 	} else { braking->count = 0; }
 
-	if (braking->count > config->tc_braking_count && //If the counter
-	    check_last) {				// and the braking delay are satified allow traction braking
+	if (braking->count > config->tc_braking_count && //If the counter exceeds the minimum
+	    check_last) {				// and the braking delay are satified, allow traction braking
 		braking->active = true;
 		braking->brake_delay = rt->current_time; //reset delay counter for when we exit traciton braking
 		
@@ -163,7 +164,7 @@ void check_traction_braking(MotorData *m, BrakingData *braking, State *state, Ru
 		braking_dbg->aggregate_timer = rt->current_time;
 		if (!braking->last_active) // Just entered traction braking, reset
 			braking->timeron = rt->current_time;
-		braking_dbg->debug2 = m->duty_filtered; //on signal
+		braking_dbg->debug2 = m->duty_filtered;
 		braking_dbg->debug6 = max(braking_dbg->debug6, fabsf(m->accel_avg / braking_dbg->freq_factor));
 		braking_dbg->debug9 = max(fabsf(braking_dbg->debug9), m->abs_erpm) * sign(m->erpm);
 		if (braking_dbg->debug3 == 0)
