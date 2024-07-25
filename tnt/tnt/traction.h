@@ -74,5 +74,5 @@ typedef struct {
 void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeData *rt, tnt_config *config, TractionDebug *traction_dbg);
 void reset_traction(TractionData *traction, State *state);
 void deactivate_traction(TractionData *traction, State *state, RuntimeData *rt, TractionDebug *traction_dbg, float exit);
-void configure_traction(TractionData *traction, tnt_config *config, TractionDebug *traction_dbg);
+void configure_traction(TractionData *traction, tnt_config *config, TractionDebug *traction_dbg, BrakingDebug *braking_dbg);
 void check_traction_braking(MotorData *m, BrakingData *braking, State *state, RuntimeData *rt, tnt_config *config, float inputtilt_interpolated, BrakingDebug *braking_dbg);
