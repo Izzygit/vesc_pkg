@@ -366,7 +366,7 @@ static void reset_vars(data *d) {
 		reset_surge(&d->surge);
 	
 		// Traction Control
-		reset_traction(&d->traction, &d->state);
+		reset_traction(&d->traction, &d->state, &d->braking);
 		
 		//Low pass pitch filter
 		d->prop_smooth = 0;
