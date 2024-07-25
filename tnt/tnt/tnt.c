@@ -330,7 +330,7 @@ static void configure(data *d) {
 	configure_surge(&d->surge, &d->tnt_conf);
 
 	//Traction Configure
-	configure_traction(&d->traction, &d->tnt_conf, &d->traction_dbg);
+	configure_traction(&d->traction, &d->tnt_conf, &d->traction_dbg, &d->braking_dbg);
 	
 	//Drop Configure
 	configure_drop(&d->drop, &d->tnt_conf);
