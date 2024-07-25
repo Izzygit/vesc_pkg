@@ -16,6 +16,9 @@
 // this program. If not, see <http://www.gnu.org/licenses/>.
 
 #pragma once
+#include "biquad.h"
+#include "kalman.h"
+#include "vesc_c_if.h"
 
 typedef struct { //Run time values used in various features
 	float proportional;
@@ -26,4 +29,16 @@ typedef struct { //Run time values used in various features
 	float setpoint;
 	float last_accel_z;
 	float accel[3];
+	float abs_roll_angle;
+ 	float true_pitch_angle;
+	float gyro[3];
+	float pitch_smooth; // Low Pass Filter
+	Biquad pitch_biquad; // Low Pass Filter
+	KalmanFilter pitch_kalman; // Kalman Filter
+	float pitch_smooth_kalman; // Kalman Filter
+	float diff_time, last_time;
+	ATTITUDE_INFO m_att_ref; // Feature: True Pitch / Yaw
 } RuntimeData;
+
+void runtime_data_update(RuntimeData *rt);
+void apply_pitch_filters(RuntimeData *rt, tnt_config *config);
