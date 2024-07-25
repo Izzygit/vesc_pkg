@@ -15,27 +15,35 @@
 // You should have received a copy of the GNU General Public License along with
 // this program. If not, see <http://www.gnu.org/licenses/>.
 
-#include "state_tnt.h"
+#include "runtime.h"
+//#include "vesc_c_if.h"
 
-void state_init(State *state, bool disable) {
-    state->state = disable ? STATE_DISABLED : STATE_STARTUP;
-    state->mode = MODE_NORMAL;
-    state->sat = SAT_NONE;
-    state->stop_condition = STOP_NONE;
-    state->charging = false;
-    state->darkride = false;
+void runtime_data_update(RuntimeData *rt) {
+		// Update times
+		rt->current_time = VESC_IF->system_time();
+		if (rt->last_time == 0) {
+			rt->last_time = rt->current_time;
+		}
+		rt->diff_time = rt->current_time - rt->last_time;
+		rt->last_time = rt->current_time;
+		
+		// Get the IMU Values
+		rt->roll_angle = rad2deg(VESC_IF->imu_get_roll());
+		rt->abs_roll_angle = fabsf(rt->roll_angle);
+		rt->true_pitch_angle = rad2deg(VESC_IF->ahrs_get_pitch(&rt->m_att_ref)); // True pitch is derived from the secondary IMU filter running with kp=0.2
+		rt->rt.pitch_angle = rad2deg(VESC_IF->imu_get_pitch());
+		rt->yaw_angle = rad2deg(VESC_IF->ahrs_get_yaw(&rt->m_att_ref));
+		VESC_IF->imu_get_gyro(rt->gyro);
+		VESC_IF->imu_get_accel(rt->accel); //Used for drop detection
+		apply_angle_drop(&d->drop, &d->rt); //corrects accel z with angles
 }
 
-void state_stop(State *state, StopCondition stop_condition) {
-    state->state = STATE_READY;
-    state->stop_condition = stop_condition;
-    state->wheelslip = false;
-}
-
-void state_engage(State *state) {
-    if (!state->charging) {
-        state->state = STATE_RUNNING;
-        state->sat = SAT_CENTERING;
-        state->stop_condition = STOP_NONE;
-    }
+void apply_pitch_filters(RuntimeData *rt, tnt_config *config){
+		//Apply low pass and Kalman filters to pitch
+		if (config->pitch_filter > 0) {
+			rt->pitch_smooth = biquad_process(&rt->pitch_biquad, rt->pitch_angle);
+		} else {rt->pitch_smooth = rt->pitch_angle;}
+		if (config->kalman_factor1 > 0) {
+			 apply_kalman(rt->pitch_smooth, rt->gyro[1], &rt->pitch_smooth_kalman, rt->diff_time, &rt->pitch_kalman);
+		} else {rt->pitch_smooth_kalman = rt->pitch_smooth;}
 }
