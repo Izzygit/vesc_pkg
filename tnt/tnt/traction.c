@@ -61,7 +61,7 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 				deactivate_traction(traction, state, rt, traction_dbg, 3);
 			}
 		}
-	} else {
+	} else { //Start conditions and traciton control activation
 		if (traction->end_accel_hold) { //Do not allow start conditions if we are in hold
 			traction->end_accel_hold = fabsf(m->accel_avg) > traction->end_accel; //deactivate hold when below the threshold acceleration
 		} else { //Start conditions
