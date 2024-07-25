@@ -165,10 +165,10 @@ void check_traction_braking(MotorData *m, BrakingData *braking, State *state, Ru
 			braking->timeron = rt->current_time;
 		braking_dbg->debug2 = m->duty_filtered;
 		braking_dbg->debug6 = max(braking_dbg->debug6, fabsf(m->accel_avg / braking_dbg->freq_factor));
-		braking_dbg->debug9 = max(fabsf(braking_dbg->debug9), m->abs_erpm) * sign(m->erpm);
+		braking_dbg->debug9 = max(fabsf(braking_dbg->debug9), m->abs_erpm) * m->erpm_sign;
 		if (braking_dbg->debug3 == 0)
 			braking_dbg->debug3 = m->erpm;
-		braking_dbg->debug3 = min(fabsf(braking_dbg->debug3), m->abs_erpm) * sign(m->erpm);	
+		braking_dbg->debug3 = min(fabsf(braking_dbg->debug3), m->abs_erpm) * m->erpm_sign;	
 		braking_dbg->debug8 = rt->current_time - braking->timeron + braking_dbg->debug1; /running on time tracker
 	} else { 
 		braking->active = false; 
