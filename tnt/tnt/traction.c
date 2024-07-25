@@ -169,7 +169,7 @@ void check_traction_braking(MotorData *m, BrakingData *braking, State *state, Ru
 		if (braking_dbg->debug3 == 0)
 			braking_dbg->debug3 = m->erpm;
 		braking_dbg->debug3 = min(fabsf(braking_dbg->debug3), m->abs_erpm) * m->erpm_sign;	
-		braking_dbg->debug8 = rt->current_time - braking->timeron + braking_dbg->debug1; /running on time tracker
+		braking_dbg->debug8 = rt->current_time - braking->timeron + braking_dbg->debug1; //running on time tracker
 	} else { 
 		braking->active = false; 
 		
