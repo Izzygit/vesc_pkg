@@ -47,8 +47,7 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 				if (sign(traction->accelstartval) * m->accel_avg < traction->slowed_accel) {	 	
 				// First we identify that the wheel has deccelerated due to traciton control
 					traction->highaccelon2 = false;	
-				} else if ((rt->current_time - traction->timeron > 0.5) && 
-				    traction->highaccelon1) {					// Time out at 800ms if wheel does not deccelerate
+				} else if (rt->current_time - traction->timeron > 0.05) {	// Time out at 800ms if wheel does not deccelerate
 					deactivate_traction(traction, state, rt, traction_dbg, 5);
 				}
 			} else if (fabsf(m->accel_avg) > traction->end_accel) {
