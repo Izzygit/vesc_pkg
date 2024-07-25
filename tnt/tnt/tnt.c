@@ -94,16 +94,8 @@ typedef struct {
 	// Feature: Soft Start
 	float softstart_pid_limit, softstart_ramp_step_size;
 
-	// Feature: True Pitch
-	ATTITUDE_INFO m_att_ref;
-
 	// Runtime values grouped for easy access in ancillary functions
 	RuntimeData rt; 		// pitch_angle proportional pid_value setpoint current_time roll_angle  last_accel_z  accel[3]
-
-	// Runtime values read from elsewhere
-	float abs_roll_angle;
- 	float true_pitch_angle;
-	float gyro[3];
 	
 	FootpadSensor footpad_sensor;
 
@@ -139,15 +131,6 @@ typedef struct {
 	TractionDebug traction_dbg;
 	BrakingData braking;
 	BrakingDebug braking_dbg;
-
-	// Low Pass Filter
-	float pitch_smooth; 
-	Biquad pitch_biquad;
-	
-	// Kalman Filter
-	KalmanFilter pitch_kalman; 
-	float pitch_smooth_kalman;
-	float diff_time, last_time;
 
 	// Throttle/Brake Scaling
 	float prop_smooth, abs_prop_smooth;
@@ -300,10 +283,10 @@ static void configure(data *d) {
 	configure_remote_features(&d->tnt_conf, &d->remote, &d->st_tilt);
 	
 	//Pitch Biquad Configure
-	biquad_configure(&d->pitch_biquad, BQ_LOWPASS, d->tnt_conf.pitch_filter / d->tnt_conf.hertz);
+	biquad_configure(&d->rt.pitch_biquad, BQ_LOWPASS, 1.0 * d->tnt_conf.pitch_filter / d->tnt_conf.hertz);
 
 	//Pitch Kalman Configure
-	configure_kalman(&d->tnt_conf, &d->pitch_kalman);
+	configure_kalman(&d->tnt_conf, &d->rt.pitch_kalman);
 
 	//Motor Data Configure
 	motor_data_configure(&d->motor, &d->tnt_conf);
@@ -371,12 +354,12 @@ static void reset_vars(data *d) {
 		//Low pass pitch filter
 		d->prop_smooth = 0;
 		d->abs_prop_smooth = 0;
-		d->pitch_smooth = d->rt.pitch_angle;
-		biquad_reset(&d->pitch_biquad);
+		d->rt.pitch_smooth = d->rt.pitch_angle;
+		biquad_reset(&d->rt.pitch_biquad);
 		
 		//Kalman filter
-		reset_kalman(&d->pitch_kalman);
-		d->pitch_smooth_kalman = d->rt.pitch_angle;
+		reset_kalman(&d->rt.pitch_kalman);
+		d->rt.pitch_smooth_kalman = d->rt.pitch_angle;
 	
 		//Stability
 		d->stabl = 0;
@@ -487,9 +470,9 @@ static bool check_faults(data *d) {
                     return true;
                 }
             }
-    		if ((d->motor.abs_erpm <200) && (fabsf(d->true_pitch_angle) > 14) && 
+    		if ((d->motor.abs_erpm <200) && (fabsf(d->rt.true_pitch_angle) > 14) && 
                 (fabsf(d->remote.inputtilt_interpolated) < 30) && 
-                (sign(d->true_pitch_angle) ==  d->motor.erpm_sign)) {
+                (sign(d->rt.true_pitch_angle) ==  d->motor.erpm_sign)) {
     			state_stop(&d->state, STOP_QUICKSTOP);
     			return true;
     		}
@@ -769,7 +752,7 @@ static void apply_stability(data *d) {
 static void imu_ref_callback(float *acc, float *gyro, float *mag, float dt) {
 	UNUSED(mag);
 	data *d = (data*)ARG;
-	VESC_IF->ahrs_update_mahony_imu(gyro, acc, dt, &d->m_att_ref);
+	VESC_IF->ahrs_update_mahony_imu(gyro, acc, dt, &d->rt.m_att_ref);
 }
 
 static void tnt_thd(void *arg) {
@@ -779,33 +762,8 @@ static void tnt_thd(void *arg) {
 
 	while (!VESC_IF->should_terminate()) {
 		beeper_update(d);
-
-		// Update times
-		d->rt.current_time = VESC_IF->system_time();
-		if (d->last_time == 0) {
-			d->last_time = d->rt.current_time;
-		}
-		d->diff_time = d->rt.current_time - d->last_time;
-		d->last_time = d->rt.current_time;
-		
-		// Get the IMU Values
-		d->rt.roll_angle = rad2deg(VESC_IF->imu_get_roll());
-		d->abs_roll_angle = fabsf(d->rt.roll_angle);
-		d->true_pitch_angle = rad2deg(VESC_IF->ahrs_get_pitch(&d->m_att_ref)); // True pitch is derived from the secondary IMU filter running with kp=0.2
-		d->rt.pitch_angle = rad2deg(VESC_IF->imu_get_pitch());
-		d->yaw_angle = rad2deg(VESC_IF->ahrs_get_yaw(&d->m_att_ref));
-		VESC_IF->imu_get_gyro(d->gyro);
-		VESC_IF->imu_get_accel(d->rt.accel); //Used for drop detection
-		apply_angle_drop(&d->drop, &d->rt); //corrects accel z with angles
-		
-		//Apply low pass and Kalman filters to pitch
-		if (d->tnt_conf.pitch_filter > 0) {
-			d->pitch_smooth = biquad_process(&d->pitch_biquad, d->rt.pitch_angle);
-		} else {d->pitch_smooth = d->rt.pitch_angle;}
-		if (d->tnt_conf.kalman_factor1 > 0) {
-			 apply_kalman(d->pitch_smooth, d->gyro[1], &d->pitch_smooth_kalman, d->diff_time, &d->pitch_kalman);
-		} else {d->pitch_smooth_kalman = d->pitch_smooth;}
-
+		runtime_data_update(&d->rt);
+		apply_pitch_filters(&d->rt, &d->tnt_config);
 		motor_data_update(&d->motor);
 		update_remote(&d->tnt_conf, &d->remote);
 		check_drop(&d->drop, &d->motor, &d->rt, &d->state, &d->drop_dbg);
@@ -892,7 +850,7 @@ static void tnt_thd(void *arg) {
 			
 			// Do PID maths
 			d->rt.proportional = d->rt.setpoint - d->rt.pitch_angle;
-			d->prop_smooth = d->rt.setpoint - d->pitch_smooth_kalman;
+			d->prop_smooth = d->rt.setpoint - d->rt.pitch_smooth_kalman;
 			d->abs_prop_smooth = fabsf(d->prop_smooth);
 			
 			//Select and Apply Kp
@@ -906,7 +864,7 @@ static void tnt_thd(void *arg) {
 			new_pid_value = kp_mod * d->rt.proportional;
 			
 			// Select and Apply Rate P
-			float rate_prop = -d->gyro[1];
+			float rate_prop = -d->rt.gyro[1];
 			float kp_rate = brake_curve ? d->brake_kp.kp_rate : d->accel_kp.kp_rate;		
 			float rate_stabl = 1 + d->stabl * d->tnt_conf.stabl_rate_max_scale / 100; 			
 			d->pid_mod = kp_rate * rate_prop * rate_stabl;
@@ -916,7 +874,7 @@ static void tnt_thd(void *arg) {
 			float rollkp = 0;
 			float erpmscale = 1;
 			bool brake_roll = d->roll_brake_kp.count!=0 && d->state.braking_pos;
-			rollkp = angle_kp_select(d->abs_roll_angle, 
+			rollkp = angle_kp_select(d->rt.abs_roll_angle, 
 				brake_roll ? &d->roll_brake_kp : &d->roll_accel_kp);
 
 			//Apply ERPM Scale
@@ -1238,7 +1196,7 @@ static void send_realtime_data(data *d){
 		buffer_append_float32_auto(buffer, d->surge_dbg.debug8, &ind); //ramp rate
 	} else if (d->tnt_conf.is_tunedebug_enabled) {
 		buffer[ind++] = 3;
-		buffer_append_float32_auto(buffer, d->pitch_smooth_kalman, &ind); //smooth pitch	
+		buffer_append_float32_auto(buffer, d->rt.pitch_smooth_kalman, &ind); //smooth pitch	
 		buffer_append_float32_auto(buffer, d->debug1, &ind); // scaled angle P
 		buffer_append_float32_auto(buffer, d->debug1*d->stabl*d->tnt_conf.stabl_pitch_max_scale/100.0, &ind); // added stiffnes pitch kp
 		buffer_append_float32_auto(buffer, d->debug3, &ind); // added stability rate P
@@ -1428,9 +1386,9 @@ INIT_FUN(lib_info *info) {
 		beeper_init();
 	}
 
-	VESC_IF->ahrs_init_attitude_info(&d->m_att_ref);
-	d->m_att_ref.acc_confidence_decay = 0.1;
-	d->m_att_ref.kp = 0.2;
+	VESC_IF->ahrs_init_attitude_info(&d->rt.m_att_ref);
+	d->rt.m_att_ref.acc_confidence_decay = 0.1;
+	d->rt.m_att_ref.kp = 0.2;
 
 	VESC_IF->imu_set_read_callback(imu_ref_callback);
 	
