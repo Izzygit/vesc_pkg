@@ -105,7 +105,7 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 	}
 }
 
-void reset_traction(TractionData *traction, State *state) {
+void reset_traction(TractionData *traction, State *state, BrakingData *braking) {
 	state->wheelslip = false;
 	traction->reverse_wheelslip = false;
 	traction->end_accel_hold = false;
