@@ -93,17 +93,15 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 			if (rt->current_time - traction_dbg->aggregate_timer > 5) { // Aggregate the number of drop activations in 5 seconds
 				traction_dbg->aggregate_timer = rt->current_time;
 				traction_dbg->debug5 = 0;
-				traction_dbg->debug4 = 0;
-			}
-			if (traction_dbg->debug5 == 0) {
-				traction_dbg->debug2 = erpmfactor;
+				traction_dbg->debug2 = erpmfactor;		//only record the first traction loss for some debug variables
 				traction_dbg->debug6 = m->accel_avg / traction_dbg->freq_factor; 
 				traction_dbg->debug9 = m->erpm_filtered;
 				traction_dbg->debug3 = m->erpm_history[m->last_erpm_idx];
 				traction_dbg->debug4 = 0;
 				traction_dbg->debug8 = 0;
 			}
-			traction_dbg->debug5 += 1;
+
+			traction_dbg->debug5 += 1; // count number of traction losses
 		}
 	}
 }
@@ -122,7 +120,7 @@ void deactivate_traction(TractionData *traction, State *state, RuntimeData *rt, 
 	state->wheelslip = false;
 	traction->timeroff = rt->current_time;
 	traction->reverse_wheelslip = false;
-	traction->end_accel_hold = true;
+	traction->end_accel_hold = true; //activate high accel hold to prevent traction control
 	if (traction_dbg->debug5 == 1) //only save the first activation duration
 		traction_dbg->debug8 = traction->timeroff - traction->timeron;
 	if (traction_dbg->debug4 > 10000) 
