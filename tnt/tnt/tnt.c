@@ -300,7 +300,7 @@ static void configure(data *d) {
 	configure_remote_features(&d->tnt_conf, &d->remote, &d->st_tilt);
 	
 	//Pitch Biquad Configure
-	biquad_configure(&d->pitch_biquad, BQ_LOWPASS, d->tnt_conf.pitch_filter / d->tnt_conf.hertz);
+	biquad_configure(&d->pitch_biquad, BQ_LOWPASS, 25.0 / d->tnt_conf.hertz); //d->tnt_conf.pitch_filter / d->tnt_conf.hertz);
 
 	//Pitch Kalman Configure
 	configure_kalman(&d->tnt_conf, &d->pitch_kalman);
@@ -1263,13 +1263,13 @@ static void send_realtime_data(data *d){
 		buffer_append_float32_auto(buffer, d->drop_dbg.debug7, &ind); //duration
 	} else if (d->tnt_conf.is_brakingdebug_enabled) {
 		buffer[ind++] = 6;
-		buffer_append_float32_auto(buffer, d->traction_dbg.debug2, &ind); //current duty
-		buffer_append_float32_auto(buffer, d->traction_dbg.debug6, &ind); //max accel
-		buffer_append_float32_auto(buffer, d->traction_dbg.debug3, &ind); //Min ERPM
-		buffer_append_float32_auto(buffer, d->traction_dbg.debug9, &ind); //Max ERPM
-		buffer_append_float32_auto(buffer, d->traction_dbg.debug4, &ind); //Debug condition 
-		buffer_append_float32_auto(buffer, d->traction_dbg.debug8, &ind); //duration
-		buffer_append_float32_auto(buffer, d->traction_dbg.debug5, &ind); //count 
+		buffer_append_float32_auto(buffer, d->braking_dbg.debug2, &ind); //current duty
+		buffer_append_float32_auto(buffer, d->braking_dbg.debug6, &ind); //max accel
+		buffer_append_float32_auto(buffer, d->braking_dbg.debug3, &ind); //Min ERPM
+		buffer_append_float32_auto(buffer, d->braking_dbg.debug9, &ind); //Max ERPM
+		buffer_append_float32_auto(buffer, d->braking_dbg.debug4, &ind); //Debug condition 
+		buffer_append_float32_auto(buffer, d->braking_dbg.debug8, &ind); //duration
+		buffer_append_float32_auto(buffer, d->braking_dbg.debug5, &ind); //count 
 	} else { 
 		buffer[ind++] = 0; 
 	}
