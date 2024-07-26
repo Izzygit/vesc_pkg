@@ -30,6 +30,7 @@ typedef struct {
         float z_limit;				//Required acceleration to engage drop
         float motor_limit;			//Required motor acceleration to end drop
 	int count;
+	int count_limit;
 } DropData;
 
 typedef struct {
