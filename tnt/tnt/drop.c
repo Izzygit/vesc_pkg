@@ -26,7 +26,7 @@ void check_drop(DropData *drop, MotorData *m, RuntimeData *rt, State *state, Dro
 		drop->count += 1;
 	} else { drop-> count = 0; }
 
-	if ((drop->count > 10) &&	
+	if ((drop->count > drop->count_limit) &&	
 	    (state->sat != SAT_CENTERING) && 						// Not during startup
 	    (rt->current_time - drop->timeroff > 0.02)) {				// Don't re-enter drop state for duration 	
 		
@@ -39,6 +39,7 @@ void check_drop(DropData *drop, MotorData *m, RuntimeData *rt, State *state, Dro
 				drop_dbg->debug5 = 0; //reset
 				drop_dbg->debug4 = drop->accel_z; //reset
 				drop_dbg->debug7 = 0; //reset
+				drop_dbg->debug3 = 0;
 			}
 			drop_dbg->debug5 += 1;
 		}
@@ -57,7 +58,7 @@ void check_drop(DropData *drop, MotorData *m, RuntimeData *rt, State *state, Dro
 		if (fabsf(m->accel_filtered) > drop->motor_limit) { 	//Fastest reaction is hall sensor
 			drop_deactivate(drop, drop_dbg, rt);
 			drop_dbg->debug3 = drop_dbg->debug3 * 10 + 1;
-		} else if (rt->last_accel_z <= drop->accel_z) {		// for fastest landing reaction with accelerometer check that we are still dropping
+		} else if (rt->last_accel_z < drop->accel_z) {		// for fastest landing reaction with accelerometer check that we are still dropping
 			drop_deactivate(drop, drop_dbg, rt);
 			drop_dbg->debug3 = drop_dbg->debug3 * 10 + 2;
 		}
@@ -67,7 +68,7 @@ void check_drop(DropData *drop, MotorData *m, RuntimeData *rt, State *state, Dro
 void configure_drop(DropData *drop, const tnt_config *config){
 	drop->z_limit = config->drop_z_accel / 100.0;	// Value of accel z to initiate drop. A drop of about 6" / .1s produces about 0.9 accel y (normally 1)
 	drop->motor_limit = 1000.0 * config->drop_motor_accel / config->hertz; //ends drop via motor acceleration 
-	drop->count = config->drop_count;
+	drop->count_limit = config->drop_count;
 }
 
 void reset_drop(DropData *drop){
