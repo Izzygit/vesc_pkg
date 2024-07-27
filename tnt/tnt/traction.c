@@ -44,7 +44,7 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 			
 			//This section determines if the wheel is acted on by outside forces by detecting acceleration magnitude
 			if (traction->highaccelon2) {
-				if (sign(fabsf(m->accel_avg) < traction->slowed_accel) {	 	
+				if (fabsf(m->accel_avg) < traction->slowed_accel) {	 	
 				// First we identify that the wheel has deccelerated due to traciton control
 					traction->highaccelon2 = false;	
 				} else if (rt->current_time - traction->timeron > config->pitch_filter/100) {	// Time out at 800ms if wheel does not deccelerate
