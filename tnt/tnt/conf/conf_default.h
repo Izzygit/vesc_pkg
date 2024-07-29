@@ -270,7 +270,7 @@
 
 // Roll Maximum Scaler
 #ifndef APPCONF_TNT_ROLL_HS_MAXSCALE
-#define APPCONF_TNT_ROLL_HS_MAXSCALE -30
+#define APPCONF_TNT_ROLL_HS_MAXSCALE 0
 #endif
 
 // Level 1 Yaw Kp
@@ -310,7 +310,7 @@
 
 // Level 2 Yaw Kp Braking
 #ifndef APPCONF_TNT_BRKYAW_KP2
-#define APPCONF_TNT_BRKYAW_KP2 0.07
+#define APPCONF_TNT_BRKYAW_KP2 0.08
 #endif
 
 // Level 3 Yaw Kp Braking
@@ -388,12 +388,17 @@
 #define APPCONF_TNT_IS_TRACTION_ENABLED 1
 #endif
 
-// Start Condition
+// Start Acceleration
 #ifndef APPCONF_TNT_WHEELSLIP_ACCELSTART
 #define APPCONF_TNT_WHEELSLIP_ACCELSTART 29
 #endif
 
-// End Condition
+// Transition Condition
+#ifndef APPCONF_TNT_WHEELSLIP_ACCELSLOWED
+#define APPCONF_TNT_WHEELSLIP_ACCELSLOWED 2
+#endif
+
+// End Acceleration
 #ifndef APPCONF_TNT_WHEELSLIP_ACCELEND
 #define APPCONF_TNT_WHEELSLIP_ACCELEND 2
 #endif
@@ -406,6 +411,66 @@
 // Scale ERPM
 #ifndef APPCONF_TNT_WHEELSLIP_SCALEERPM
 #define APPCONF_TNT_WHEELSLIP_SCALEERPM 3000
+#endif
+
+// ERPM Filter Freq
+#ifndef APPCONF_TNT_WHEELSLIP_FILTER_FREQ_FAST
+#define APPCONF_TNT_WHEELSLIP_FILTER_FREQ_FAST 50
+#endif
+
+// Angle Limit
+#ifndef APPCONF_TNT_WHEELSLIP_MAX_ANGLE
+#define APPCONF_TNT_WHEELSLIP_MAX_ANGLE 10
+#endif
+
+// Enable Traction Control Braking
+#ifndef APPCONF_TNT_IS_TC_BRAKING_ENABLED
+#define APPCONF_TNT_IS_TC_BRAKING_ENABLED 0
+#endif
+
+// Traction Braking Angle
+#ifndef APPCONF_TNT_TC_BRAKING_ANGLE
+#define APPCONF_TNT_TC_BRAKING_ANGLE 2
+#endif
+
+// Duty Limit
+#ifndef APPCONF_TNT_TC_BRAKING_DUTY_LIMIT
+#define APPCONF_TNT_TC_BRAKING_DUTY_LIMIT 10
+#endif
+
+// Duty Filter Frequency
+#ifndef APPCONF_TNT_DUTY_FILTER
+#define APPCONF_TNT_DUTY_FILTER 15
+#endif
+
+// Start Count
+#ifndef APPCONF_TNT_TC_BRAKING_COUNT
+#define APPCONF_TNT_TC_BRAKING_COUNT 10
+#endif
+
+// Braking Delay
+#ifndef APPCONF_TNT_TC_BRAKING_DELAY
+#define APPCONF_TNT_TC_BRAKING_DELAY 0.2
+#endif
+
+// Enable Drop Detection
+#ifndef APPCONF_TNT_IS_DROP_ENABLED
+#define APPCONF_TNT_IS_DROP_ENABLED 0
+#endif
+
+// Start Condition
+#ifndef APPCONF_TNT_DROP_Z_ACCEL
+#define APPCONF_TNT_DROP_Z_ACCEL 80
+#endif
+
+// Start Count
+#ifndef APPCONF_TNT_DROP_COUNT
+#define APPCONF_TNT_DROP_COUNT 5
+#endif
+
+// End Condition
+#ifndef APPCONF_TNT_DROP_MOTOR_ACCEL
+#define APPCONF_TNT_DROP_MOTOR_ACCEL 2
 #endif
 
 // Enable Speed Stability
@@ -723,6 +788,16 @@
 #define APPCONF_TNT_IS_YAWDEBUG_ENABLED 0
 #endif
 
+// Enable Drop Debug Info
+#ifndef APPCONF_TNT_IS_DROPDEBUG_ENABLED
+#define APPCONF_TNT_IS_DROPDEBUG_ENABLED 0
+#endif
+
+// Enable Traction Braking Debug Info
+#ifndef APPCONF_TNT_IS_BRAKINGDEBUG_ENABLED
+#define APPCONF_TNT_IS_BRAKINGDEBUG_ENABLED 0
+#endif
+
 // Disable Package
 #ifndef APPCONF_TNT_DISABLE
 #define APPCONF_TNT_DISABLE 0
@@ -730,7 +805,7 @@
 
 // Package Version
 #ifndef APPCONF_TNT_VERSION
-#define APPCONF_TNT_VERSION 1.3
+#define APPCONF_TNT_VERSION 1.4
 #endif
 
 // CONF_DEFAULT_H_

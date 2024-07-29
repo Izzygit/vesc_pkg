@@ -830,7 +830,7 @@ p, li { white-space: pre-wrap; }
             <maxDouble>5</maxDouble>
             <minDouble>0</minDouble>
             <showDisplay>0</showDisplay>
-            <stepDouble>0.1</stepDouble>
+            <stepDouble>0.05</stepDouble>
             <valDouble>0</valDouble>
             <vTxDoubleScale>100</vTxDoubleScale>
             <suffix></suffix>
@@ -874,7 +874,7 @@ p, li { white-space: pre-wrap; }
             <maxDouble>5</maxDouble>
             <minDouble>0</minDouble>
             <showDisplay>0</showDisplay>
-            <stepDouble>0.1</stepDouble>
+            <stepDouble>0.05</stepDouble>
             <valDouble>0</valDouble>
             <vTxDoubleScale>100</vTxDoubleScale>
             <suffix></suffix>
@@ -962,7 +962,7 @@ p, li { white-space: pre-wrap; }
             <maxDouble>5</maxDouble>
             <minDouble>0</minDouble>
             <showDisplay>0</showDisplay>
-            <stepDouble>0.1</stepDouble>
+            <stepDouble>0.05</stepDouble>
             <valDouble>0</valDouble>
             <vTxDoubleScale>100</vTxDoubleScale>
             <suffix></suffix>
@@ -1006,7 +1006,7 @@ p, li { white-space: pre-wrap; }
             <maxDouble>5</maxDouble>
             <minDouble>0</minDouble>
             <showDisplay>0</showDisplay>
-            <stepDouble>0.1</stepDouble>
+            <stepDouble>0.05</stepDouble>
             <valDouble>0</valDouble>
             <vTxDoubleScale>100</vTxDoubleScale>
             <suffix></suffix>
@@ -1198,7 +1198,7 @@ p, li { white-space: pre-wrap; }
             <minInt>-100</minInt>
             <showDisplay>0</showDisplay>
             <stepInt>10</stepInt>
-            <valInt>-30</valInt>
+            <valInt>0</valInt>
             <suffix> %</suffix>
             <vTx>2</vTx>
         </roll_hs_maxscale>
@@ -1373,7 +1373,7 @@ p, li { white-space: pre-wrap; }
             <minDouble>0</minDouble>
             <showDisplay>0</showDisplay>
             <stepDouble>0.01</stepDouble>
-            <valDouble>0.07</valDouble>
+            <valDouble>0.08</valDouble>
             <vTxDoubleScale>100</vTxDoubleScale>
             <suffix></suffix>
             <vTx>7</vTx>
@@ -1675,7 +1675,7 @@ p, li { white-space: pre-wrap; }
             <valInt>1</valInt>
         </is_traction_enabled>
         <wheelslip_accelstart>
-            <longName>Start Condition</longName>
+            <longName>Start Acceleration</longName>
             <type>2</type>
             <transmittable>1</transmittable>
             <description>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
@@ -1694,8 +1694,28 @@ p, li { white-space: pre-wrap; }
             <suffix> ERPM/ms</suffix>
             <vTx>3</vTx>
         </wheelslip_accelstart>
+        <wheelslip_accelslowed>
+            <longName>Transition Condition</longName>
+            <type>2</type>
+            <transmittable>1</transmittable>
+            <description>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Roboto'; ; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;If the motor acceleration reduces significantly, the wheel has traction again. Higher values will end traction control sooner. Lower values, including negative values, will exit later. This can be felt by doing bonks and drops. Lower values will feel smoother when landing. If the value is too low you will feel the nose dip where traciton control ends too late.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</description>
+            <cDefine>APPCONF_TNT_WHEELSLIP_ACCELSLOWED</cDefine>
+            <editorScale>1</editorScale>
+            <editAsPercentage>0</editAsPercentage>
+            <maxInt>100</maxInt>
+            <minInt>-100</minInt>
+            <showDisplay>0</showDisplay>
+            <stepInt>1</stepInt>
+            <valInt>2</valInt>
+            <suffix> ERPM/ms</suffix>
+            <vTx>4</vTx>
+        </wheelslip_accelslowed>
         <wheelslip_accelend>
-            <longName>End Condition</longName>
+            <longName>End Acceleration</longName>
             <type>2</type>
             <transmittable>1</transmittable>
             <description>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
@@ -1707,12 +1727,12 @@ p, li { white-space: pre-wrap; }
             <editorScale>1</editorScale>
             <editAsPercentage>0</editAsPercentage>
             <maxInt>100</maxInt>
-            <minInt>-100</minInt>
+            <minInt>0</minInt>
             <showDisplay>0</showDisplay>
             <stepInt>1</stepInt>
             <valInt>2</valInt>
             <suffix> ERPM/ms</suffix>
-            <vTx>4</vTx>
+            <vTx>1</vTx>
         </wheelslip_accelend>
         <wheelslip_scaleaccel>
             <longName>Low ERPM Scaler</longName>
@@ -1754,6 +1774,232 @@ p, li { white-space: pre-wrap; }
             <suffix> ERPM</suffix>
             <vTx>3</vTx>
         </wheelslip_scaleerpm>
+        <wheelslip_filter_freq>
+            <longName>ERPM Filter Freq</longName>
+            <type>2</type>
+            <transmittable>1</transmittable>
+            <description>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Roboto'; ; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;A low pass filter is required to turn the ERPM signal into a usable acceleration. The filter adds a slight delay to the response time with the delay becoming greater at lower values. For this reason we have a different filter for the start conditions and end condtions of traction control. For the start condition we want a high frequency for faster response but values too high will cause some nuisance trips. For the end condition we want a lower frequency because the response time is not as critical and the smoother signal is more reliable.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</description>
+            <cDefine>APPCONF_TNT_WHEELSLIP_FILTER_FREQ_FAST</cDefine>
+            <editorScale>1</editorScale>
+            <editAsPercentage>0</editAsPercentage>
+            <maxInt>200</maxInt>
+            <minInt>0</minInt>
+            <showDisplay>0</showDisplay>
+            <stepInt>1</stepInt>
+            <valInt>50</valInt>
+            <suffix> Hz</suffix>
+            <vTx>1</vTx>
+        </wheelslip_filter_freq>
+        <wheelslip_max_angle>
+            <longName>Angle Limit</longName>
+            <type>2</type>
+            <transmittable>1</transmittable>
+            <description>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Roboto'; ; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;An extra safety that will end traction control if the difference between the pitch angle and setpoint exceeds this value.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</description>
+            <cDefine>APPCONF_TNT_WHEELSLIP_MAX_ANGLE</cDefine>
+            <editorScale>1</editorScale>
+            <editAsPercentage>0</editAsPercentage>
+            <maxInt>90</maxInt>
+            <minInt>0</minInt>
+            <showDisplay>0</showDisplay>
+            <stepInt>1</stepInt>
+            <valInt>10</valInt>
+            <suffix> °</suffix>
+            <vTx>1</vTx>
+        </wheelslip_max_angle>
+        <is_tc_braking_enabled>
+            <longName>Enable Traction Control Braking</longName>
+            <type>5</type>
+            <transmittable>1</transmittable>
+            <description>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Roboto'; ; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Allows the board to use the set brake function which prevents reverse wheel spin while braking.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</description>
+            <cDefine>APPCONF_TNT_IS_TC_BRAKING_ENABLED</cDefine>
+            <valInt>0</valInt>
+        </is_tc_braking_enabled>
+        <tc_braking_angle>
+            <longName>Traction Braking Angle</longName>
+            <type>2</type>
+            <transmittable>1</transmittable>
+            <description>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Roboto'; ; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;The nose down angle, applied via remote, required to allow traction control braking.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</description>
+            <cDefine>APPCONF_TNT_TC_BRAKING_ANGLE</cDefine>
+            <editorScale>1</editorScale>
+            <editAsPercentage>0</editAsPercentage>
+            <maxInt>90</maxInt>
+            <minInt>0</minInt>
+            <showDisplay>0</showDisplay>
+            <stepInt>1</stepInt>
+            <valInt>2</valInt>
+            <suffix> °</suffix>
+            <vTx>1</vTx>
+        </tc_braking_angle>
+        <tc_braking_duty_limit>
+            <longName>Duty Limit</longName>
+            <type>2</type>
+            <transmittable>1</transmittable>
+            <description>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Roboto'; ; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Traction braking will cease to balance the board if the motor demand hits zero duty. This value provides a low limit to prevent the board from activating traction braking at low duty values.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</description>
+            <cDefine>APPCONF_TNT_TC_BRAKING_DUTY_LIMIT</cDefine>
+            <editorScale>1</editorScale>
+            <editAsPercentage>0</editAsPercentage>
+            <maxInt>100</maxInt>
+            <minInt>1</minInt>
+            <showDisplay>0</showDisplay>
+            <stepInt>2</stepInt>
+            <valInt>10</valInt>
+            <suffix> %</suffix>
+            <vTx>1</vTx>
+        </tc_braking_duty_limit>
+        <duty_filter_freq>
+            <longName>Duty Filter Frequency</longName>
+            <type>2</type>
+            <transmittable>1</transmittable>
+            <description>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Roboto'; ; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;This smooths the duty to prevent spikes in duty causing nuisance activations of traction braking.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</description>
+            <cDefine>APPCONF_TNT_DUTY_FILTER</cDefine>
+            <editorScale>1</editorScale>
+            <editAsPercentage>0</editAsPercentage>
+            <maxInt>200</maxInt>
+            <minInt>0</minInt>
+            <showDisplay>0</showDisplay>
+            <stepInt>1</stepInt>
+            <valInt>15</valInt>
+            <suffix> Hz</suffix>
+            <vTx>1</vTx>
+        </duty_filter_freq>
+        <tc_braking_count>
+            <longName>Start Count</longName>
+            <type>2</type>
+            <transmittable>1</transmittable>
+            <description>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Roboto'; ; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;The number of code cycles, which satisfay the start condition, required to enter drop mode. This prevents nuisance activations.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</description>
+            <cDefine>APPCONF_TNT_TC_BRAKING_COUNT</cDefine>
+            <editorScale>1</editorScale>
+            <editAsPercentage>0</editAsPercentage>
+            <maxInt>200</maxInt>
+            <minInt>0</minInt>
+            <showDisplay>0</showDisplay>
+            <stepInt>1</stepInt>
+            <valInt>10</valInt>
+            <suffix></suffix>
+            <vTx>1</vTx>
+        </tc_braking_count>
+        <tc_braking_delay>
+            <longName>Braking Delay</longName>
+            <type>1</type>
+            <transmittable>1</transmittable>
+            <description>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Roboto'; ; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Adds a delay after the end of traction braking to prevent rapid activations and deactivations.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</description>
+            <cDefine>APPCONF_TNT_TC_BRAKING_DELAY</cDefine>
+            <editorDecimalsDouble>2</editorDecimalsDouble>
+            <editorScale>1</editorScale>
+            <editAsPercentage>0</editAsPercentage>
+            <maxDouble>10</maxDouble>
+            <minDouble>0</minDouble>
+            <showDisplay>0</showDisplay>
+            <stepDouble>0.1</stepDouble>
+            <valDouble>0.2</valDouble>
+            <vTxDoubleScale>100</vTxDoubleScale>
+            <suffix> s</suffix>
+            <vTx>7</vTx>
+        </tc_braking_delay>
+        <is_drop_enabled>
+            <longName>Enable Drop Detection</longName>
+            <type>5</type>
+            <transmittable>1</transmittable>
+            <description>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Roboto'; ; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Enable drop detection to help control free wheel spin when the board detects it is falling.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</description>
+            <cDefine>APPCONF_TNT_IS_DROP_ENABLED</cDefine>
+            <valInt>0</valInt>
+        </is_drop_enabled>
+        <drop_z_accel>
+            <longName>Start Condition</longName>
+            <type>2</type>
+            <transmittable>1</transmittable>
+            <description>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Roboto'; ; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Drop detection engages once the board senses gravity has dipped below this threshold.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</description>
+            <cDefine>APPCONF_TNT_DROP_Z_ACCEL</cDefine>
+            <editorScale>1</editorScale>
+            <editAsPercentage>0</editAsPercentage>
+            <maxInt>100</maxInt>
+            <minInt>0</minInt>
+            <showDisplay>0</showDisplay>
+            <stepInt>5</stepInt>
+            <valInt>80</valInt>
+            <suffix>% Gravity</suffix>
+            <vTx>1</vTx>
+        </drop_z_accel>
+        <drop_count>
+            <longName>Start Count</longName>
+            <type>2</type>
+            <transmittable>1</transmittable>
+            <description>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Roboto'; ; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;The number of code cycles, which satisfay the start condition, required to enter drop mode. This prevents nuisance activations.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</description>
+            <cDefine>APPCONF_TNT_DROP_COUNT</cDefine>
+            <editorScale>1</editorScale>
+            <editAsPercentage>0</editAsPercentage>
+            <maxInt>100</maxInt>
+            <minInt>0</minInt>
+            <showDisplay>0</showDisplay>
+            <stepInt>1</stepInt>
+            <valInt>5</valInt>
+            <suffix></suffix>
+            <vTx>1</vTx>
+        </drop_count>
+        <drop_motor_accel>
+            <longName>End Condition</longName>
+            <type>2</type>
+            <transmittable>1</transmittable>
+            <description>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Roboto'; ; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;High motor acceleration beyond this limit will end drop mode.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</description>
+            <cDefine>APPCONF_TNT_DROP_MOTOR_ACCEL</cDefine>
+            <editorScale>1</editorScale>
+            <editAsPercentage>0</editAsPercentage>
+            <maxInt>5000</maxInt>
+            <minInt>0</minInt>
+            <showDisplay>0</showDisplay>
+            <stepInt>1</stepInt>
+            <valInt>2</valInt>
+            <suffix> ERPM/ms</suffix>
+            <vTx>3</vTx>
+        </drop_motor_accel>
         <enable_speed_stability>
             <longName>Enable Speed Stability</longName>
             <type>5</type>
@@ -2938,6 +3184,30 @@ p, li { white-space: pre-wrap; }
             <cDefine>APPCONF_TNT_IS_YAWDEBUG_ENABLED</cDefine>
             <valInt>0</valInt>
         </is_yawdebug_enabled>
+        <is_dropdebug_enabled>
+            <longName>Enable Drop Debug Info</longName>
+            <type>5</type>
+            <transmittable>1</transmittable>
+            <description>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Roboto'; ; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Enable/disable drop debug information on the AppUI screen for more metrics on your drop detection. Only one feature debug available at a time.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</description>
+            <cDefine>APPCONF_TNT_IS_DROPDEBUG_ENABLED</cDefine>
+            <valInt>0</valInt>
+        </is_dropdebug_enabled>
+        <is_brakingdebug_enabled>
+            <longName>Enable Traction Braking Debug Info</longName>
+            <type>5</type>
+            <transmittable>1</transmittable>
+            <description>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
+&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
+p, li { white-space: pre-wrap; }
+&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'Roboto'; ; font-weight:400; font-style:normal;&quot;&gt;
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Enable/disable traction braking debug information on the AppUI screen for more metrics on your traction braking. Only one feature debug available at a time.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</description>
+            <cDefine>APPCONF_TNT_IS_BRAKINGDEBUG_ENABLED</cDefine>
+            <valInt>0</valInt>
+        </is_brakingdebug_enabled>
         <disable_pkg>
             <longName>Disable Package</longName>
             <type>5</type>
@@ -2968,7 +3238,7 @@ p, li { white-space: pre-wrap; }
             <minDouble>0</minDouble>
             <showDisplay>0</showDisplay>
             <stepDouble>1</stepDouble>
-            <valDouble>1.3</valDouble>
+            <valDouble>1.4</valDouble>
             <vTxDoubleScale>1000</vTxDoubleScale>
             <suffix></suffix>
             <vTx>7</vTx>
@@ -3053,9 +3323,22 @@ p, li { white-space: pre-wrap; }
         <ser>tiltback_surge_speed</ser>
         <ser>is_traction_enabled</ser>
         <ser>wheelslip_accelstart</ser>
+        <ser>wheelslip_accelslowed</ser>
         <ser>wheelslip_accelend</ser>
         <ser>wheelslip_scaleaccel</ser>
         <ser>wheelslip_scaleerpm</ser>
+        <ser>wheelslip_filter_freq</ser>
+        <ser>wheelslip_max_angle</ser>
+        <ser>is_tc_braking_enabled</ser>
+        <ser>tc_braking_angle</ser>
+        <ser>tc_braking_duty_limit</ser>
+        <ser>duty_filter_freq</ser>
+        <ser>tc_braking_count</ser>
+        <ser>tc_braking_delay</ser>
+        <ser>is_drop_enabled</ser>
+        <ser>drop_z_accel</ser>
+        <ser>drop_count</ser>
+        <ser>drop_motor_accel</ser>
         <ser>enable_speed_stability</ser>
         <ser>enable_throttle_stability</ser>
         <ser>stabl_pitch_max_scale</ser>
@@ -3119,6 +3402,8 @@ p, li { white-space: pre-wrap; }
         <ser>is_tcdebug_enabled</ser>
         <ser>is_tunedebug_enabled</ser>
         <ser>is_yawdebug_enabled</ser>
+        <ser>is_dropdebug_enabled</ser>
+        <ser>is_brakingdebug_enabled</ser>
         <ser>disable_pkg</ser>
         <ser>version</ser>
     </SerOrder>
@@ -3246,12 +3531,33 @@ p, li { white-space: pre-wrap; }
                     <param>surge_maxangle</param>
                     <param>tiltback_surge_speed</param>
                     <param>surge_pitchmargin</param>
-                    <param>::sep::Traction Control</param>
+                </subgroupParams>
+            </subgroup>
+            <subgroup>
+                <subgroupName>Traction Control</subgroupName>
+                <subgroupParams>
+                    <param>::sep:: Start Condtions</param>
                     <param>is_traction_enabled</param>
                     <param>wheelslip_accelstart</param>
-                    <param>wheelslip_accelend</param>
+                    <param>wheelslip_filter_freq</param>
                     <param>wheelslip_scaleaccel</param>
                     <param>wheelslip_scaleerpm</param>
+                    <param>::sep:: End Conditions</param>
+                    <param>wheelslip_accelslowed</param>
+                    <param>wheelslip_accelend</param>
+                    <param>wheelslip_max_angle</param>
+                    <param>::sep:: Traction Braking</param>
+                    <param>is_tc_braking_enabled</param>
+                    <param>tc_braking_angle</param>
+                    <param>tc_braking_duty_limit</param>
+                    <param>duty_filter_freq</param>
+                    <param>tc_braking_count</param>
+                    <param>tc_braking_delay</param>
+                    <param>::sep:: Drop Detection</param>
+                    <param>is_drop_enabled</param>
+                    <param>drop_z_accel</param>
+                    <param>drop_count</param>
+                    <param>drop_motor_accel</param>
                 </subgroupParams>
             </subgroup>
             <subgroup>
@@ -3353,6 +3659,8 @@ p, li { white-space: pre-wrap; }
                     <param>is_surgedebug_enabled</param>
                     <param>is_tcdebug_enabled</param>
                     <param>is_yawdebug_enabled</param>
+                    <param>is_dropdebug_enabled</param>
+                    <param>is_brakingdebug_enabled</param>
                 </subgroupParams>
             </subgroup>
         </group>

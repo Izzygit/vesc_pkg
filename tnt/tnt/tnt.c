@@ -32,6 +32,7 @@
 #include "ride_time.h"
 #include "remote_input.h"
 #include "yaw.h"
+#include "drop.h"
 
 #include "conf/datatypes.h"
 #include "conf/confparser.h"
@@ -136,7 +137,9 @@ typedef struct {
 	//Traction Control
 	TractionData traction;
 	TractionDebug traction_dbg;
-	
+	BrakingData braking;
+	BrakingDebug braking_dbg;
+
 	// Low Pass Filter
 	float pitch_smooth; 
 	Biquad pitch_biquad;
@@ -173,6 +176,10 @@ typedef struct {
 	YawDebugData yaw_dbg;
 	float yaw_pid_mod;
 	float yaw_angle;
+
+	//Drop
+	DropData drop;
+	DropDebug drop_dbg;
 
 	//Debug
 	float debug1, debug2, debug3, debug4, debug5, debug6;
@@ -293,14 +300,14 @@ static void configure(data *d) {
 	configure_remote_features(&d->tnt_conf, &d->remote, &d->st_tilt);
 	
 	//Pitch Biquad Configure
-	biquad_configure(&d->pitch_biquad, BQ_LOWPASS, d->tnt_conf.pitch_filter / d->tnt_conf.hertz);
+	biquad_configure(&d->pitch_biquad, BQ_LOWPASS, 25.0 / d->tnt_conf.hertz); //d->tnt_conf.pitch_filter / d->tnt_conf.hertz);
 
 	//Pitch Kalman Configure
 	configure_kalman(&d->tnt_conf, &d->pitch_kalman);
 
 	//Motor Data Configure
-	motor_data_configure(&d->motor, 3.0 / d->tnt_conf.hertz);
-	
+	motor_data_configure(&d->motor, &d->tnt_conf);
+
 	//initialize current and pitch arrays for acceleration
 	angle_kp_reset(&d->accel_kp);
 	pitch_kp_configure(&d->tnt_conf, &d->accel_kp, 1);
@@ -323,8 +330,11 @@ static void configure(data *d) {
 	configure_surge(&d->surge, &d->tnt_conf);
 
 	//Traction Configure
-	configure_traction(&d->traction, &d->tnt_conf, &d->traction_dbg);
-
+	configure_traction(&d->traction, &d->tnt_conf, &d->traction_dbg, &d->braking_dbg);
+	
+	//Drop Configure
+	configure_drop(&d->drop, &d->tnt_conf);
+	
 	if (d->state.state == STATE_DISABLED) {
 	    beep_alert(d, 3, false);
 	} else {
@@ -333,52 +343,56 @@ static void configure(data *d) {
 }
 
 static void reset_vars(data *d) {
-	motor_data_reset(&d->motor);
+	if (d->rt.current_time - d->disengage_timer > 1) {//Delay reset in case there is a minor disengagement
+		motor_data_reset(&d->motor);
 	
-	// Set values for startup
-	d->rt.setpoint = d->rt.pitch_angle;
-	d->setpoint_target_interpolated = d->rt.pitch_angle;
-	d->setpoint_target = 0;
-	d->brake_timeout = 0;
-	d->softstart_pid_limit = 0;
-	d->startup_pitch_tolerance = d->tnt_conf.startup_pitch_tolerance;
+		// Set values for startup
+		d->rt.setpoint = d->rt.pitch_angle;
+		d->setpoint_target_interpolated = d->rt.pitch_angle;
+		d->setpoint_target = 0;
+		d->brake_timeout = 0;
+		d->softstart_pid_limit = 0;
+		d->startup_pitch_tolerance = d->tnt_conf.startup_pitch_tolerance;
+		
+		//Control variables
+		d->rt.pid_value = 0;
+		d->pid_mod = 0;
+		d->roll_pid_mod = 0;
 	
-	//Control variables
-	d->rt.pid_value = 0;
-	d->pid_mod = 0;
-	d->roll_pid_mod = 0;
-
-	//Remote
-	reset_remote(&d->remote, &d->st_tilt);
-
-	// Surge
-	reset_surge(&d->surge);
-
-	// Traction Control
-	reset_traction(&d->traction, &d->state);
+		//Remote
+		reset_remote(&d->remote, &d->st_tilt);
 	
-	//Low pass pitch filter
-	d->prop_smooth = 0;
-	d->abs_prop_smooth = 0;
-	d->pitch_smooth = d->rt.pitch_angle;
-	biquad_reset(&d->pitch_biquad);
+		// Surge
+		reset_surge(&d->surge);
 	
-	//Kalman filter
-	reset_kalman(&d->pitch_kalman);
-	d->pitch_smooth_kalman = d->rt.pitch_angle;
-
-	//Stability
-	d->stabl = 0;
-
-	// Haptic Buzz:
-	d->haptic_tone_in_progress = false;
-	d->haptic_timer = d->rt.current_time;
-	d->applied_haptic_current = 0;
-
-	//Yaw Boost
-	yaw_reset(&d->yaw, &d->yaw_dbg);
-	d->yaw_pid_mod = 0;
+		// Traction Control
+		reset_traction(&d->traction, &d->state, &d->braking);
+		
+		//Low pass pitch filter
+		d->prop_smooth = 0;
+		d->abs_prop_smooth = 0;
+		d->pitch_smooth = d->rt.pitch_angle;
+		biquad_reset(&d->pitch_biquad);
+		
+		//Kalman filter
+		reset_kalman(&d->pitch_kalman);
+		d->pitch_smooth_kalman = d->rt.pitch_angle;
 	
+		//Stability
+		d->stabl = 0;
+	
+		// Haptic Buzz:
+		d->haptic_tone_in_progress = false;
+		d->haptic_timer = d->rt.current_time;
+		d->applied_haptic_current = 0;
+	
+		//Yaw Boost
+		yaw_reset(&d->yaw, &d->yaw_dbg);
+		d->yaw_pid_mod = 0;
+		
+		// Drop
+		reset_drop(&d->drop);
+	}
 	state_engage(&d->state);
 }
 
@@ -730,6 +744,12 @@ static void set_dutycycle(data *d, float dutycycle){
 	VESC_IF->mc_set_duty(dutycycle); 
 }
 
+static void set_brake(data *d, float current) {
+    VESC_IF->timeout_reset();
+    VESC_IF->mc_set_current_off_delay(d->motor_timeout_s);
+    VESC_IF->mc_set_brake_current(current);
+}
+
 static void apply_stability(data *d) {
 	float speed_stabl_mod = 0;
 	float throttle_stabl_mod = 0;	
@@ -775,6 +795,8 @@ static void tnt_thd(void *arg) {
 		d->rt.pitch_angle = rad2deg(VESC_IF->imu_get_pitch());
 		d->yaw_angle = rad2deg(VESC_IF->ahrs_get_yaw(&d->m_att_ref));
 		VESC_IF->imu_get_gyro(d->gyro);
+		VESC_IF->imu_get_accel(d->rt.accel); //Used for drop detection
+		apply_angle_drop(&d->drop, &d->rt); //corrects accel z with angles
 		
 		//Apply low pass and Kalman filters to pitch
 		if (d->tnt_conf.pitch_filter > 0) {
@@ -786,7 +808,8 @@ static void tnt_thd(void *arg) {
 
 		motor_data_update(&d->motor);
 		update_remote(&d->tnt_conf, &d->remote);
-
+		check_drop(&d->drop, &d->motor, &d->rt, &d->state, &d->drop_dbg);
+		
 		//Footpad Sensor
 	        footpad_sensor_update(&d->footpad_sensor, &d->tnt_conf);
 	        if (d->footpad_sensor.state == FS_NONE && d->state.state == STATE_RUNNING &&
@@ -853,7 +876,7 @@ static void tnt_thd(void *arg) {
 			//Apply Remote Tilt
 			float input_tiltback_target = d->remote.throttle_val * d->tnt_conf.inputtilt_angle_limit;
 			if (d->tnt_conf.is_stickytilt_enabled) { 
-				apply_stickytilt(&d->remote, &d->st_tilt, d->motor.current_avg, &input_tiltback_target);
+				apply_stickytilt(&d->remote, &d->st_tilt, d->motor.current_filtered, &input_tiltback_target);
 			}
 			apply_inputtilt(&d->remote, input_tiltback_target); //produces output d->remote.inputtilt_interpolated
 			d->rt.setpoint += d->tnt_conf.enable_throttle_stability ? 0 : d->remote.inputtilt_interpolated; //Don't apply if we are using the throttle for stability
@@ -965,14 +988,20 @@ static void tnt_thd(void *arg) {
 			check_traction(&d->motor, &d->traction, &d->state, &d->rt, &d->tnt_conf, &d->traction_dbg);
 			if (d->tnt_conf.is_surge_enabled)
 				check_surge(&d->motor, &d->surge, &d->state, &d->rt, &d->tnt_conf, &d->surge_dbg);
-
+			if (d->tnt_conf.is_tc_braking_enabled)
+				check_traction_braking(&d->motor, &d->braking, &d->state, &d->rt, &d->tnt_conf, d->remote.inputtilt_interpolated, &d->braking_dbg);
+			
 			// PID value application
-			d->rt.pid_value = (d->state.wheelslip && d->tnt_conf.is_traction_enabled) ? 0 : new_pid_value;
+				
+			d->rt.pid_value = (d->state.wheelslip && d->tnt_conf.is_traction_enabled) ? 0 : 
+					((d->drop.active && d->tnt_conf.is_drop_enabled) ? 0 : new_pid_value);
 			d->rt.pid_value += haptic_buzz(d, 0.3); //Apply haptic buzz
 
 			// Output to motor
 			if (d->surge.active) { 	
 				set_dutycycle(d, d->surge.new_duty_cycle); 		// Set the duty to surge
+			} else if (d->braking.active) {
+				set_brake(d, d->rt.pid_value);				// Use braking function for traction control
 			} else {
 				set_current(d, d->rt.pid_value); 			// Set current as normal.
 			}
@@ -1136,7 +1165,7 @@ static float app_get_debug(int index) {
     case (8):
         return d->motor.current;
     case (9):
-        return d->motor.atr_filtered_current;
+        return d->motor.current;
     default:
         return 0;
     }
@@ -1150,7 +1179,7 @@ enum {
 } Commands;
 
 static void send_realtime_data(data *d){
-	static const int bufsize = 103;
+	static const int bufsize = 107;
 	uint8_t buffer[bufsize];
 	int32_t ind = 0;
 	buffer[ind++] = 111;//Magic Number
@@ -1165,7 +1194,7 @@ static void send_realtime_data(data *d){
 	buffer_append_float32_auto(buffer, d->footpad_sensor.adc1, &ind);
 	buffer_append_float32_auto(buffer, d->footpad_sensor.adc2, &ind);
 	buffer_append_float32_auto(buffer, VESC_IF->mc_get_input_voltage_filtered(), &ind);
-	buffer_append_float32_auto(buffer, d->motor.current_avg, &ind); // current atr_filtered_current
+	buffer_append_float32_auto(buffer, d->motor.current_filtered, &ind); // current atr_filtered_current
 	buffer_append_float32_auto(buffer, d->rt.pitch_angle, &ind);
 	buffer_append_float32_auto(buffer, d->rt.roll_angle, &ind);
 
@@ -1175,7 +1204,8 @@ static void send_realtime_data(data *d){
 	buffer_append_float32_auto(buffer, d->remote.throttle_val, &ind);
 	buffer_append_float32_auto(buffer, d->rt.current_time - d->traction.timeron , &ind); //Time since last wheelslip
 	buffer_append_float32_auto(buffer, d->rt.current_time - d->surge.timer , &ind); //Time since last surge
-
+	buffer_append_float32_auto(buffer, d->rt.current_time - d->drop.timeron , &ind); //Time since last drop
+	
 	// Trip
 	if (d->ridetimer.ride_time > 0) {
 		corr_factor =  d->rt.current_time / d->ridetimer.ride_time;
@@ -1222,6 +1252,24 @@ static void send_realtime_data(data *d){
 		buffer_append_float32_auto(buffer, d->yaw_dbg.debug4, &ind); //yaw kp scaled	
 		buffer_append_float32_auto(buffer, d->yaw_dbg.debug5, &ind); //erpm scaler
 		buffer_append_float32_auto(buffer, d->yaw_dbg.debug2, &ind); //max kp change
+	} else if (d->tnt_conf.is_dropdebug_enabled) {
+		buffer[ind++] = 5;
+		buffer_append_float32_auto(buffer, d->drop.accel_z, &ind); //accel_z
+		buffer_append_float32_auto(buffer, d->drop.applied_correction, &ind); //applied correction
+		buffer_append_float32_auto(buffer, d->drop_dbg.debug5, &ind); //number of drops
+		buffer_append_float32_auto(buffer, d->drop_dbg.debug3, &ind); //end condition
+		buffer_append_float32_auto(buffer, d->drop_dbg.debug4, &ind); //min accel z
+		buffer_append_float32_auto(buffer, d->drop_dbg.debug6, &ind); //ending prop
+		buffer_append_float32_auto(buffer, d->drop_dbg.debug7, &ind); //duration
+	} else if (d->tnt_conf.is_brakingdebug_enabled) {
+		buffer[ind++] = 6;
+		buffer_append_float32_auto(buffer, d->braking_dbg.debug2, &ind); //current duty
+		buffer_append_float32_auto(buffer, d->braking_dbg.debug6, &ind); //max accel
+		buffer_append_float32_auto(buffer, d->braking_dbg.debug3, &ind); //Min ERPM
+		buffer_append_float32_auto(buffer, d->braking_dbg.debug9, &ind); //Max ERPM
+		buffer_append_float32_auto(buffer, d->braking_dbg.debug4, &ind); //Debug condition 
+		buffer_append_float32_auto(buffer, d->braking_dbg.debug8, &ind); //duration
+		buffer_append_float32_auto(buffer, d->braking_dbg.debug5, &ind); //count 
 	} else { 
 		buffer[ind++] = 0; 
 	}

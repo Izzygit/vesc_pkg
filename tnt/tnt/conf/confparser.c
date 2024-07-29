@@ -88,9 +88,22 @@ int32_t confparser_serialize_tnt_config(uint8_t *buffer, const tnt_config *conf)
 	buffer[ind++] = (uint8_t)conf->tiltback_surge_speed;
 	buffer[ind++] = conf->is_traction_enabled;
 	buffer_append_uint16(buffer, conf->wheelslip_accelstart, &ind);
-	buffer_append_int16(buffer, conf->wheelslip_accelend, &ind);
+	buffer_append_int16(buffer, conf->wheelslip_accelslowed, &ind);
+	buffer[ind++] = (uint8_t)conf->wheelslip_accelend;
 	buffer[ind++] = (uint8_t)conf->wheelslip_scaleaccel;
 	buffer_append_uint16(buffer, conf->wheelslip_scaleerpm, &ind);
+	buffer[ind++] = (uint8_t)conf->wheelslip_filter_freq;
+	buffer[ind++] = (uint8_t)conf->wheelslip_max_angle;
+	buffer[ind++] = conf->is_tc_braking_enabled;
+	buffer[ind++] = (uint8_t)conf->tc_braking_angle;
+	buffer[ind++] = (uint8_t)conf->tc_braking_duty_limit;
+	buffer[ind++] = (uint8_t)conf->duty_filter_freq;
+	buffer[ind++] = (uint8_t)conf->tc_braking_count;
+	buffer_append_float16(buffer, conf->tc_braking_delay, 100, &ind);
+	buffer[ind++] = conf->is_drop_enabled;
+	buffer[ind++] = (uint8_t)conf->drop_z_accel;
+	buffer[ind++] = (uint8_t)conf->drop_count;
+	buffer_append_uint16(buffer, conf->drop_motor_accel, &ind);
 	buffer[ind++] = conf->enable_speed_stability;
 	buffer[ind++] = conf->enable_throttle_stability;
 	buffer_append_uint16(buffer, conf->stabl_pitch_max_scale, &ind);
@@ -154,6 +167,8 @@ int32_t confparser_serialize_tnt_config(uint8_t *buffer, const tnt_config *conf)
 	buffer[ind++] = conf->is_tcdebug_enabled;
 	buffer[ind++] = conf->is_tunedebug_enabled;
 	buffer[ind++] = conf->is_yawdebug_enabled;
+	buffer[ind++] = conf->is_dropdebug_enabled;
+	buffer[ind++] = conf->is_brakingdebug_enabled;
 	buffer[ind++] = conf->disable_pkg;
 	buffer_append_float16(buffer, conf->version, 1000, &ind);
 
@@ -246,9 +261,22 @@ bool confparser_deserialize_tnt_config(const uint8_t *buffer, tnt_config *conf) 
 	conf->tiltback_surge_speed = buffer[ind++];
 	conf->is_traction_enabled = buffer[ind++];
 	conf->wheelslip_accelstart = buffer_get_uint16(buffer, &ind);
-	conf->wheelslip_accelend = buffer_get_int16(buffer, &ind);
+	conf->wheelslip_accelslowed = buffer_get_int16(buffer, &ind);
+	conf->wheelslip_accelend = buffer[ind++];
 	conf->wheelslip_scaleaccel = buffer[ind++];
 	conf->wheelslip_scaleerpm = buffer_get_uint16(buffer, &ind);
+	conf->wheelslip_filter_freq = buffer[ind++];
+	conf->wheelslip_max_angle = buffer[ind++];
+	conf->is_tc_braking_enabled = buffer[ind++];
+	conf->tc_braking_angle = buffer[ind++];
+	conf->tc_braking_duty_limit = buffer[ind++];
+	conf->duty_filter_freq = buffer[ind++];
+	conf->tc_braking_count = buffer[ind++];
+	conf->tc_braking_delay = buffer_get_float16(buffer, 100, &ind);
+	conf->is_drop_enabled = buffer[ind++];
+	conf->drop_z_accel = buffer[ind++];
+	conf->drop_count = buffer[ind++];
+	conf->drop_motor_accel = buffer_get_uint16(buffer, &ind);
 	conf->enable_speed_stability = buffer[ind++];
 	conf->enable_throttle_stability = buffer[ind++];
 	conf->stabl_pitch_max_scale = buffer_get_uint16(buffer, &ind);
@@ -312,6 +340,8 @@ bool confparser_deserialize_tnt_config(const uint8_t *buffer, tnt_config *conf) 
 	conf->is_tcdebug_enabled = buffer[ind++];
 	conf->is_tunedebug_enabled = buffer[ind++];
 	conf->is_yawdebug_enabled = buffer[ind++];
+	conf->is_dropdebug_enabled = buffer[ind++];
+	conf->is_brakingdebug_enabled = buffer[ind++];
 	conf->disable_pkg = buffer[ind++];
 	conf->version = buffer_get_float16(buffer, 1000, &ind);
 
@@ -397,9 +427,22 @@ void confparser_set_defaults_tnt_config(tnt_config *conf) {
 	conf->tiltback_surge_speed = APPCONF_TNT_TILTBACK_SURGE_SPEED;
 	conf->is_traction_enabled = APPCONF_TNT_IS_TRACTION_ENABLED;
 	conf->wheelslip_accelstart = APPCONF_TNT_WHEELSLIP_ACCELSTART;
+	conf->wheelslip_accelslowed = APPCONF_TNT_WHEELSLIP_ACCELSLOWED;
 	conf->wheelslip_accelend = APPCONF_TNT_WHEELSLIP_ACCELEND;
 	conf->wheelslip_scaleaccel = APPCONF_TNT_WHEELSLIP_SCALEACCEL;
 	conf->wheelslip_scaleerpm = APPCONF_TNT_WHEELSLIP_SCALEERPM;
+	conf->wheelslip_filter_freq = APPCONF_TNT_WHEELSLIP_FILTER_FREQ_FAST;
+	conf->wheelslip_max_angle = APPCONF_TNT_WHEELSLIP_MAX_ANGLE;
+	conf->is_tc_braking_enabled = APPCONF_TNT_IS_TC_BRAKING_ENABLED;
+	conf->tc_braking_angle = APPCONF_TNT_TC_BRAKING_ANGLE;
+	conf->tc_braking_duty_limit = APPCONF_TNT_TC_BRAKING_DUTY_LIMIT;
+	conf->duty_filter_freq = APPCONF_TNT_DUTY_FILTER;
+	conf->tc_braking_count = APPCONF_TNT_TC_BRAKING_COUNT;
+	conf->tc_braking_delay = APPCONF_TNT_TC_BRAKING_DELAY;
+	conf->is_drop_enabled = APPCONF_TNT_IS_DROP_ENABLED;
+	conf->drop_z_accel = APPCONF_TNT_DROP_Z_ACCEL;
+	conf->drop_count = APPCONF_TNT_DROP_COUNT;
+	conf->drop_motor_accel = APPCONF_TNT_DROP_MOTOR_ACCEL;
 	conf->enable_speed_stability = APPCONF_TNT_ENABLE_SPEED_STABILITY;
 	conf->enable_throttle_stability = APPCONF_TNT_ENABLE_THROTTLE_STABILITY;
 	conf->stabl_pitch_max_scale = APPCONF_TNT_STABL_PITCH_MAXSCALE;
@@ -463,6 +506,8 @@ void confparser_set_defaults_tnt_config(tnt_config *conf) {
 	conf->is_tcdebug_enabled = APPCONF_TNT_IS_TCDEBUG_ENABLED;
 	conf->is_tunedebug_enabled = APPCONF_TNT_IS_TRIPDEBUG_ENABLED;
 	conf->is_yawdebug_enabled = APPCONF_TNT_IS_YAWDEBUG_ENABLED;
+	conf->is_dropdebug_enabled = APPCONF_TNT_IS_DROPDEBUG_ENABLED;
+	conf->is_brakingdebug_enabled = APPCONF_TNT_IS_BRAKINGDEBUG_ENABLED;
 	conf->disable_pkg = APPCONF_TNT_DISABLE;
 	conf->version = APPCONF_TNT_VERSION;
 }

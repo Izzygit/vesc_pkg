@@ -116,6 +116,7 @@ Item {
                 var throttle_val = dv.getFloat32(ind); ind += 4;
                 var lastwheelslip = dv.getFloat32(ind); ind += 4; 
                 var surge_lasttime = dv.getFloat32(ind); ind += 4; 
+                var drop_lasttime = dv.getFloat32(ind); ind += 4; 
 	
 		var ridetime = dv.getFloat32(ind); ind += 4; //ride time
 	        var resttime = dv.getFloat32(ind); ind += 4; //rest time
@@ -155,6 +156,22 @@ Item {
       		    var debug3 = dv.getFloat32(ind); ind += 4; //yaw kp scaled
                     var debug4 = dv.getFloat32(ind); ind += 4; //erpm scaler 
                     var debug5 = dv.getFloat32(ind); ind += 4; //max kp
+                } else if (debug_state == 5) {
+                    var debug1 = dv.getFloat32(ind); ind += 4; //drop duration 
+                    var debug2 = dv.getFloat32(ind); ind += 4; //applied reduction
+	            var debug5 = dv.getFloat32(ind); ind += 4; //drop count	    
+                    var debug3 = dv.getFloat32(ind); ind += 4; //end condition  
+                    var debug4 = dv.getFloat32(ind); ind += 4; //min accel z 
+                    var debug6 = dv.getFloat32(ind); ind += 4; //ending pitch 
+                    var debug7 = dv.getFloat32(ind); ind += 4; //duration
+                } else if (debug_state == 6) {
+                    var debug1 = dv.getFloat32(ind); ind += 4; // duty
+                    var debug2 = dv.getFloat32(ind); ind += 4; // accel
+                    var debug3 = dv.getFloat32(ind); ind += 4; // min erpm 
+                    var debug4 = dv.getFloat32(ind); ind += 4; // max erpm 
+                    var debug5 = dv.getFloat32(ind); ind += 4; // debug 
+                    var debug6 = dv.getFloat32(ind); ind += 4; // duration 
+                    var debug7 = dv.getFloat32(ind); ind += 4; // count 
 		} else {
 		    //space for temporary debugs
                 }
@@ -249,6 +266,9 @@ Item {
         	var resttime1 = ("0" + Math.trunc(resttime/3600)).slice(-2);
     		var resttime2 = ("0" + Math.trunc(resttime/60 - resttime1*60)).slice(-2);
     		var resttime3 = ("0" + Math.trunc(resttime - resttime1*3600 - resttime2*60)).slice(-2);
+              	var droptime1 = ("0" + Math.trunc(drop_lasttime/3600)).slice(-2);
+    		var droptime2 = ("0" + Math.trunc(drop_lasttime/60 - droptime1*60)).slice(-2);
+    		var droptime3 = ("0" + Math.trunc(drop_lasttime - droptime1*3600 - droptime2*60)).slice(-2);
       
                 if(state == 0){
                     stateString = "DISABLED"
@@ -274,7 +294,8 @@ Item {
 	                    "Setpoint            : " + float_setpoint.toFixed(2) + "°\n" +
 	                    "RemoteTilt Setpoint : " + float_inputtilt.toFixed(2) + "°\n" +
 	                    "Last Wheelslip Time : " + wheelsliptime1 + ":" + wheelsliptime2 + ":" + wheelsliptime3 + "\n" +                
-	                    "Last Surge Time     : " + surgetime1 + ":" + surgetime2 + ":" + surgetime3 + "\n"  
+	                    "Last Surge Time     : " + surgetime1 + ":" + surgetime2 + ":" + surgetime3 + "\n" +
+	                    "Last Drop Time      : " + droptime1 + ":" + droptime2 + ":" + droptime3 + "\n"       
 		     
 	                trip.text =
 	                    "Ride Time          : " + ridetime1 + ":" + ridetime2 + ":" + ridetime3 + "\n" +
@@ -287,7 +308,7 @@ Item {
 			if (debug_state == 1) {
 				debug.text =
 				"Start ERPM Factor   : " + debug1.toFixed(1) + "\n" +  
-				"Start Accleration   : " + debug2.toFixed(1) + " ERPM/ms\n" +
+				"Start Acceleration  : " + debug2.toFixed(1) + " ERPM/ms\n" +
 				"Start ERPM          : " + debug4.toFixed(0) + " ERPM\n" +
 				"Last ERPM           : " + debug3.toFixed(0) + " ERPM\n" +
 				"End Condition       : " + debug5.toFixed(0) + "\n" +
@@ -318,7 +339,25 @@ Item {
     				"Yaw Kp (scaled)     : " + debug3.toFixed(2) + " \n" +
 				"ERPM Scaler         : " + debug4.toFixed(1) + " \n" +
     				"Max Yaw Kp          : " + debug5.toFixed(2) + " \n" 
-      			} else { 
+    			} else if (debug_state == 5) {
+				debug.text =
+				"Accel Z             : " + debug1.toFixed(2) + " g\n" +
+				"Pitch/Roll Factor   : " + debug2.toFixed(2) + " \n" +
+				"Drop Count          : " + debug5.toFixed(0) + " \n" +         
+				"Drop End Condition  : " + debug3.toFixed(2) + " \n" +         
+				"Min Accel Z         : " + debug4.toFixed(2) + " \n" + 
+				"Ending Proportional : " + debug6.toFixed(1) + "°\n" +
+    				"Drop Duration       : " + debug7.toFixed(3) + " s\n" 
+    			} else if (debug_state == 6) {
+				debug.text =
+				"Duty Filtered       : " + debug1.toFixed(2) + "\n" +  
+				"Max Acceleration    : " + debug2.toFixed(1) + " ERPM/ms\n" +
+				"Min ERPM            : " + debug3.toFixed(0) + " ERPM\n" +
+				"Max ERPM            : " + debug4.toFixed(0) + " ERPM\n" +
+				"End Condition       : " + debug5.toFixed(0) + "\n" +
+				"Total Duration      : " + debug6.toFixed(1) + " s\n" +
+				"Brake Count         : " + debug7.toFixed(0) + "\n" 
+    			} else { 
 				debug.text = 
 				"-- n/a --"       
 	  		}

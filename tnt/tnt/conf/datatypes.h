@@ -110,9 +110,22 @@ typedef struct {
 	uint16_t tiltback_surge_speed;
 	bool is_traction_enabled;
 	uint16_t wheelslip_accelstart;
-	int16_t wheelslip_accelend;
+	int16_t wheelslip_accelslowed;
+	uint8_t wheelslip_accelend;
 	uint16_t wheelslip_scaleaccel;
 	uint16_t wheelslip_scaleerpm;
+	uint8_t wheelslip_filter_freq;
+	uint8_t wheelslip_max_angle;
+	bool is_tc_braking_enabled;
+	uint8_t tc_braking_angle;
+	uint8_t tc_braking_duty_limit;
+	uint8_t duty_filter_freq;
+	uint8_t tc_braking_count;
+	float tc_braking_delay;
+	bool is_drop_enabled;
+	uint8_t drop_z_accel;
+	uint8_t drop_count;
+	uint16_t drop_motor_accel;
 	bool enable_speed_stability;
 	bool enable_throttle_stability;
 	uint16_t stabl_pitch_max_scale;
@@ -176,6 +189,8 @@ typedef struct {
 	bool is_surgedebug_enabled;
 	bool is_tcdebug_enabled;
 	bool is_yawdebug_enabled;
+	bool is_dropdebug_enabled;
+	bool is_brakingdebug_enabled;
 } tnt_config;
 
 // DATATYPES_H_
