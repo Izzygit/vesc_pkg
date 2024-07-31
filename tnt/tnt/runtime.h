@@ -26,6 +26,7 @@ typedef struct { //Run time values used in various features
 	float pid_value;
 	float pitch_angle;
 	float roll_angle;
+	float yaw_angle;
 	float current_time;
 	float setpoint;
 	float last_accel_z;
