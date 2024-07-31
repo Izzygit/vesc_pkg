@@ -16,7 +16,8 @@
 // this program. If not, see <http://www.gnu.org/licenses/>.
 
 #include "runtime.h"
-//#include "vesc_c_if.h"
+#include "vesc_c_if.h"
+#include <math.h>
 
 void runtime_data_update(RuntimeData *rt) {
 	// Update times
