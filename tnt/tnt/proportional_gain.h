@@ -25,9 +25,30 @@ typedef struct {
 	float kp_rate;
 } KpArray;
 
+typedef struct {
+	float proportional;
+	float pid_value;
+	float prop_smooth;
+	float abs_prop_smooth;
+	float pid_mod;
+	float stabl;
+	float stability_kp;
+	float stability_kprate;
+	float stabl;
+	float stabl_step_size_up, stabl_step_size_down;
+	float roll_pid_mod;
+	float yaw_pid_mod;
+} PidData;
+
 void pitch_kp_configure(const tnt_config *config, KpArray *k, int mode);
 void roll_kp_configure(const tnt_config *config, KpArray *k, int mode);
 void yaw_kp_configure(const tnt_config *config, KpArray *k, int mode);
 float angle_kp_select(float angle, const KpArray *k);
 void angle_kp_reset(KpArray *k);
 float erpm_scale(float lowvalue, float highvalue, float lowscale, float highscale, float abs_erpm); 
+void apply_stability(PidData *p, MotorData *m, RemoteData *remote, tnt_config *config);
+float pitch_kp_calc(PidData *p, KpArray *accel_kp, KpArray *brake_kp, PidDebug *pid_dbg);
+void pitch_kprate_apply(PidData *p, Runttime *rt, KpArray *accel_kp, KpArray *brake_kp, PidDebug *pid_dbg);
+void check_brake_kp(PidData *p, State *state, tnt_config *config, KpArray *roll_brake_kp, KpArray *yaw_brake_kp);
+float roll_erpm_scale(PidData *p, State *state, Runttime *rt, MotorData *m, KpArray *roll_accel_kp, tnt_config *config);
+void reset_pid(PidData *p);
