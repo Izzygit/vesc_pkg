@@ -193,3 +193,71 @@ float erpm_scale(float lowvalue, float highvalue, float lowscale, float highscal
 	} else { scaler = max(min(scaler, lowscale), highscale); }
 	return scaler;
 }
+
+static void apply_stability(PidData *p, MotorData *m, RemoteData *remote tnt_config *config,) {
+	float speed_stabl_mod = 0;
+	float throttle_stabl_mod = 0;	
+	float stabl_mod = 0;
+	if (config->enable_throttle_stability) {
+		throttle_stabl_mod = fabsf(remote->inputtilt_interpolated) / config->inputtilt_angle_limit; 	//using inputtilt_interpolated allows the use of sticky tilt and inputtilt smoothing
+	}
+	if (config->enable_speed_stability && d->motor.abs_erpm > 1.0 * config->stabl_min_erpm) {		
+		speed_stabl_mod = fminf(1 ,										// Do not exceed the max value.				
+				lerp(config->stabl_min_erpm, config->stabl_max_erpm, 0, 1, d->motor.abs_erpm));
+	}
+	stabl_mod = fmaxf(speed_stabl_mod,throttle_stabl_mod);
+	float step_size = stabl_mod > p->stabl ? p->stabl_step_size_up : p->stabl_step_size_down;
+	rate_limitf(&p->stabl, stabl_mod, step_size); 
+	p->stability_kp = 1 + p->stabl * config->stabl_pitch_max_scale / 100; //apply dynamic stability for pitch kp
+	p->stability_kprate = 1 + p->stabl * config->stabl_rate_max_scale / 100;
+}
+
+float pitch_kp_calc(PidData *p, bool brake_curve, KpArray *accel_kp, KpArray *brake_kp, PidDebug *pid_dbg) {
+	//Select and Apply Kp
+	float kp_mod;
+	kp_mod = angle_kp_select(p->abs_prop_smooth, 
+		brake_curve ? &brake_kp : &accel_kp);
+	pid_dbg->debug1 = brake_curve ? -kp_mod : kp_mod;
+	kp_mod *= p->stability_kp;
+	return kp_mod;
+}
+
+void pitch_kprate_apply(PidData *p, Runttime *rt, KpArray *accel_kp, KpArray *brake_kp, PidDebug *pid_dbg) {
+	// Select and Apply Rate P
+	float kp_rate = rt->brake_curve ? brake_kp->kp_rate : accel_kp->kp_rate;		
+	p->pid_mod = kp_rate * -rt->gyro[1] * p->stability_kprate;
+	pid_dbg->debug3 = kp_rate * (p->stability_kprate - 1);			// Calc the contribution of stability to kp_rate
+}
+
+void check_brake(Runtime *rt, State *state
+	brake_roll = d->roll_brake_kp.count!=0 && d->state.braking_pos;
+	d->rt.brake_curve = config->brake_curve && state->braking_pos;
+
+
+float pitch_kp_calc(float angle, bool brake, PidData *p, Runttime *rt, State *state, KpArray *accel_kp, KpArray *brake_kp, PidDebug *pid_dbg) {
+
+			// Select Roll Kp
+			float rollkp = 0;
+			rollkp = angle_kp_select(angle, 
+				brake ? &brake_kp : &daccel_kp);
+
+			//Apply ERPM Scale
+			float erpmscale = 1;
+			if ((brake_roll && d->motor.abs_erpm < 750) ||
+				d->state.sat == SAT_CENTERING) { 				
+				// If we want to actually stop at low speed reduce kp to 0
+				erpmscale = 0;
+			} else if (d->roll_accel_kp.count!=0 && d->motor.abs_erpm < d->tnt_conf.rollkp_higherpm) { 
+				erpmscale = 1 + erpm_scale(d->tnt_conf.rollkp_lowerpm, d->tnt_conf.rollkp_higherpm, d->tnt_conf.rollkp_maxscale / 100.0, 0, d->motor.abs_erpm);
+			} else if (d->roll_accel_kp.count!=0 && d->motor.abs_erpm > d->tnt_conf.roll_hs_lowerpm) { 
+				erpmscale = 1 + erpm_scale(d->tnt_conf.roll_hs_lowerpm, d->tnt_conf.roll_hs_higherpm, 0, d->tnt_conf.roll_hs_maxscale / 100.0, d->motor.abs_erpm);
+			}
+			rollkp *= erpmscale;
+			
+			
+
+
+//Apply Roll Boost
+			d->roll_pid_mod = .99 * d->roll_pid_mod + .01 * rollkp * fabsf(new_pid_value) * d->motor.erpm_sign; 	//always act in the direciton of travel
+			d->pid_mod += d->roll_pid_mod;
+			d->debug2 = brake_roll ? -rollkp : rollkp;	
