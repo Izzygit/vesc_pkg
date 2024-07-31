@@ -36,7 +36,6 @@ void runtime_data_update(RuntimeData *rt) {
 	rt->yaw_angle = rad2deg(VESC_IF->ahrs_get_yaw(&rt->m_att_ref));
 	VESC_IF->imu_get_gyro(rt->gyro);
 	VESC_IF->imu_get_accel(rt->accel); //Used for drop detection
-	apply_angle_drop(&d->drop, &d->rt); //corrects accel z with angles
 }
 
 void apply_pitch_filters(RuntimeData *rt, tnt_config *config){
