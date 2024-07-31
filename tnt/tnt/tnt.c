@@ -102,7 +102,6 @@ typedef struct {
 	// Rumtime state values
 	State state;
 
-	float pid_mod;
 	float setpoint_target, setpoint_target_interpolated;
 	float noseangling_interpolated;
 	float disengage_timer, nag_timer;
@@ -732,22 +731,6 @@ static void set_brake(data *d, float current) {
     VESC_IF->mc_set_brake_current(current);
 }
 
-static void apply_stability(data *d) {
-	float speed_stabl_mod = 0;
-	float throttle_stabl_mod = 0;	
-	float stabl_mod = 0;
-	if (d->tnt_conf.enable_throttle_stability) {
-		throttle_stabl_mod = fabsf(d->remote.inputtilt_interpolated) / d->tnt_conf.inputtilt_angle_limit; 	//using inputtilt_interpolated allows the use of sticky tilt and inputtilt smoothing
-	}
-	if (d->tnt_conf.enable_speed_stability && d->motor.abs_erpm > 1.0 * d->tnt_conf.stabl_min_erpm) {		
-		speed_stabl_mod = fminf(1 ,										// Do not exceed the max value.				
-				lerp(d->tnt_conf.stabl_min_erpm, d->tnt_conf.stabl_max_erpm, 0, 1, d->motor.abs_erpm));
-	}
-	stabl_mod = fmaxf(speed_stabl_mod,throttle_stabl_mod);
-	float step_size = stabl_mod > d->stabl ? d->stabl_step_size_up : d->stabl_step_size_down;
-	rate_limitf(&d->stabl, stabl_mod, step_size); 
-}
-
 static void imu_ref_callback(float *acc, float *gyro, float *mag, float dt) {
 	UNUSED(mag);
 	data *d = (data*)ARG;
@@ -853,46 +836,12 @@ static void tnt_thd(void *arg) {
 			d->prop_smooth = d->rt.setpoint - d->rt.pitch_smooth_kalman;
 			d->abs_prop_smooth = fabsf(d->prop_smooth);
 			
-			//Select and Apply Kp
-			d->state.braking_pos = sign(d->rt.proportional) != d->motor.erpm_sign;
-			bool brake_curve = d->tnt_conf.brake_curve && d->state.braking_pos;
-			float kp_mod;
-			kp_mod = angle_kp_select(d->abs_prop_smooth, 
-				brake_curve ? &d->brake_kp : &d->accel_kp);
-			d->debug1 = brake_curve ? -kp_mod : kp_mod;
-			kp_mod *= (1 + d->stabl * d->tnt_conf.stabl_pitch_max_scale / 100); //apply dynamic stability
-			new_pid_value = kp_mod * d->rt.proportional;
-			
-			// Select and Apply Rate P
-			float rate_prop = -d->rt.gyro[1];
-			float kp_rate = brake_curve ? d->brake_kp.kp_rate : d->accel_kp.kp_rate;		
-			float rate_stabl = 1 + d->stabl * d->tnt_conf.stabl_rate_max_scale / 100; 			
-			d->pid_mod = kp_rate * rate_prop * rate_stabl;
-			d->debug3 = kp_rate * (rate_stabl - 1);				// Calc the contribution of stability to kp_rate
-		
-			// Select Roll Kp
-			float rollkp = 0;
-			float erpmscale = 1;
-			bool brake_roll = d->roll_brake_kp.count!=0 && d->state.braking_pos;
-			rollkp = angle_kp_select(d->rt.abs_roll_angle, 
-				brake_roll ? &d->roll_brake_kp : &d->roll_accel_kp);
+			state->braking_pos = sign(p->proportional) != m->erpm_sign;
 
-			//Apply ERPM Scale
-			if ((brake_roll && d->motor.abs_erpm < 750) ||
-				d->state.sat == SAT_CENTERING) { 				
-				// If we want to actually stop at low speed reduce kp to 0
-				erpmscale = 0;
-			} else if (d->roll_accel_kp.count!=0 && d->motor.abs_erpm < d->tnt_conf.rollkp_higherpm) { 
-				erpmscale = 1 + erpm_scale(d->tnt_conf.rollkp_lowerpm, d->tnt_conf.rollkp_higherpm, d->tnt_conf.rollkp_maxscale / 100.0, 0, d->motor.abs_erpm);
-			} else if (d->roll_accel_kp.count!=0 && d->motor.abs_erpm > d->tnt_conf.roll_hs_lowerpm) { 
-				erpmscale = 1 + erpm_scale(d->tnt_conf.roll_hs_lowerpm, d->tnt_conf.roll_hs_higherpm, 0, d->tnt_conf.roll_hs_maxscale / 100.0, d->motor.abs_erpm);
-			}
-			rollkp *= erpmscale;
+			new_pid_value = d->rt.proportional * pitch_kp_calc(PidData *p, Runttime *rt, KpArray *accel_kp, KpArray *brake_kp, PidDebug *pid_dbg);
+			pitch_kprate_apply(PidData *p, Runttime *rt, KpArray *accel_kp, KpArray *brake_kp, PidDebug *pid_dbg);
 			
-			//Apply Roll Boost
-			d->roll_pid_mod = .99 * d->roll_pid_mod + .01 * rollkp * fabsf(new_pid_value) * d->motor.erpm_sign; 	//always act in the direciton of travel
-			d->pid_mod += d->roll_pid_mod;
-			d->debug2 = brake_roll ? -rollkp : rollkp;	
+
 
 			// Calculate yaw change
 			calc_yaw_change(&d->yaw, d->rt.yaw_angle, &d->yaw_dbg);
