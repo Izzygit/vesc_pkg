@@ -763,7 +763,7 @@ static void tnt_thd(void *arg) {
 	while (!VESC_IF->should_terminate()) {
 		beeper_update(d);
 		runtime_data_update(&d->rt);
-		apply_pitch_filters(&d->rt, &d->tnt_config);
+		apply_pitch_filters(&d->rt, &d->tnt_conf);
 		motor_data_update(&d->motor);
 		update_remote(&d->tnt_conf, &d->remote);
 		check_drop(&d->drop, &d->motor, &d->rt, &d->state, &d->drop_dbg);
