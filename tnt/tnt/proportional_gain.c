@@ -17,6 +17,7 @@
 
 #include "proportional_gain.h"
 #include "utils_tnt.h"
+#include <math.h>
 
 float angle_kp_select(float angle, const KpArray *k) {
 	float kp_mod = 0;
@@ -183,4 +184,12 @@ void yaw_kp_configure(const tnt_config *config, KpArray *k, int mode){
 	} else if (k->angle_kp[1][1] >0 && k->angle_kp[1][0]>0) {
 		k->count = 1;
 	} else {k->count = 0;}
+}
+
+float erpm_scale(float lowvalue, float highvalue, float lowscale, float highscale, float abs_erpm){ 
+	float scaler = lerp(lowvalue, highvalue, lowscale, highscale, abs_erpm);
+	if (lowscale < highscale) {
+		scaler = min(max(scaler, lowscale), highscale);
+	} else { scaler = max(min(scaler, lowscale), highscale); }
+	return scaler;
 }
