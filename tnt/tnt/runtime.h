@@ -18,7 +18,7 @@
 #pragma once
 #include "biquad.h"
 #include "kalman.h"
-#include "vesc_c_if.h"
+#include "conf/datatypes.h"
 
 typedef struct { //Run time values used in various features
 	float proportional;
