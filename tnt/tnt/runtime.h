@@ -42,14 +42,6 @@ typedef struct { //Run time values used in various features
 } RuntimeData;
 
 typedef struct {
-	float proportional;
-	float pid_value;
-	float prop_smooth;
-	float abs_prop_smooth;
-	float pid_mod;
-} PIDData;
-
-typedef struct {
 	float last_angle;
 	float last_change;
 	float change;
