@@ -22,8 +22,6 @@
 #include "vesc_c_if.h"
 
 typedef struct { //Run time values used in various features
-	float proportional;
-	float pid_value;
 	float pitch_angle;
 	float roll_angle;
 	float yaw_angle;
@@ -40,7 +38,16 @@ typedef struct { //Run time values used in various features
 	float pitch_smooth_kalman; // Kalman Filter
 	float diff_time, last_time;
 	ATTITUDE_INFO m_att_ref; // Feature: True Pitch / Yaw
+	bool brake_pitch, brake_roll, brake_yaw;
 } RuntimeData;
+
+typedef struct {
+	float proportional;
+	float pid_value;
+	float prop_smooth;
+	float abs_prop_smooth;
+	float pid_mod;
+} PIDData;
 
 typedef struct {
 	float last_angle;
