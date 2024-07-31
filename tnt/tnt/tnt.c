@@ -72,7 +72,8 @@ typedef struct {
 	int fw_version_major, fw_version_minor, fw_version_beta;
 
   	MotorData motor;
-	
+	PidData pid;
+
 	// Beeper
 	int beep_num_left;
 	int beep_duration;
@@ -132,18 +133,12 @@ typedef struct {
 	BrakingDebug braking_dbg;
 
 	// Throttle/Brake Scaling
-	float prop_smooth, abs_prop_smooth;
-	float roll_pid_mod;
 	KpArray accel_kp;
 	KpArray brake_kp;
 	KpArray roll_accel_kp;
 	KpArray roll_brake_kp;
 	KpArray yaw_accel_kp;
 	KpArray yaw_brake_kp;
-
-	// Dynamic Stability
-	float stabl;
-	float stabl_step_size_up, stabl_step_size_down;
 
 	//Haptic Buzz
 	float applied_haptic_current, haptic_timer;
@@ -156,7 +151,6 @@ typedef struct {
 	//Yaw Boost
 	YawData yaw;
 	YawDebugData yaw_dbg;
-	float yaw_pid_mod;
 
 	//Drop
 	DropData drop;
@@ -336,9 +330,7 @@ static void reset_vars(data *d) {
 		d->startup_pitch_tolerance = d->tnt_conf.startup_pitch_tolerance;
 		
 		//Control variables
-		d->rt.pid_value = 0;
-		d->pid_mod = 0;
-		d->roll_pid_mod = 0;
+		reset_pid(&d->pid);
 	
 		//Remote
 		reset_remote(&d->remote, &d->st_tilt);
@@ -359,9 +351,6 @@ static void reset_vars(data *d) {
 		reset_kalman(&d->rt.pitch_kalman);
 		d->rt.pitch_smooth_kalman = d->rt.pitch_angle;
 	
-		//Stability
-		d->stabl = 0;
-	
 		// Haptic Buzz:
 		d->haptic_tone_in_progress = false;
 		d->haptic_timer = d->rt.current_time;
@@ -369,7 +358,6 @@ static void reset_vars(data *d) {
 	
 		//Yaw Boost
 		yaw_reset(&d->yaw, &d->yaw_dbg);
-		d->yaw_pid_mod = 0;
 		
 		// Drop
 		reset_drop(&d->drop);
@@ -814,7 +802,7 @@ static void tnt_thd(void *arg) {
 			calculate_setpoint_interpolated(d);
 			d->rt.setpoint = d->setpoint_target_interpolated;
 
-			//Apply Remote Tilt
+			//Apply Remote Tilt and Sticky Tilt
 			float input_tiltback_target = d->remote.throttle_val * d->tnt_conf.inputtilt_angle_limit;
 			if (d->tnt_conf.is_stickytilt_enabled) { 
 				apply_stickytilt(&d->remote, &d->st_tilt, d->motor.current_filtered, &input_tiltback_target);
@@ -828,61 +816,65 @@ static void tnt_thd(void *arg) {
 			//Apply Stability
 			if (d->tnt_conf.enable_speed_stability || 
 			    d->tnt_conf.enable_throttle_stability) {
-				apply_stability(d);
+				apply_stability(&d->pid, &d->motor, &d->remote, &d->tnt_conf);
 			}
 			
 			// Do PID maths
-			d->rt.proportional = d->rt.setpoint - d->rt.pitch_angle;
-			d->prop_smooth = d->rt.setpoint - d->rt.pitch_smooth_kalman;
-			d->abs_prop_smooth = fabsf(d->prop_smooth);
+			d->pid.proportional = d->rt.setpoint - d->rt.pitch_angle;
+			d->pid.prop_smooth = d->rt.setpoint - d->rt.pitch_smooth_kalman;
+			d->pid.abs_prop_smooth = fabsf(d->pid.prop_smooth);
+
+			//Check for braking conditions and braking curves
+			state->braking_pos = sign(p->pid.proportional) != m->erpm_sign;
+			check_brake_kp(&d->pid,  &d->state,  &d->tnt_conf,  &d->roll_brake_kp,  &d->yaw_brake_kp); //Check that there are appropriate kp values for pitch roll and yaw
+
+			//Select and Apply Pitch kp and kp rate
+			new_pid_value = d->rt.proportional * pitch_kp_calc(&d->pid, &d->rt, &d->accel_kp,  &d->brake_kp,  &d->pid_dbg);
+			pitch_kprate_apply(&d->pid, &d->rt,  &d->accel_kp,  &d->brake_kp,  &d->pid_dbg);
 			
-			state->braking_pos = sign(p->proportional) != m->erpm_sign;
-
-			new_pid_value = d->rt.proportional * pitch_kp_calc(PidData *p, Runttime *rt, KpArray *accel_kp, KpArray *brake_kp, PidDebug *pid_dbg);
-			pitch_kprate_apply(PidData *p, Runttime *rt, KpArray *accel_kp, KpArray *brake_kp, PidDebug *pid_dbg);
+			// Select Roll Kp
+			float rollkp = 0;
+			rollkp = angle_kp_select(d->rt.abs_roll_angle, 
+				d->pid.brake_roll ? &d->roll_brake_kp : &d->roll_accel_kp);
 			
-
-
+			//ERPM Scale
+			rollkp *= roll_erpm_scale(&d->pid,  &d->state, &d->rt, &d->motor, &d->roll_accel_kp, &d->tnt_conf);
+			
+			//Apply Roll Boost
+			d->pid.roll_pid_mod = .99 * d->pid.roll_pid_mod + .01 * rollkp * fabsf(new_pid_value) * d->motor.erpm_sign; 	//always act in the direciton of travel
+			d->pid.pid_mod += d->pid.roll_pid_mod;
+			d->debug2 = d->pid.brake_roll ? -rollkp : rollkp;	
+				
 			// Calculate yaw change
 			calc_yaw_change(&d->yaw, d->rt.yaw_angle, &d->yaw_dbg);
 
 			//Select Yaw Kp
 			float yawkp = 0;
-			bool brake_yaw = d->yaw_brake_kp.count!=0 && d->state.braking_pos;
 			yawkp = angle_kp_select(d->yaw.abs_change, 
-				brake_yaw ? &d->yaw_brake_kp : &d->yaw_accel_kp);
+				d->pid.brake_yaw ? &d->yaw_brake_kp : &d->yaw_accel_kp);
 			
 			//Apply ERPM Scale
-			erpmscale = ((brake_yaw && d->motor.abs_erpm < 750) || 
+			erpmscale = ((d->pid.brake_yaw && d->motor.abs_erpm < 750) || 
 				d->motor.abs_erpm < d->tnt_conf.yaw_minerpm || 
 				d->state.sat == SAT_CENTERING) ? 0 : 1;
-			/*erpmscale = 1;
-			if ((brake_yaw && d->motor.abs_erpm < 750) ||
-				d->motor.abs_erpm < d->tnt_conf.yaw_minerpm ||
-				d->state.sat == SAT_CENTERING) { 				
-				// Enforce minimum speed and always reduce scaler to 0 when braking below 750 erpm
-				erpmscale = 0;
-			} else if (d->yaw_accel_kp.count!=0 && d->motor.abs_erpm > d->tnt_conf.yaw_lowerpm) { 
-				erpmscale = 1 + erpm_scale(config->yaw_lowerpm, config->yaw_higherpm, 0, config->yaw_maxscale / 100.0, d->motor.abs_erpm);
-			} */
 			d->yaw_dbg.debug5 = erpmscale;
-			d->yaw_dbg.debug3 = brake_yaw ? -yawkp : yawkp;
+			d->yaw_dbg.debug3 = d->pid.brake_yaw ? -yawkp : yawkp;
 			yawkp *= erpmscale;
-			d->yaw_dbg.debug4 = brake_yaw ? -yawkp : yawkp;
+			d->yaw_dbg.debug4 = d->pid.brake_yaw ? -yawkp : yawkp;
 			d->yaw_dbg.debug2 = fmaxf(d->yaw_dbg.debug2, yawkp);
 			
 			//Apply Yaw Boost
-			d->yaw_pid_mod = .99 * d->yaw_pid_mod + .01 * yawkp * fabsf(new_pid_value) * d->motor.erpm_sign; 	//always act in the direciton of travel
-			d->pid_mod += d->yaw_pid_mod;
+			d->pid.yaw_pid_mod = .99 * d->pid.yaw_pid_mod + .01 * yawkp * fabsf(new_pid_value) * d->motor.erpm_sign; 	//always act in the direciton of travel
+			d->pid.pid_mod += d->pid.yaw_pid_mod;
 			
 			//Soft Start
 			if (d->softstart_pid_limit < d->mc_current_max) {
-				d->pid_mod = fminf(fabsf(d->pid_mod), d->softstart_pid_limit) * sign(d->pid_mod);
+				d->pid.pid_mod = fminf(fabsf(d->pid.pid_mod), d->softstart_pid_limit) * sign(d->pid.pid_mod);
 				d->softstart_pid_limit += d->softstart_ramp_step_size;
 			}
 
 			// Apply PID modifiers
-			new_pid_value += d->pid_mod; 
+			new_pid_value += d->pid.pid_mod; 
 			
 			// Current Limiting
 			float current_limit = d->motor.braking ? d->mc_current_min : d->mc_current_max;
