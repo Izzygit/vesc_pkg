@@ -766,6 +766,7 @@ static void tnt_thd(void *arg) {
 		apply_pitch_filters(&d->rt, &d->tnt_conf);
 		motor_data_update(&d->motor);
 		update_remote(&d->tnt_conf, &d->remote);
+		apply_angle_drop(&d->drop, &d->rt); //corrects accel z with angles
 		check_drop(&d->drop, &d->motor, &d->rt, &d->state, &d->drop_dbg);
 		
 		//Footpad Sensor
