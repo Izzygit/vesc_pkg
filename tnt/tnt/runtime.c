@@ -48,3 +48,23 @@ void apply_pitch_filters(RuntimeData *rt, tnt_config *config){
 		 apply_kalman(rt->pitch_smooth, rt->gyro[1], &rt->pitch_smooth_kalman, rt->diff_time, &rt->pitch_kalman);
 	} else {rt->pitch_smooth_kalman = rt->pitch_smooth;}
 }
+
+void calc_yaw_change(YawData *yaw, float yaw_angle, YawDebugData *yaw_dbg){ 
+	float new_change = yaw_angle - yaw->last_angle;
+	if ((new_change == 0) || // Exact 0's only happen when the IMU is not updating between loops
+	    (fabsf(new_change) > 100)) { // yaw flips signs at 180, ignore those changes
+		new_change = yaw->last_change;
+	}
+	yaw->last_change = new_change;
+	yaw->last_angle = yaw_angle;
+	yaw->change = yaw->change * 0.8 + 0.2 * (new_change);
+	yaw->abs_change = fabsf(yaw->change);
+	yaw_dbg->debug1 = yaw->change;
+}
+
+void yaw_reset(YawData *yaw, YawDebugData *yaw_dbg){ 
+	yaw->last_angle = 0;
+	yaw->last_change = 0;
+	yaw->abs_change = 0;
+	yaw_dbg->debug2 = 0;
+}
