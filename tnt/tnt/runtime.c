@@ -18,6 +18,7 @@
 #include "runtime.h"
 #include "vesc_c_if.h"
 #include <math.h>
+#include "utils_tnt.h"
 
 void runtime_data_update(RuntimeData *rt) {
 	// Update times
