@@ -158,7 +158,6 @@ typedef struct {
 	YawData yaw;
 	YawDebugData yaw_dbg;
 	float yaw_pid_mod;
-	float yaw_angle;
 
 	//Drop
 	DropData drop;
@@ -896,7 +895,7 @@ static void tnt_thd(void *arg) {
 			d->debug2 = brake_roll ? -rollkp : rollkp;	
 
 			// Calculate yaw change
-			calc_yaw_change(&d->yaw, d->yaw_angle, &d->yaw_dbg);
+			calc_yaw_change(&d->yaw, d->rt.yaw_angle, &d->yaw_dbg);
 
 			//Select Yaw Kp
 			float yawkp = 0;
@@ -1205,7 +1204,7 @@ static void send_realtime_data(data *d){
 		buffer_append_float32_auto(buffer, d->debug2, &ind); //rollkp d->debug2
 	} else if (d->tnt_conf.is_yawdebug_enabled) {
 		buffer[ind++] = 4;
-		buffer_append_float32_auto(buffer, d->yaw_angle, &ind); //yaw angle
+		buffer_append_float32_auto(buffer, d->rt.yaw_angle, &ind); //yaw angle
 		buffer_append_float32_auto(buffer, d->yaw_dbg.debug1 * d->tnt_conf.hertz, &ind); //yaw change
 		buffer_append_float32_auto(buffer, d->yaw_dbg.debug3, &ind); //yaw kp raw
 		buffer_append_float32_auto(buffer, d->yaw_dbg.debug4, &ind); //yaw kp scaled	
