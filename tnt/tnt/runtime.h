@@ -42,5 +42,23 @@ typedef struct { //Run time values used in various features
 	ATTITUDE_INFO m_att_ref; // Feature: True Pitch / Yaw
 } RuntimeData;
 
+typedef struct {
+	float last_angle;
+	float last_change;
+	float change;
+	float abs_change;
+	float aggregate;
+} YawData;
+
+typedef struct {
+	float debug1; //change
+	float debug2; //max kp
+	float debug3; //kp unscaled
+	float debug4; //kp scaled
+	float debug5; //erpm scaler
+} YawDebugData;
+
 void runtime_data_update(RuntimeData *rt);
 void apply_pitch_filters(RuntimeData *rt, tnt_config *config);
+void yaw_reset(YawData *yaw, YawDebugData *yaw_dbg);
+void calc_yaw_change(YawData *yaw, float yaw_angle, YawDebugData *yaw_dbg);
