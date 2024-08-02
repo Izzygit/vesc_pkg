@@ -61,4 +61,4 @@ void runtime_data_update(RuntimeData *rt);
 void apply_pitch_filters(RuntimeData *rt, tnt_config *config);
 void yaw_reset(YawData *yaw, YawDebugData *yaw_dbg);
 void calc_yaw_change(YawData *yaw, float yaw_angle, YawDebugData *yaw_dbg);
-void runtime_reset(RuntimeData *rt);
+void reset_runtime(RuntimeData *rt);
