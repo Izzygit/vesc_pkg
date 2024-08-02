@@ -256,13 +256,6 @@ static void configure(data *d) {
 		VESC_IF->set_cfg_float(CFG_PARAM_IMU_mahony_kp, d->tnt_conf.mahony_kp);
 	}
 
-	d->mc_max_temp_fet = VESC_IF->get_cfg_float(CFG_PARAM_l_temp_fet_start) - 3;
-	d->mc_max_temp_mot = VESC_IF->get_cfg_float(CFG_PARAM_l_temp_motor_start) - 3;
-
-	d->mc_current_max = VESC_IF->get_cfg_float(CFG_PARAM_l_current_max);
-	// min current is a positive value here!
-	d->mc_current_min = fabsf(VESC_IF->get_cfg_float(CFG_PARAM_l_current_min));
-
 	// Speed above which to warn users about an impending full switch fault
 	d->switch_warn_beep_erpm = d->tnt_conf.is_footbeep_enabled ? 2000 : 100000;
 
@@ -541,11 +534,11 @@ static void calculate_setpoint_target(data *d) {
 			// The rider has 500ms to react to the triple-beep, or maybe it was just a short spike
 			d->state.sat = SAT_NONE;
 		}
-	} else if (VESC_IF->mc_temp_fet_filtered() > d->mc_max_temp_fet) {
+	} else if (VESC_IF->mc_temp_fet_filtered() > d->motor.mc_max_temp_fet) {
 		// Use the angle from Low-Voltage tiltback, but slower speed from High-Voltage tiltback
 		beep_alert(d, 3, true);
 		d->beep_reason = BEEP_TEMPFET;
-		if (VESC_IF->mc_temp_fet_filtered() > (d->mc_max_temp_fet + 1)) {
+		if (VESC_IF->mc_temp_fet_filtered() > (d->motor.mc_max_temp_fet + 1)) {
 			if (d->motor.erpm > 0) {
 				d->setpoint_target = d->tnt_conf.tiltback_ht_angle;
 			} else {
@@ -556,11 +549,11 @@ static void calculate_setpoint_target(data *d) {
 			// The rider has 1 degree Celsius left before we start tilting back
 			d->state.sat = SAT_NONE;
 		}
-	} else if (VESC_IF->mc_temp_motor_filtered() > d->mc_max_temp_mot) {
+	} else if (VESC_IF->mc_temp_motor_filtered() > d->motor.mc_max_temp_mot) {
 		// Use the angle from Low-Voltage tiltback, but slower speed from High-Voltage tiltback
 		beep_alert(d, 3, true);
 		d->beep_reason = BEEP_TEMPMOT;
-		if (VESC_IF->mc_temp_motor_filtered() > (d->mc_max_temp_mot + 1)) {
+		if (VESC_IF->mc_temp_motor_filtered() > (d->motor.mc_max_temp_mot + 1)) {
 			if (d->motor.erpm > 0) {
 				d->setpoint_target = d->tnt_conf.tiltback_ht_angle;
 			} else {
@@ -869,7 +862,7 @@ static void tnt_thd(void *arg) {
 			d->pid.pid_mod += d->pid.yaw_pid_mod;
 			
 			//Soft Start
-			if (d->softstart_pid_limit < d->mc_current_max) {
+			if (d->softstart_pid_limit < d->motor.mc_current_max) {
 				d->pid.pid_mod = fminf(fabsf(d->pid.pid_mod), d->softstart_pid_limit) * sign(d->pid.pid_mod);
 				d->softstart_pid_limit += d->softstart_ramp_step_size;
 			}
@@ -878,7 +871,7 @@ static void tnt_thd(void *arg) {
 			new_pid_value += d->pid.pid_mod; 
 			
 			// Current Limiting
-			float current_limit = d->motor.braking ? d->mc_current_min : d->mc_current_max;
+			float current_limit = d->motor.braking ? d->motor.mc_current_min : d->motor.mc_current_max;
 			if (fabsf(new_pid_value) > current_limit) {
 				new_pid_value = sign(new_pid_value) * current_limit;
 			}
