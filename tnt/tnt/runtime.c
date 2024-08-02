@@ -64,14 +64,7 @@ void calc_yaw_change(YawData *yaw, float yaw_angle, YawDebugData *yaw_dbg){
 	yaw_dbg->debug1 = yaw->change;
 }
 
-void yaw_reset(YawData *yaw, YawDebugData *yaw_dbg){ 
-	yaw->last_angle = 0;
-	yaw->last_change = 0;
-	yaw->abs_change = 0;
-	yaw_dbg->debug2 = 0;
-}
-
-void reset_runtime(RuntimeData *rt) {
+void reset_runtime(RuntimeData *rt, YawData *yaw, YawDebugData *yaw_dbg) {
 	rt->setpoint = rt->pitch_angle;
 	
 	//Low pass pitch filter
@@ -81,4 +74,10 @@ void reset_runtime(RuntimeData *rt) {
 	//Kalman filter
 	reset_kalman(&rt->pitch_kalman);
 	rt->pitch_smooth_kalman = rt->pitch_angle;
+
+	//Yaw
+	yaw->last_angle = 0;
+	yaw->last_change = 0;
+	yaw->abs_change = 0;
+	yaw_dbg->debug2 = 0;
 }
