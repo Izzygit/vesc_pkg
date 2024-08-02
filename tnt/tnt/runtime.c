@@ -68,3 +68,13 @@ void yaw_reset(YawData *yaw, YawDebugData *yaw_dbg){
 	yaw->abs_change = 0;
 	yaw_dbg->debug2 = 0;
 }
+
+void runtime_reset(RuntimeData *rt) {
+	//Low pass pitch filter
+	rt->pitch_smooth = rt->pitch_angle;
+	biquad_reset(&rt->pitch_biquad);
+	
+	//Kalman filter
+	reset_kalman(&rt->pitch_kalman);
+	rt->pitch_smooth_kalman = rt->pitch_angle;
+}
