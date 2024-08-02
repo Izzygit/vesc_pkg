@@ -71,7 +71,7 @@ void yaw_reset(YawData *yaw, YawDebugData *yaw_dbg){
 	yaw_dbg->debug2 = 0;
 }
 
-void runtime_reset(RuntimeData *rt) {
+void reset_runtime(RuntimeData *rt) {
 	//Low pass pitch filter
 	rt->pitch_smooth = rt->pitch_angle;
 	biquad_reset(&rt->pitch_biquad);
