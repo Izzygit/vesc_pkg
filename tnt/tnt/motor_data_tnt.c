@@ -53,6 +53,11 @@ void motor_data_configure(MotorData *m, tnt_config *config) {
     biquad_configure(&m->duty_biquad, BQ_LOWPASS, 1.0 * config->duty_filter_freq / config->hertz);
    
     m->erpm_sign_factor = 0.9984 / config->hertz; //originally configured for 832 hz to delay an erpm sign change for 1 second (0.0012 factor)
+
+    m->mc_max_temp_fet = VESC_IF->get_cfg_float(CFG_PARAM_l_temp_fet_start) - 3;
+    m->mc_max_temp_mot = VESC_IF->get_cfg_float(CFG_PARAM_l_temp_motor_start) - 3;
+    m->mc_current_max = VESC_IF->get_cfg_float(CFG_PARAM_l_current_max); 
+    m->mc_current_min = fabsf(VESC_IF->get_cfg_float(CFG_PARAM_l_current_min));    // min current is a positive value here!
 }
 
 void update_erpm_sign(MotorData *m) {
