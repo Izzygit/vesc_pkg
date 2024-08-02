@@ -56,6 +56,11 @@ typedef struct {
     float erpm_history[ERPM_ARRAY_SIZE];
     int erpm_idx;
     int last_erpm_idx;
+
+    float mc_max_temp_fet;
+    float mc_max_temp_mot;
+    float mc_current_max;
+    float mc_current_min;
 } MotorData;
 
 void motor_data_reset(MotorData *m);
