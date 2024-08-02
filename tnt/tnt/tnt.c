@@ -521,7 +521,7 @@ static void calculate_setpoint_target(data *d) {
 			d->surge.deactivate = false;
 		}
 	} else if (d->surge.active) {
-		if (d->rt.proportional*d->motor.erpm_sign < d->tnt_conf.surge_pitchmargin) {
+		if (d->pid.proportional*d->motor.erpm_sign < d->tnt_conf.surge_pitchmargin) {
 			d->setpoint_target = d->rt.pitch_angle + d->tnt_conf.surge_pitchmargin * d->motor.erpm_sign;
 			d->state.sat = SAT_SURGE;
 		}
@@ -828,9 +828,18 @@ static void tnt_thd(void *arg) {
 			state->braking_pos = sign(p->pid.proportional) != m->erpm_sign;
 			check_brake_kp(&d->pid,  &d->state,  &d->tnt_conf,  &d->roll_brake_kp,  &d->yaw_brake_kp); //Check that there are appropriate kp values for pitch roll and yaw
 
-			//Select and Apply Pitch kp and kp rate
-			new_pid_value = d->rt.proportional * pitch_kp_calc(&d->pid, &d->rt, &d->accel_kp,  &d->brake_kp,  &d->pid_dbg);
-			pitch_kprate_apply(&d->pid, &d->rt,  &d->accel_kp,  &d->brake_kp,  &d->pid_dbg);
+			//Select and Apply Pitch kp  
+			float kp_mod;
+			kp_mod = angle_kp_select(p->abs_prop_smooth, 
+				d->pid.brake_pitch ? &d->brake_kp : &d->accel_kp);
+			d->debug1 = d->pid.brake_pitch ? -kp_mod : kp_mod;
+			kp_mod *= d->pid.stability_kp;
+			new_pid_value = d->pid.proportional * kp_mod;
+	
+			//Select and Apply Pitch kp  rate			
+			float kp_rate = d->pid.brake_pitch ? d->brake_kp.kp_rate : d->accel_kp.kp_rate;		
+			d->debug3 = kp_rate * (d->pid.stability_kprate - 1);			// Calc the contribution of stability to kp_rate
+			d->pid.pid_mod = kp_rate * -d->rt.gyro[1] * d->pid.stability_kprate;
 			
 			// Select Roll Kp
 			float rollkp = 0;
@@ -839,11 +848,11 @@ static void tnt_thd(void *arg) {
 			
 			//ERPM Scale
 			rollkp *= roll_erpm_scale(&d->pid,  &d->state, &d->rt, &d->motor, &d->roll_accel_kp, &d->tnt_conf);
-			
+			d->debug2 = d->pid.brake_roll ? -rollkp : rollkp;	
+
 			//Apply Roll Boost
 			d->pid.roll_pid_mod = .99 * d->pid.roll_pid_mod + .01 * rollkp * fabsf(new_pid_value) * d->motor.erpm_sign; 	//always act in the direciton of travel
 			d->pid.pid_mod += d->pid.roll_pid_mod;
-			d->debug2 = d->pid.brake_roll ? -rollkp : rollkp;	
 				
 			// Calculate yaw change
 			calc_yaw_change(&d->yaw, d->rt.yaw_angle, &d->yaw_dbg);
@@ -892,17 +901,17 @@ static void tnt_thd(void *arg) {
 			
 			// PID value application
 				
-			d->rt.pid_value = (d->state.wheelslip && d->tnt_conf.is_traction_enabled) ? 0 : 
+			d->pid.pid_value = (d->state.wheelslip && d->tnt_conf.is_traction_enabled) ? 0 : 
 					((d->drop.active && d->tnt_conf.is_drop_enabled) ? 0 : new_pid_value);
-			d->rt.pid_value += haptic_buzz(d, 0.3); //Apply haptic buzz
+			d->pid.pid_value += haptic_buzz(d, 0.3); //Apply haptic buzz
 
 			// Output to motor
 			if (d->surge.active) { 	
 				set_dutycycle(d, d->surge.new_duty_cycle); 		// Set the duty to surge
 			} else if (d->braking.active) {
-				set_brake(d, d->rt.pid_value);				// Use braking function for traction control
+				set_brake(d, d->pid.pid_value);				// Use braking function for traction control
 			} else {
-				set_current(d, d->rt.pid_value); 			// Set current as normal.
+				set_current(d, d->pid.pid_value); 			// Set current as normal.
 			}
 
 			break;
@@ -1048,17 +1057,17 @@ static float app_get_debug(int index) {
 
     switch (index) {
     case (1):
-        return d->rt.pid_value;
+        return d->pid.pid_value;
     case (2):
-        return d->rt.proportional;
+        return d->pid.proportional;
     case (3):
-        return d->rt.proportional;
+        return d->pid.proportional;
     case (4):
-        return d->rt.proportional;
+        return d->pid.proportional;
     case (5):
         return d->rt.setpoint;
     case (6):
-        return d->rt.proportional;
+        return d->pid.proportional;
     case (7):
         return d->motor.erpm;
     case (8):
