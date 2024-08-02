@@ -212,23 +212,6 @@ void apply_stability(PidData *p, MotorData *m, RemoteData *remote, tnt_config *c
 	p->stability_kprate = 1 + p->stabl * config->stabl_rate_max_scale / 100;
 }
 
-float pitch_kp_calc(PidData *p, KpArray *accel_kp, KpArray *brake_kp, PidDebug *pid_dbg) {
-	//Select and Apply Kp
-	float kp_mod;
-	kp_mod = angle_kp_select(p->abs_prop_smooth, 
-		p->brake_pitch ? &brake_kp : &accel_kp);
-	pid_dbg->debug1 = brake_curve ? -kp_mod : kp_mod;
-	kp_mod *= p->stability_kp;
-	return kp_mod;
-}
-
-void pitch_kprate_apply(PidData *p, Runttime *rt, KpArray *accel_kp, KpArray *brake_kp, PidDebug *pid_dbg) {
-	// Select and Apply Rate P
-	float kp_rate = p->brake_pitch ? brake_kp->kp_rate : accel_kp->kp_rate;		
-	p->pid_mod = kp_rate * -rt->gyro[1] * p->stability_kprate;
-	pid_dbg->debug3 = kp_rate * (p->stability_kprate - 1);			// Calc the contribution of stability to kp_rate
-}
-
 void check_brake_kp(PidData *p, State *state, tnt_config *config, KpArray *roll_brake_kp, KpArray *yaw_brake_kp) {
 	p->brake_roll = d->roll_brake_kp.count!=0 && state->braking_pos;
 	p->brake_pitch = config->brake_curve && state->braking_pos;
