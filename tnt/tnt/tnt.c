@@ -322,7 +322,6 @@ static void reset_vars(data *d) {
 		motor_data_reset(&d->motor);
 	
 		// Set values for startup
-		d->rt.setpoint = d->rt.pitch_angle;
 		d->setpoint_target_interpolated = d->rt.pitch_angle;
 		d->setpoint_target = 0;
 		d->brake_timeout = 0;
@@ -341,16 +340,9 @@ static void reset_vars(data *d) {
 		// Traction Control
 		reset_traction(&d->traction, &d->state, &d->braking);
 		
-		//Low pass pitch filter
-		d->prop_smooth = 0;
-		d->abs_prop_smooth = 0;
-		d->rt.pitch_smooth = d->rt.pitch_angle;
-		biquad_reset(&d->rt.pitch_biquad);
+		// Runtime 
+		reset_runtime(&d->rt);
 		
-		//Kalman filter
-		reset_kalman(&d->rt.pitch_kalman);
-		d->rt.pitch_smooth_kalman = d->rt.pitch_angle;
-	
 		// Haptic Buzz:
 		d->haptic_tone_in_progress = false;
 		d->haptic_timer = d->rt.current_time;
