@@ -312,6 +312,7 @@ static void configure(data *d) {
 
 static void reset_vars(data *d) {
 	if (d->rt.current_time - d->disengage_timer > 1) {//Delay reset in case there is a minor disengagement
+		//Motor
 		motor_data_reset(&d->motor);
 	
 		// Set values for startup
@@ -320,6 +321,9 @@ static void reset_vars(data *d) {
 		d->brake_timeout = 0;
 		d->softstart_pid_limit = 0;
 		d->startup_pitch_tolerance = d->tnt_conf.startup_pitch_tolerance;
+		
+		// Runtime 
+		reset_runtime(&d->rt, &d->yaw, &d->yaw_dbg);
 		
 		//Control variables
 		reset_pid(&d->pid);
@@ -333,19 +337,13 @@ static void reset_vars(data *d) {
 		// Traction Control
 		reset_traction(&d->traction, &d->state, &d->braking);
 		
-		// Runtime 
-		reset_runtime(&d->rt);
-		
+		// Drop
+		reset_drop(&d->drop);		
+
 		// Haptic Buzz:
 		d->haptic_tone_in_progress = false;
 		d->haptic_timer = d->rt.current_time;
 		d->applied_haptic_current = 0;
-	
-		//Yaw Boost
-		yaw_reset(&d->yaw, &d->yaw_dbg);
-		
-		// Drop
-		reset_drop(&d->drop);
 	}
 	state_engage(&d->state);
 }
