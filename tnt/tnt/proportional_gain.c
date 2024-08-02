@@ -239,4 +239,6 @@ void reset_pid(PidData *p) {
 	p->roll_pid_mod = 0;
 	p->yaw_pid_mod = 0;
 	p->stabl = 0;
+	d->prop_smooth = 0;
+	d->abs_prop_smooth = 0;
 }
