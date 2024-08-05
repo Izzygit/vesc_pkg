@@ -247,7 +247,7 @@ static void configure(data *d) {
 	d->stabl_step_size_down = 1.0 * d->tnt_conf.stabl_ramp_down / 100.0 / d->tnt_conf.hertz;
 	
 	// Feature: Soft Start
-	d->softstart_ramp_step_size = 100.0 / d->tnt_conf.hertz;
+	d->pid.softstart_ramp_step_size = 100.0 / d->tnt_conf.hertz;
 	// Feature: Dirty Landings
 	d->startup_pitch_trickmargin = d->tnt_conf.startup_dirtylandings_enabled ? 10 : 0;
 
@@ -319,7 +319,6 @@ static void reset_vars(data *d) {
 		d->setpoint_target_interpolated = d->rt.pitch_angle;
 		d->setpoint_target = 0;
 		d->brake_timeout = 0;
-		d->softstart_pid_limit = 0;
 		d->startup_pitch_tolerance = d->tnt_conf.startup_pitch_tolerance;
 		
 		// Runtime 
@@ -840,9 +839,8 @@ static void tnt_thd(void *arg) {
 
 			//Apply Remote Tilt and Sticky Tilt
 			float input_tiltback_target = d->remote.throttle_val * d->tnt_conf.inputtilt_angle_limit;
-			if (d->tnt_conf.is_stickytilt_enabled) { 
+			if (d->tnt_conf.is_stickytilt_enabled)
 				apply_stickytilt(&d->remote, &d->st_tilt, d->motor.current_filtered, &input_tiltback_target);
-			}
 			apply_inputtilt(&d->remote, input_tiltback_target); //produces output d->remote.inputtilt_interpolated
 			d->rt.setpoint += d->tnt_conf.enable_throttle_stability ? 0 : d->remote.inputtilt_interpolated; //Don't apply if we are using the throttle for stability
 
@@ -851,11 +849,10 @@ static void tnt_thd(void *arg) {
 
 			//Apply Stability
 			if (d->tnt_conf.enable_speed_stability || 
-			    d->tnt_conf.enable_throttle_stability) {
+			    d->tnt_conf.enable_throttle_stability) 
 				apply_stability(&d->pid, &d->motor, &d->remote, &d->tnt_conf);
-			}
 			
-			// Do PID maths
+			// Calculate proportional difference for raw and filtered pitch
 			d->pid.proportional = d->rt.setpoint - d->rt.pitch_angle;
 			d->pid.prop_smooth = d->rt.setpoint - d->rt.pitch_smooth_kalman;
 			d->pid.abs_prop_smooth = fabsf(d->pid.prop_smooth);
@@ -864,17 +861,10 @@ static void tnt_thd(void *arg) {
 			state->braking_pos = sign(p->pid.proportional) != m->erpm_sign;
 			check_brake_kp(&d->pid,  &d->state,  &d->tnt_conf,  &d->roll_brake_kp,  &d->yaw_brake_kp); //Check that there are appropriate kp values for pitch roll and yaw
 
-			//Apply Pitch, Roll, and Yaw Kp
+			//Apply Pitch, Roll, Yaw Kp, and Soft Start
 			new_pid_value = apply_pitch_kp(d);
 			apply_kp_modifiers(d);
-						
-			//Apply Soft Start
-			if (d->softstart_pid_limit < d->motor.mc_current_max) {
-				d->pid.pid_mod = fminf(fabsf(d->pid.pid_mod), d->softstart_pid_limit) * sign(d->pid.pid_mod);
-				d->softstart_pid_limit += d->softstart_ramp_step_size;
-			}
-
-			// Apply PID modifiers for roll, yaw, and pitch rate 
+			apply_soft_start(&d->pid, &d->motor);
 			new_pid_value += d->pid.pid_mod; 
 			
 			// Current Limiting
