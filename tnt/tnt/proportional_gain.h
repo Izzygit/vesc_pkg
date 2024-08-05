@@ -38,6 +38,8 @@ typedef struct {
 	float stabl_step_size_up, stabl_step_size_down;
 	float roll_pid_mod;
 	float yaw_pid_mod;
+	float softstart_pid_limit;
+	float softstart_ramp_size;
 } PidData;
 
 void pitch_kp_configure(const tnt_config *config, KpArray *k, int mode);
@@ -50,3 +52,4 @@ void apply_stability(PidData *p, MotorData *m, RemoteData *remote, tnt_config *c
 void check_brake_kp(PidData *p, State *state, tnt_config *config, KpArray *roll_brake_kp, KpArray *yaw_brake_kp);
 float roll_erpm_scale(PidData *p, State *state, Runttime *rt, MotorData *m, KpArray *roll_accel_kp, tnt_config *config);
 void reset_pid(PidData *p);
+void apply_soft_start(PidData *p, MotorData *m);
