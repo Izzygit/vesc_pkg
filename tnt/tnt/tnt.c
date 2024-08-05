@@ -662,7 +662,7 @@ static float haptic_buzz(data *d, float note_period) {
 	return d->applied_haptic_current;
 }
 
-float apply_kp(data *d) {
+float apply_pitch_kp(data *d) {
 	//Select and Apply Pitch kp  
 	float kp_mod, new_pid_value;
 	kp_mod = angle_kp_select(p->abs_prop_smooth, 
@@ -671,6 +671,10 @@ float apply_kp(data *d) {
 	kp_mod *= d->pid.stability_kp;
 	new_pid_value = d->pid.proportional * kp_mod;
 
+	return new_pid_value;
+}
+
+void apply apply_kp_modifiers(data *d) {
 	//Select and Apply Pitch kp  rate			
 	float kp_rate = d->pid.brake_pitch ? d->brake_kp.kp_rate : d->accel_kp.kp_rate;		
 	d->debug3 = kp_rate * (d->pid.stability_kprate - 1);			// Calc the contribution of stability to kp_rate
@@ -701,17 +705,14 @@ float apply_kp(data *d) {
 	erpmscale = ((d->pid.brake_yaw && d->motor.abs_erpm < 750) || 
 		d->motor.abs_erpm < d->tnt_conf.yaw_minerpm || 
 		d->state.sat == SAT_CENTERING) ? 0 : 1;
-	d->yaw_dbg.debug5 = erpmscale;
-	d->yaw_dbg.debug3 = d->pid.brake_yaw ? -yawkp : yawkp;
 	yawkp *= erpmscale;
+	d->yaw_dbg.debug5 = erpmscale;
 	d->yaw_dbg.debug4 = d->pid.brake_yaw ? -yawkp : yawkp;
 	d->yaw_dbg.debug2 = fmaxf(d->yaw_dbg.debug2, yawkp);
 	
 	//Apply Yaw Boost
 	d->pid.yaw_pid_mod = .99 * d->pid.yaw_pid_mod + .01 * yawkp * fabsf(new_pid_value) * d->motor.erpm_sign; 	//always act in the direciton of travel
 	d->pid.pid_mod += d->pid.yaw_pid_mod;
-
-	return new_pid_value;
 }
 
 static void brake(data *d) {
@@ -864,7 +865,8 @@ static void tnt_thd(void *arg) {
 			check_brake_kp(&d->pid,  &d->state,  &d->tnt_conf,  &d->roll_brake_kp,  &d->yaw_brake_kp); //Check that there are appropriate kp values for pitch roll and yaw
 
 			//Apply Pitch, Roll, and Yaw Kp
-			new_pid_value = apply_kp(d);
+			new_pid_value = apply_pitch_kp(d);
+			apply_kp_modifiers(d);
 						
 			//Apply Soft Start
 			if (d->softstart_pid_limit < d->motor.mc_current_max) {
@@ -1144,10 +1146,10 @@ static void send_realtime_data(data *d){
 	} else if (d->tnt_conf.is_yawdebug_enabled) {
 		buffer[ind++] = 4;
 		buffer_append_float32_auto(buffer, d->rt.yaw_angle, &ind); //yaw angle
-		buffer_append_float32_auto(buffer, d->yaw_dbg.debug1 * d->tnt_conf.hertz, &ind); //yaw change
-		buffer_append_float32_auto(buffer, d->yaw_dbg.debug3, &ind); //yaw kp raw
-		buffer_append_float32_auto(buffer, d->yaw_dbg.debug4, &ind); //yaw kp scaled	
 		buffer_append_float32_auto(buffer, d->yaw_dbg.debug5, &ind); //erpm scaler
+		buffer_append_float32_auto(buffer, d->yaw_dbg.debug1 * d->tnt_conf.hertz, &ind); //yaw change
+		buffer_append_float32_auto(buffer, d->yaw_dbg.debug3, &ind); //max yaw change
+		buffer_append_float32_auto(buffer, d->yaw_dbg.debug4, &ind); //yaw kp 	
 		buffer_append_float32_auto(buffer, d->yaw_dbg.debug2, &ind); //max kp change
 	} else if (d->tnt_conf.is_dropdebug_enabled) {
 		buffer[ind++] = 5;
