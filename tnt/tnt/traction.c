@@ -19,7 +19,7 @@
 #include <math.h>
 #include "utils_tnt.h"
 
-void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeData *rt, tnt_config *config, TractionDebug *traction_dbg){
+void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeData *rt, tnt_config *config, BrakingData *braking, TractionDebug *traction_dbg){
 	float erpmfactor = fmaxf(1, lerp(0, config->wheelslip_scaleerpm, config->wheelslip_scaleaccel, 1, m->abs_erpm));
 	bool start_condition1 = false;
 	bool start_condition2 = false;
@@ -33,23 +33,18 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 		} else {
 			//This section determines if the wheel is acted on by outside forces by detecting acceleration direction change
 			if (traction->highaccelon1) { 
-				if (sign(traction->accelstartval) != sign(m->accel_filtered)) { 
+				if (sign(traction->accelstartval) != sign(m->accel_filtered))
 				// First we identify that the wheel has deccelerated due to traciton control, switching the sign
 					traction->highaccelon1 = false;				
-				} 
 			} else if (sign(m->accel_filtered)!= sign(m->last_accel_filtered)) { 
 			// Next we check to see if accel direction changes again from outside forces 
-					deactivate_traction(traction, state, rt, traction_dbg, 1);
+				deactivate_traction(traction, state, rt, traction_dbg, 1);
 			}
 			
 			//This section determines if the wheel is acted on by outside forces by detecting acceleration magnitude
 			if (traction->highaccelon2) {
-				if (fabsf(m->accel_avg) < traction->slowed_accel) {	 	
-				// First we identify that the wheel has deccelerated due to traciton control
-					traction->highaccelon2 = false;	
-				} else if (rt->current_time - traction->timeron > config->pitch_filter/100) {	// Time out at 800ms if wheel does not deccelerate
-					deactivate_traction(traction, state, rt, traction_dbg, 5);
-				}
+				if (fabsf(m->accel_avg) < traction->slowed_accel) 	
+					traction->highaccelon2 = false;		// First we identify that the wheel has deccelerated
 			} else if (fabsf(m->accel_avg) > traction->end_accel) {
 			// Next we check to see if accel magnitude increases from outside forces 
 				deactivate_traction(traction, state, rt, traction_dbg, 2);
@@ -68,12 +63,12 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 			//Check motor erpm and acceleration to determine the correct detection condition to use if any
 			if (m->erpm_sign == sign(m->erpm_history[m->last_erpm_idx])) { 							//Check sign of the motor at the start of acceleration
 				if (fabsf(m->erpm_filtered) > fabsf(m->erpm_history[m->last_erpm_idx])) { 						//If signs the same check for magnitude increase
-					start_condition1 = (sign(m->current) * m->accel_avg > traction->start_accel * erpmfactor) &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
-					    (!state->braking_pos);									// Do not apply for braking 
+					start_condition1 = sign(m->current) * m->accel_avg > traction->start_accel * erpmfactor &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
+			   	    !state->braking_pos && !braking->active;									// Do not apply for braking 								
 				} // else if (...TODO Put working braking condition here
 			} else if (sign(m->erpm_sign_soft) != sign(m->accel_avg)) {				// If the motor is back spinning engage but don't allow wheelslip on landing
-				start_condition2 = (sign(m->current) * m->accel_avg > traction->start_accel * erpmfactor) &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
-			   	    (!state->braking_pos);									// Do not apply for braking 
+				start_condition2 = sign(m->current) * m->accel_avg > traction->start_accel * erpmfactor &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
+			   	    !state->braking_pos && (rt->current_time - braking->brake_delay > 0.2);									// Do not apply for braking 
 			}
 		}
 		
