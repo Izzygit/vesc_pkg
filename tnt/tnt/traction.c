@@ -26,8 +26,8 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 
 	// Conditions to end traction control
 	if (state->wheelslip) {
-		if (rt->current_time - traction->timeron > .8) {		// Time out at 500ms
-			deactivate_traction(traction, state, rt, traction_dbg, 6);
+		if (rt->current_time - traction->timeron > 1) {		// Time out at 1s
+			deactivate_traction(traction, state, rt, traction_dbg, 5);
 		} else if (fabsf(rt->proportional) > config->wheelslip_max_angle) {
 			deactivate_traction(traction, state, rt, traction_dbg, 4);
 		} else {
