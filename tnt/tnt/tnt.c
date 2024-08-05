@@ -662,6 +662,58 @@ static float haptic_buzz(data *d, float note_period) {
 	return d->applied_haptic_current;
 }
 
+float apply_kp(data *d) {
+	//Select and Apply Pitch kp  
+	float kp_mod, new_pid_value;
+	kp_mod = angle_kp_select(p->abs_prop_smooth, 
+		d->pid.brake_pitch ? &d->brake_kp : &d->accel_kp);
+	d->debug1 = d->pid.brake_pitch ? -kp_mod : kp_mod;
+	kp_mod *= d->pid.stability_kp;
+	new_pid_value = d->pid.proportional * kp_mod;
+
+	//Select and Apply Pitch kp  rate			
+	float kp_rate = d->pid.brake_pitch ? d->brake_kp.kp_rate : d->accel_kp.kp_rate;		
+	d->debug3 = kp_rate * (d->pid.stability_kprate - 1);			// Calc the contribution of stability to kp_rate
+	d->pid.pid_mod = kp_rate * -d->rt.gyro[1] * d->pid.stability_kprate;
+	
+	// Select Roll Kp
+	float rollkp = 0;
+	rollkp = angle_kp_select(d->rt.abs_roll_angle, 
+		d->pid.brake_roll ? &d->roll_brake_kp : &d->roll_accel_kp);
+	
+	//ERPM Scale
+	rollkp *= roll_erpm_scale(&d->pid,  &d->state, &d->rt, &d->motor, &d->roll_accel_kp, &d->tnt_conf);
+	d->debug2 = d->pid.brake_roll ? -rollkp : rollkp;	
+
+	//Apply Roll Boost
+	d->pid.roll_pid_mod = .99 * d->pid.roll_pid_mod + .01 * rollkp * fabsf(new_pid_value) * d->motor.erpm_sign; 	//always act in the direciton of travel
+	d->pid.pid_mod += d->pid.roll_pid_mod;
+		
+	// Calculate yaw change
+	calc_yaw_change(&d->yaw, d->rt.yaw_angle, &d->yaw_dbg);
+
+	//Select Yaw Kp
+	float yawkp = 0;
+	yawkp = angle_kp_select(d->yaw.abs_change, 
+		d->pid.brake_yaw ? &d->yaw_brake_kp : &d->yaw_accel_kp);
+	
+	//Apply ERPM Scale
+	erpmscale = ((d->pid.brake_yaw && d->motor.abs_erpm < 750) || 
+		d->motor.abs_erpm < d->tnt_conf.yaw_minerpm || 
+		d->state.sat == SAT_CENTERING) ? 0 : 1;
+	d->yaw_dbg.debug5 = erpmscale;
+	d->yaw_dbg.debug3 = d->pid.brake_yaw ? -yawkp : yawkp;
+	yawkp *= erpmscale;
+	d->yaw_dbg.debug4 = d->pid.brake_yaw ? -yawkp : yawkp;
+	d->yaw_dbg.debug2 = fmaxf(d->yaw_dbg.debug2, yawkp);
+	
+	//Apply Yaw Boost
+	d->pid.yaw_pid_mod = .99 * d->pid.yaw_pid_mod + .01 * yawkp * fabsf(new_pid_value) * d->motor.erpm_sign; 	//always act in the direciton of travel
+	d->pid.pid_mod += d->pid.yaw_pid_mod;
+
+	return new_pid_value;
+}
+
 static void brake(data *d) {
     // Brake timeout logic
     float brake_timeout_length = 1;  // Brake Timeout hard-coded to 1s
@@ -811,61 +863,16 @@ static void tnt_thd(void *arg) {
 			state->braking_pos = sign(p->pid.proportional) != m->erpm_sign;
 			check_brake_kp(&d->pid,  &d->state,  &d->tnt_conf,  &d->roll_brake_kp,  &d->yaw_brake_kp); //Check that there are appropriate kp values for pitch roll and yaw
 
-			//Select and Apply Pitch kp  
-			float kp_mod;
-			kp_mod = angle_kp_select(p->abs_prop_smooth, 
-				d->pid.brake_pitch ? &d->brake_kp : &d->accel_kp);
-			d->debug1 = d->pid.brake_pitch ? -kp_mod : kp_mod;
-			kp_mod *= d->pid.stability_kp;
-			new_pid_value = d->pid.proportional * kp_mod;
-	
-			//Select and Apply Pitch kp  rate			
-			float kp_rate = d->pid.brake_pitch ? d->brake_kp.kp_rate : d->accel_kp.kp_rate;		
-			d->debug3 = kp_rate * (d->pid.stability_kprate - 1);			// Calc the contribution of stability to kp_rate
-			d->pid.pid_mod = kp_rate * -d->rt.gyro[1] * d->pid.stability_kprate;
-			
-			// Select Roll Kp
-			float rollkp = 0;
-			rollkp = angle_kp_select(d->rt.abs_roll_angle, 
-				d->pid.brake_roll ? &d->roll_brake_kp : &d->roll_accel_kp);
-			
-			//ERPM Scale
-			rollkp *= roll_erpm_scale(&d->pid,  &d->state, &d->rt, &d->motor, &d->roll_accel_kp, &d->tnt_conf);
-			d->debug2 = d->pid.brake_roll ? -rollkp : rollkp;	
-
-			//Apply Roll Boost
-			d->pid.roll_pid_mod = .99 * d->pid.roll_pid_mod + .01 * rollkp * fabsf(new_pid_value) * d->motor.erpm_sign; 	//always act in the direciton of travel
-			d->pid.pid_mod += d->pid.roll_pid_mod;
-				
-			// Calculate yaw change
-			calc_yaw_change(&d->yaw, d->rt.yaw_angle, &d->yaw_dbg);
-
-			//Select Yaw Kp
-			float yawkp = 0;
-			yawkp = angle_kp_select(d->yaw.abs_change, 
-				d->pid.brake_yaw ? &d->yaw_brake_kp : &d->yaw_accel_kp);
-			
-			//Apply ERPM Scale
-			erpmscale = ((d->pid.brake_yaw && d->motor.abs_erpm < 750) || 
-				d->motor.abs_erpm < d->tnt_conf.yaw_minerpm || 
-				d->state.sat == SAT_CENTERING) ? 0 : 1;
-			d->yaw_dbg.debug5 = erpmscale;
-			d->yaw_dbg.debug3 = d->pid.brake_yaw ? -yawkp : yawkp;
-			yawkp *= erpmscale;
-			d->yaw_dbg.debug4 = d->pid.brake_yaw ? -yawkp : yawkp;
-			d->yaw_dbg.debug2 = fmaxf(d->yaw_dbg.debug2, yawkp);
-			
-			//Apply Yaw Boost
-			d->pid.yaw_pid_mod = .99 * d->pid.yaw_pid_mod + .01 * yawkp * fabsf(new_pid_value) * d->motor.erpm_sign; 	//always act in the direciton of travel
-			d->pid.pid_mod += d->pid.yaw_pid_mod;
-			
-			//Soft Start
+			//Apply Pitch, Roll, and Yaw Kp
+			new_pid_value = apply_kp(d);
+						
+			//Apply Soft Start
 			if (d->softstart_pid_limit < d->motor.mc_current_max) {
 				d->pid.pid_mod = fminf(fabsf(d->pid.pid_mod), d->softstart_pid_limit) * sign(d->pid.pid_mod);
 				d->softstart_pid_limit += d->softstart_ramp_step_size;
 			}
 
-			// Apply PID modifiers
+			// Apply PID modifiers for roll, yaw, and pitch rate 
 			new_pid_value += d->pid.pid_mod; 
 			
 			// Current Limiting
@@ -883,7 +890,6 @@ static void tnt_thd(void *arg) {
 				check_traction_braking(&d->motor, &d->braking, &d->state, &d->rt, &d->tnt_conf, d->remote.inputtilt_interpolated, &d->braking_dbg);
 			
 			// PID value application
-				
 			d->pid.pid_value = (d->state.wheelslip && d->tnt_conf.is_traction_enabled) ? 0 : 
 					((d->drop.active && d->tnt_conf.is_drop_enabled) ? 0 : new_pid_value);
 			d->pid.pid_value += haptic_buzz(d, 0.3); //Apply haptic buzz
