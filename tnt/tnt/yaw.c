@@ -32,6 +32,7 @@ void calc_yaw_change(YawData *yaw, float yaw_angle, YawDebugData *yaw_dbg){
 	yaw->change = yaw->change * 0.8 + 0.2 * (new_change);
 	yaw->abs_change = fabsf(yaw->change);
 	yaw_dbg->debug1 = yaw->change;
+	yaw_dbg->debug3 = fmaxf(yaw_dbg->debug3, yaw->abs_change);
 }
 
 void yaw_reset(YawData *yaw, YawDebugData *yaw_dbg){ 
@@ -39,6 +40,7 @@ void yaw_reset(YawData *yaw, YawDebugData *yaw_dbg){
 	yaw->last_change = 0;
 	yaw->abs_change = 0;
 	yaw_dbg->debug2 = 0;
+	yaw_dbg->debug3 = 0;
 }
 
 float erpm_scale(float lowvalue, float highvalue, float lowscale, float highscale, float abs_erpm){ 
