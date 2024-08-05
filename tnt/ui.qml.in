@@ -150,12 +150,12 @@ Item {
         	    var debug5 = dv.getFloat32(ind); ind += 4; //stabl
 		    var debug6 = dv.getFloat32(ind); ind += 4; //rollkp
                 } else if (debug_state == 4) {
-                    var debug6 = dv.getFloat32(ind); ind += 4; //yaw angle
-                    var debug1 = dv.getFloat32(ind); ind += 4; //yaw change
-		    var debug2 = dv.getFloat32(ind); ind += 4; //yaw kp raw
-      		    var debug3 = dv.getFloat32(ind); ind += 4; //yaw kp scaled
-                    var debug4 = dv.getFloat32(ind); ind += 4; //erpm scaler 
-                    var debug5 = dv.getFloat32(ind); ind += 4; //max kp
+                    var debug1 = dv.getFloat32(ind); ind += 4; //yaw angle
+                    var debug2 = dv.getFloat32(ind); ind += 4; //erpm scaler
+		    var debug3 = dv.getFloat32(ind); ind += 4; //yaw change
+      		    var debug4 = dv.getFloat32(ind); ind += 4; //max yaw change
+                    var debug5 = dv.getFloat32(ind); ind += 4; // yaw kp 
+                    var debug6 = dv.getFloat32(ind); ind += 4; //max kp
                 } else if (debug_state == 5) {
                     var debug1 = dv.getFloat32(ind); ind += 4; //drop duration 
                     var debug2 = dv.getFloat32(ind); ind += 4; //applied reduction
@@ -313,7 +313,13 @@ Item {
 				"Last ERPM           : " + debug3.toFixed(0) + " ERPM\n" +
 				"End Condition       : " + debug5.toFixed(0) + "\n" +
 				"Last Duration       : " + debug6.toFixed(3) + " s\n" +
-				"Wheelslip Count     : " + debug7.toFixed(0) + "\n" 
+				"Wheelslip Count     : " + debug7.toFixed(0) + "\n" +
+    				"End Conditions \n
+				1 - Accel Direction Change \n
+    				2 - Accel Magnitude Change \n
+				3 - Reverse Direction \n
+    				4 - Pitch Angle Limit \n
+				5 - 1 Second Timeout \n"
 	                } else if (debug_state == 2) {
 				debug.text =
 				"Start Current       : " + debug7.toFixed(0) + " A\n" +
@@ -333,12 +339,12 @@ Item {
 				"Roll Kp             : " + debug6.toFixed(2) + "\n" 
 			} else if (debug_state == 4) {
 				debug.text =
-				"Yaw Angle           : " + debug6.toFixed(1) + " ° \n" +
-				"Yaw Change          : " + debug1.toFixed(0) + " °/s \n" +         
-				"Yaw Kp (raw)        : " + debug2.toFixed(2) + " \n" +
-    				"Yaw Kp (scaled)     : " + debug3.toFixed(2) + " \n" +
-				"ERPM Scaler         : " + debug4.toFixed(1) + " \n" +
-    				"Max Yaw Kp          : " + debug5.toFixed(2) + " \n" 
+				"Yaw Angle           : " + debug1.toFixed(1) + " ° \n" +
+ 				"ERPM Scaler         : " + debug2.toFixed(1) + " \n" +
+				"Yaw Change          : " + debug3.toFixed(0) + " °/s \n" +         
+     				"Max Yaw Change      : " + debug4.toFixed(0) + " °/s \n" +
+     				"Yaw Kp              : " + debug5.toFixed(2) + " \n" +
+    				"Max Yaw Kp          : " + debug6.toFixed(2) + " \n" 
     			} else if (debug_state == 5) {
 				debug.text =
 				"Accel Z             : " + debug1.toFixed(2) + " g\n" +
@@ -356,7 +362,11 @@ Item {
 				"Max ERPM            : " + debug4.toFixed(0) + " ERPM\n" +
 				"End Condition       : " + debug5.toFixed(0) + "\n" +
 				"Total Duration      : " + debug6.toFixed(1) + " s\n" +
-				"Brake Count         : " + debug7.toFixed(0) + "\n" 
+				"Brake Count         : " + debug7.toFixed(0) + "\n" +
+        			"End Conditions \n
+				1 - Remote Pitch Angle \n
+    				2 - Not in Braking Position \n
+				3 - Minimum Duty \n"
     			} else { 
 				debug.text = 
 				"-- n/a --"       
