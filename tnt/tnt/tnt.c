@@ -220,15 +220,8 @@ void beep_on(data *d, bool force)
 
 static void configure(data *d) {
 	state_init(&d->state, d->tnt_conf.disable_pkg);
-	
-	// This timer is used to determine how long the board has been disengaged / idle. subtract 1 second to prevent the haptic buzz disengage click on "write config"
-	d->disengage_timer = d->rt.current_time - 1;
-
-	// Loop time in microseconds
-	d->loop_time_us = 1e6 / d->tnt_conf.hertz;
-
-	// Loop time in seconds times 20 for a nice long grace period
-	d->motor_timeout_s = 20.0f / d->tnt_conf.hertz;
+	configure_runtime(&d->rt, &d->tnt_conf);
+	configure_pid(&d->pid, &d->tnt_conf);
 
 	//Setpoint Adjustment
 	d->startup_step_size = 1.0 * d->tnt_conf.startup_speed / d->tnt_conf.hertz;
@@ -240,12 +233,6 @@ static void configure(data *d) {
 	d->noseangling_step_size = 1.0 * d->tnt_conf.noseangling_speed / d->tnt_conf.hertz;
 	d->tiltback_duty = 1.0 * d->tnt_conf.tiltback_duty / 100.0;
 
-	//Dynamic Stability
-	d->stabl_step_size_up = 1.0 * d->tnt_conf.stabl_ramp / 100.0 / d->tnt_conf.hertz;
-	d->stabl_step_size_down = 1.0 * d->tnt_conf.stabl_ramp_down / 100.0 / d->tnt_conf.hertz;
-	
-	// Feature: Soft Start
-	d->pid.softstart_ramp_step_size = 100.0 / d->tnt_conf.hertz;
 	// Feature: Dirty Landings
 	d->startup_pitch_trickmargin = d->tnt_conf.startup_dirtylandings_enabled ? 10 : 0;
 
@@ -260,7 +247,7 @@ static void configure(data *d) {
 	d->beeper_enabled = d->tnt_conf.is_beeper_enabled;
 
 	//Haptic Buzz
-	d->haptic_freq = max(1,d->tnt_conf.hertz / 832) * 2; //audible2 from float pkg
+	d->haptic_freq = max(1,d->tnt_conf.hertz / 832) * 4; //vibrate1 from float pkg
 	
 	//Remote
 	configure_remote_features(&d->tnt_conf, &d->remote, &d->st_tilt);
