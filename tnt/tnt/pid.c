@@ -250,3 +250,12 @@ void apply_soft_start(PidData *p, MotorData *m) {
 		p->softstart_pid_limit += p->softstart_ramp_step_size;
 	}
 }
+
+void configure_pid(PidData *p, tnt_config *config) {
+	//Dynamic Stability
+	p->stabl_step_size_up = 1.0 * d->tnt_conf.stabl_ramp / 100.0 / config->hertz;
+	p->stabl_step_size_down = 1.0 * d->tnt_conf.stabl_ramp_down / 100.0 / config->hertz;
+	
+	// Feature: Soft Start
+	p->softstart_ramp_step_size = 100.0 / config->hertz;
+}
