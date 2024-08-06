@@ -39,6 +39,9 @@ typedef struct { //Run time values used in various features
 	float diff_time, last_time;
 	ATTITUDE_INFO m_att_ref; // Feature: True Pitch / Yaw
 	bool brake_pitch, brake_roll, brake_yaw;
+	float disengage_timer;
+	float loop_time_us;
+	float motor_timeout_s;
 } RuntimeData;
 
 typedef struct {
@@ -61,3 +64,4 @@ void runtime_data_update(RuntimeData *rt);
 void apply_pitch_filters(RuntimeData *rt, tnt_config *config);
 void calc_yaw_change(YawData *yaw, float yaw_angle, YawDebugData *yaw_dbg);
 void reset_runtime(RuntimeData *rt, YawData *yaw, YawDebugData *yaw_dbg);
+void configure_runtime(Runtime *rt, tnt_config *config);
