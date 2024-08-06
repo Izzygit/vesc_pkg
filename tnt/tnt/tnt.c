@@ -87,8 +87,6 @@ typedef struct {
 	float startup_step_size;
 	float tiltback_duty_step_size, tiltback_hv_step_size, tiltback_lv_step_size, tiltback_return_step_size, tiltback_ht_step_size;
 	float noseangling_step_size;
-	float mc_max_temp_fet, mc_max_temp_mot;
-	float mc_current_max, mc_current_min;
 	bool duty_beeping;
 	float tiltback_duty;
 
