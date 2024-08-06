@@ -82,7 +82,6 @@ typedef struct {
 	bool beeper_enabled;
 
 	// Config values
-	uint32_t loop_time_us;
 	float startup_pitch_trickmargin, startup_pitch_tolerance;
 	float startup_step_size;
 	float tiltback_duty_step_size, tiltback_hv_step_size, tiltback_lv_step_size, tiltback_return_step_size, tiltback_ht_step_size;
@@ -103,10 +102,9 @@ typedef struct {
 
 	float setpoint_target, setpoint_target_interpolated;
 	float noseangling_interpolated;
-	float disengage_timer, nag_timer;
+	float nag_timer;
 	float idle_voltage;
 	float fault_angle_pitch_timer, fault_angle_roll_timer, fault_switch_timer, fault_switch_half_timer; // Seconds
-	float motor_timeout_s;
 	float brake_timeout; // Seconds
 	float tb_highvoltage_timer;
 	float switch_warn_beep_erpm;
@@ -296,7 +294,7 @@ static void configure(data *d) {
 }
 
 static void reset_vars(data *d) {
-	if (d->rt.current_time - d->disengage_timer > 1) {//Delay reset in case there is a minor disengagement
+	if (d->rt.current_time - d->rt.disengage_timer > 1) {//Delay reset in case there is a minor disengagement
 		//Motor
 		motor_data_reset(&d->motor);
 	
@@ -387,7 +385,7 @@ bool is_engaged(const data *d) {
     if (d->footpad_sensor.state == FS_LEFT || d->footpad_sensor.state == FS_RIGHT) {
         // 5 seconds after stopping we allow starting with a single sensor (e.g. for jump starts)
         bool is_simple_start =
-            d->tnt_conf.startup_simplestart_enabled && (d->rt.current_time - d->disengage_timer > 5);
+            d->tnt_conf.startup_simplestart_enabled && (d->rt.current_time - d->rt.disengage_timer > 5);
 
         if (d->tnt_conf.fault_is_dual_switch || is_simple_start) {
             return true;
@@ -716,7 +714,7 @@ static void brake(data *d) {
 
 static void set_current(data *d, float current) {
     VESC_IF->timeout_reset();
-    VESC_IF->mc_set_current_off_delay(d->motor_timeout_s);
+    VESC_IF->mc_set_current_off_delay(d->rt.motor_timeout_s);
     VESC_IF->mc_set_current(current);
 }
 
@@ -729,13 +727,13 @@ static void set_dutycycle(data *d, float dutycycle){
 	}
 	
 	VESC_IF->timeout_reset();
-	VESC_IF->mc_set_current_off_delay(d->motor_timeout_s);
+	VESC_IF->mc_set_current_off_delay(d->rt.motor_timeout_s);
 	VESC_IF->mc_set_duty(dutycycle); 
 }
 
 static void set_brake(data *d, float current) {
     VESC_IF->timeout_reset();
-    VESC_IF->mc_set_current_off_delay(d->motor_timeout_s);
+    VESC_IF->mc_set_current_off_delay(d->rt.motor_timeout_s);
     VESC_IF->mc_set_brake_current(current);
 }
 
@@ -812,7 +810,7 @@ static void tnt_thd(void *arg) {
 				break;
 			}
 			d->odometer_dirty = 1;
-			d->disengage_timer = d->rt.current_time;
+			d->rt.disengage_timer = d->rt.current_time;
 			
 			//Ride Timer
 			ride_timer(&d->ridetimer, &d->rt);
@@ -883,7 +881,7 @@ static void tnt_thd(void *arg) {
 			break;
 
 		case (STATE_READY):
-			if (d->rt.current_time - d->disengage_timer > 1800) {	// alert user after 30 minutes
+			if (d->rt.current_time - d->rt.disengage_timer > 1800) {	// alert user after 30 minutes
 				if (d->rt.current_time - d->nag_timer > 60) {		// beep every 60 seconds
 					d->nag_timer = d->rt.current_time;
 					float input_voltage = VESC_IF->mc_get_input_voltage_filtered();
@@ -937,7 +935,7 @@ static void tnt_thd(void *arg) {
 		}
 
 		// Delay between loops
-		VESC_IF->sleep_us(d->loop_time_us);
+		VESC_IF->sleep_us(d->rt.loop_time_us);
 	}
 }
 
