@@ -15,7 +15,7 @@
 // You should have received a copy of the GNU General Public License along with
 // this program. If not, see <http://www.gnu.org/licenses/>.
 
-#include "proportional_gain.h"
+#include "pid.h"
 #include "utils_tnt.h"
 #include <math.h>
 
