@@ -24,7 +24,7 @@
 #include "motor_data_tnt.h"
 #include "state_tnt.h"
 #include "utils_tnt.h"
-#include "proportional_gain.h"
+#include "pid.h"
 #include "kalman.h"
 #include "traction.h"
 #include "surge.h"
