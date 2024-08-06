@@ -53,3 +53,4 @@ void check_brake_kp(PidData *p, State *state, tnt_config *config, KpArray *roll_
 float roll_erpm_scale(PidData *p, State *state, Runttime *rt, MotorData *m, KpArray *roll_accel_kp, tnt_config *config);
 void reset_pid(PidData *p);
 void apply_soft_start(PidData *p, MotorData *m);
+void configure_pid(PidData *p, tnt_config *config);
