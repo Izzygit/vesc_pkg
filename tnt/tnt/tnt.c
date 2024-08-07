@@ -646,7 +646,7 @@ static float haptic_buzz(data *d, float note_period) {
 float apply_pitch_kp(data *d) {
 	//Select and Apply Pitch kp  
 	float kp_mod, new_pid_value;
-	kp_mod = angle_kp_select(p->abs_prop_smooth, 
+	kp_mod = angle_kp_select(d->pid.abs_prop_smooth, 
 		d->pid.brake_pitch ? &d->brake_kp : &d->accel_kp);
 	d->debug1 = d->pid.brake_pitch ? -kp_mod : kp_mod;
 	kp_mod *= d->pid.stability_kp;
@@ -655,7 +655,7 @@ float apply_pitch_kp(data *d) {
 	return new_pid_value;
 }
 
-void apply apply_kp_modifiers(data *d) {
+void apply_kp_modifiers(data *d) {
 	//Select and Apply Pitch kp  rate			
 	float kp_rate = d->pid.brake_pitch ? d->brake_kp.kp_rate : d->accel_kp.kp_rate;		
 	d->debug3 = kp_rate * (d->pid.stability_kprate - 1);			// Calc the contribution of stability to kp_rate
@@ -840,7 +840,7 @@ static void tnt_thd(void *arg) {
 			d->pid.abs_prop_smooth = fabsf(d->pid.prop_smooth);
 
 			//Check for braking conditions and braking curves
-			state->braking_pos = sign(p->pid.proportional) != m->erpm_sign;
+			d->state.braking_pos = sign(d->pid.proportional) != d->motor.erpm_sign;
 			check_brake_kp(&d->pid,  &d->state,  &d->tnt_conf,  &d->roll_brake_kp,  &d->yaw_brake_kp); //Check that there are appropriate kp values for pitch roll and yaw
 
 			//Apply Pitch, Roll, Yaw Kp, and Soft Start
@@ -1111,9 +1111,9 @@ static void send_realtime_data(data *d){
 		buffer[ind++] = 3;
 		buffer_append_float32_auto(buffer, d->rt.pitch_smooth_kalman, &ind); //smooth pitch	
 		buffer_append_float32_auto(buffer, d->debug1, &ind); // scaled angle P
-		buffer_append_float32_auto(buffer, d->debug1*d->stabl*d->tnt_conf.stabl_pitch_max_scale/100.0, &ind); // added stiffnes pitch kp
+		buffer_append_float32_auto(buffer, d->debug1*d->pid.stabl*d->tnt_conf.stabl_pitch_max_scale/100.0, &ind); // added stiffnes pitch kp
 		buffer_append_float32_auto(buffer, d->debug3, &ind); // added stability rate P
-		buffer_append_float32_auto(buffer, d->stabl, &ind);
+		buffer_append_float32_auto(buffer, d->pid.stabl, &ind);
 		buffer_append_float32_auto(buffer, d->debug2, &ind); //rollkp d->debug2
 	} else if (d->tnt_conf.is_yawdebug_enabled) {
 		buffer[ind++] = 4;
