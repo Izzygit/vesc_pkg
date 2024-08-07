@@ -20,7 +20,7 @@
 #include "utils_tnt.h"
 #include <math.h>
 
-void check_surge(MotorData *m, SurgeData *surge, State *state, RuntimeData *rt, tnt_config *config, SurgeDebug *surge_dbg){
+void check_surge(MotorData *m, SurgeData *surge, State *state, RuntimeData *rt, PidData *p, tnt_config *config, SurgeDebug *surge_dbg){
 	//Start Surge Code
 	//Initialize Surge Cycle
 	if ((m->current_filtered * m->erpm_sign > surge->start_current) && 	//High current condition 
@@ -33,7 +33,7 @@ void check_surge(MotorData *m, SurgeData *surge, State *state, RuntimeData *rt, 
 		surge->new_duty_cycle = m->erpm_sign * m->duty_cycle;
 		
 		//Debug Data Section
-		surge_dbg->debug1 = rt->proportional;				
+		surge_dbg->debug1 = p->proportional;				
 		surge_dbg->debug2 = m->current_filtered;
 		surge_dbg->debug3 = surge->start_current;
 		surge_dbg->debug4 = m->duty_cycle;
@@ -51,7 +51,7 @@ void check_surge(MotorData *m, SurgeData *surge, State *state, RuntimeData *rt, 
 		 (state->wheelslip)) {										//In traction control		
 			surge->active = false;
 			surge->deactivate = true;								//Identifies the end of surge to change the setpoint back to before surge 
-			rt->pid_value = VESC_IF->mc_get_tot_current_directional_filtered();			//This allows a smooth transition to PID current control
+			p->pid_value = VESC_IF->mc_get_tot_current_directional_filtered();			//This allows a smooth transition to PID current control
 			
 			//Debug Data Section
 			surge_dbg->debug7 = rt->current_time - surge->timer;						//Register how long the surge cycle lasted
