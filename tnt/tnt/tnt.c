@@ -683,7 +683,7 @@ void apply_kp_modifiers(data *d, float new_pid_value) {
 		d->pid.brake_yaw ? &d->yaw_brake_kp : &d->yaw_accel_kp);
 	
 	//Apply ERPM Scale
-	erpmscale = ((d->pid.brake_yaw && d->motor.abs_erpm < 750) || 
+	float erpmscale = ((d->pid.brake_yaw && d->motor.abs_erpm < 750) || 
 		d->motor.abs_erpm < d->tnt_conf.yaw_minerpm || 
 		d->state.sat == SAT_CENTERING) ? 0 : 1;
 	yawkp *= erpmscale;
