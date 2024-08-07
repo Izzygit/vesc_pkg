@@ -20,6 +20,8 @@
 #include "conf/datatypes.h"
 #include "remote_input.h"
 #include "runtime.h"
+#include "motor_data_tnt.h"
+#include "state_tnt.h"
 
 typedef struct {
 	float angle_kp[7][2];
