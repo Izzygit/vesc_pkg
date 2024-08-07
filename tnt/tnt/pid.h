@@ -18,6 +18,8 @@
 #pragma once
 
 #include "conf/datatypes.h"
+#include "remote_input.h"
+#include "runtime.h"
 
 typedef struct {
 	float angle_kp[7][2];
@@ -34,7 +36,6 @@ typedef struct {
 	float stabl;
 	float stability_kp;
 	float stability_kprate;
-	float stabl;
 	float stabl_step_size_up, stabl_step_size_down;
 	float roll_pid_mod;
 	float yaw_pid_mod;
