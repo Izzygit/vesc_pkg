@@ -218,7 +218,7 @@ void check_brake_kp(PidData *p, State *state, tnt_config *config, KpArray *roll_
 	p->brake_yaw = yaw_brake_kp->count!=0 && state->braking_pos;
 }
 
-float roll_erpm_scale(PidData *p, State *state, RuntimeData *rt, MotorData *m, KpArray *roll_accel_kp, tnt_config *config) {
+float roll_erpm_scale(PidData *p, State *state, MotorData *m, KpArray *roll_accel_kp, tnt_config *config) {
 	//Apply ERPM Scale
 	float erpmscale = 1;
 	if ((p->brake_roll && m->abs_erpm < 750) ||
