@@ -82,7 +82,7 @@ void reset_runtime(RuntimeData *rt, YawData *yaw, YawDebugData *yaw_dbg) {
 	yaw_dbg->debug2 = 0;
 }
 
-void configure_runtime(Runtime *rt, tnt_config *config) {
+void configure_runtime(RuntimeData *rt, tnt_config *config) {
 	// This timer is used to determine how long the board has been disengaged / idle. subtract 1 second to prevent the haptic buzz disengage click on "write config"
 	rt->disengage_timer = rt->current_time - 1;
 
