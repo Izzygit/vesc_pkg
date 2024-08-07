@@ -247,7 +247,7 @@ void reset_pid(PidData *p) {
 void apply_soft_start(PidData *p, MotorData *m) {
 	if (p->softstart_pid_limit < m->mc_current_max) {
 		p->pid_mod = fminf(fabsf(p->pid_mod), p->softstart_pid_limit) * sign(p->pid_mod);
-		p->softstart_pid_limit += p->softstart_ramp_step_size;
+		p->softstart_pid_limit += p->softstart_step_size;
 	}
 }
 
