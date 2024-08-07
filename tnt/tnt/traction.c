@@ -58,16 +58,16 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 		}
 	} else { //Start conditions and traciton control activation
 		if (traction->end_accel_hold) { //Do not allow start conditions if we are in hold
-			traction->end_accel_hold = fabsf(m->accel_avg) > traction->end_accel; //deactivate hold when below the threshold acceleration
+			traction->end_accel_hold = fabsf(m->accel_avg) > traction->start_accel; //deactivate hold when below the threshold acceleration
 		} else { //Start conditions
 			//Check motor erpm and acceleration to determine the correct detection condition to use if any
 			if (m->erpm_sign == sign(m->erpm_history[m->last_erpm_idx])) { 							//Check sign of the motor at the start of acceleration
 				if (fabsf(m->erpm_filtered) > fabsf(m->erpm_history[m->last_erpm_idx])) { 						//If signs the same check for magnitude increase
-					start_condition1 = sign(m->current) * m->accel_avg > traction->start_accel * erpmfactor &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
+					start_condition1 = sign(m->current) * m->accel_avg > 5.81 * erpmfactor &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
 			   	    !state->braking_pos && !braking->active;									// Do not apply for braking 								
 				} // else if (...TODO Put working braking condition here
 			} else if (sign(m->erpm_sign_soft) != sign(m->accel_avg)) {				// If the motor is back spinning engage but don't allow wheelslip on landing
-				start_condition2 = sign(m->current) * m->accel_avg > traction->start_accel * erpmfactor &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
+				start_condition2 = sign(m->current) * m->accel_avg > 5.81 * erpmfactor &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
 			   	    !state->braking_pos && (rt->current_time - braking->brake_delay > 0.2);									// Do not apply for braking 
 			}
 		}
