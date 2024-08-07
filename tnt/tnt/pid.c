@@ -257,5 +257,5 @@ void configure_pid(PidData *p, tnt_config *config) {
 	p->stabl_step_size_down = 1.0 * config->stabl_ramp_down / 100.0 / config->hertz;
 	
 	// Feature: Soft Start
-	p->softstart_ramp_step_size = 100.0 / config->hertz;
+	p->softstart_step_size = 100.0 / config->hertz;
 }
