@@ -655,7 +655,7 @@ float apply_pitch_kp(data *d) {
 	return new_pid_value;
 }
 
-void apply_kp_modifiers(data *d) {
+void apply_kp_modifiers(data *d, float new_pid_value) {
 	//Select and Apply Pitch kp  rate			
 	float kp_rate = d->pid.brake_pitch ? d->brake_kp.kp_rate : d->accel_kp.kp_rate;		
 	d->debug3 = kp_rate * (d->pid.stability_kprate - 1);			// Calc the contribution of stability to kp_rate
@@ -845,7 +845,7 @@ static void tnt_thd(void *arg) {
 
 			//Apply Pitch, Roll, Yaw Kp, and Soft Start
 			new_pid_value = apply_pitch_kp(d);
-			apply_kp_modifiers(d);
+			apply_kp_modifiers(d, new_pid_value);
 			apply_soft_start(&d->pid, &d->motor);
 			new_pid_value += d->pid.pid_mod; 
 			
