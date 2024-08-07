@@ -54,7 +54,7 @@ void angle_kp_reset(KpArray *k);
 float erpm_scale(float lowvalue, float highvalue, float lowscale, float highscale, float abs_erpm); 
 void apply_stability(PidData *p, MotorData *m, RemoteData *remote, tnt_config *config);
 void check_brake_kp(PidData *p, State *state, tnt_config *config, KpArray *roll_brake_kp, KpArray *yaw_brake_kp);
-float roll_erpm_scale(PidData *p, State *state, RuntimeData *rt, MotorData *m, KpArray *roll_accel_kp, tnt_config *config);
+float roll_erpm_scale(PidData *p, State *state, MotorData *m, KpArray *roll_accel_kp, tnt_config *config);
 void reset_pid(PidData *p);
 void apply_soft_start(PidData *p, MotorData *m);
 void configure_pid(PidData *p, tnt_config *config);
