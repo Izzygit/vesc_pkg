@@ -19,7 +19,7 @@
 #include <math.h>
 #include "utils_tnt.h"
 
-void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeData *rt, tnt_config *config, BrakingData *braking, TractionDebug *traction_dbg){
+void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeData *rt, tnt_config *config, BrakingData *braking, PidData *p, TractionDebug *traction_dbg){
 	float erpmfactor = fmaxf(1, lerp(0, config->wheelslip_scaleerpm, config->wheelslip_scaleaccel, 1, m->abs_erpm));
 	bool start_condition1 = false;
 	bool start_condition2 = false;
@@ -28,7 +28,7 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 	if (state->wheelslip) {
 		if (rt->current_time - traction->timeron > 1) {		// Time out at 1s
 			deactivate_traction(traction, state, rt, traction_dbg, 5);
-		} else if (fabsf(rt->proportional) > config->wheelslip_max_angle) {
+		} else if (fabsf(p->proportional) > config->wheelslip_max_angle) {
 			deactivate_traction(traction, state, rt, traction_dbg, 4);
 		} else {
 			//This section determines if the wheel is acted on by outside forces by detecting acceleration direction change
