@@ -218,7 +218,7 @@ void check_brake_kp(PidData *p, State *state, tnt_config *config, KpArray *roll_
 	p->brake_yaw = d->yaw_brake_kp.count!=0 && state->braking_pos;
 }
 
-float roll_erpm_scale(PidData *p, State *state, Runttime *rt, MotorData *m, KpArray *roll_accel_kp, tnt_config *config) {
+float roll_erpm_scale(PidData *p, State *state, RuntimeData *rt, MotorData *m, KpArray *roll_accel_kp, tnt_config *config) {
 	//Apply ERPM Scale
 	float erpmscale = 1;
 	if ((p->brake_roll && m->abs_erpm < 750) ||
@@ -253,8 +253,8 @@ void apply_soft_start(PidData *p, MotorData *m) {
 
 void configure_pid(PidData *p, tnt_config *config) {
 	//Dynamic Stability
-	p->stabl_step_size_up = 1.0 * d->tnt_conf.stabl_ramp / 100.0 / config->hertz;
-	p->stabl_step_size_down = 1.0 * d->tnt_conf.stabl_ramp_down / 100.0 / config->hertz;
+	p->stabl_step_size_up = 1.0 * config->stabl_ramp / 100.0 / config->hertz;
+	p->stabl_step_size_down = 1.0 * config->stabl_ramp_down / 100.0 / config->hertz;
 	
 	// Feature: Soft Start
 	p->softstart_ramp_step_size = 100.0 / config->hertz;
