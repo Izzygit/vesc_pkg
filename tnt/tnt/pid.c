@@ -213,9 +213,9 @@ void apply_stability(PidData *p, MotorData *m, RemoteData *remote, tnt_config *c
 }
 
 void check_brake_kp(PidData *p, State *state, tnt_config *config, KpArray *roll_brake_kp, KpArray *yaw_brake_kp) {
-	p->brake_roll = d->roll_brake_kp.count!=0 && state->braking_pos;
+	p->brake_roll = roll_brake_kp->count!=0 && state->braking_pos;
 	p->brake_pitch = config->brake_curve && state->braking_pos;
-	p->brake_yaw = d->yaw_brake_kp.count!=0 && state->braking_pos;
+	p->brake_yaw = yaw_brake_kp->count!=0 && state->braking_pos;
 }
 
 float roll_erpm_scale(PidData *p, State *state, RuntimeData *rt, MotorData *m, KpArray *roll_accel_kp, tnt_config *config) {
