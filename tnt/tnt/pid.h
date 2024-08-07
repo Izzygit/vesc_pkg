@@ -40,7 +40,6 @@ typedef struct {
 	float roll_pid_mod;
 	float yaw_pid_mod;
 	float softstart_pid_limit;
-	float softstart_ramp_size;
 	float softstart_step_size
 	bool brake_pitch, brake_roll, brake_yaw;
 } PidData;
