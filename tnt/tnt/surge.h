@@ -20,6 +20,7 @@
 #include "motor_data_tnt.h"
 #include "state_tnt.h"
 #include "runtime.h"
+#include "pid.h"
 
 typedef struct {
 	float timer;				//Timer to monitor surge cycle and period
