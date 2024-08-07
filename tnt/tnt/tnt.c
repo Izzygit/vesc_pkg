@@ -667,7 +667,7 @@ void apply_kp_modifiers(data *d, float new_pid_value) {
 		d->pid.brake_roll ? &d->roll_brake_kp : &d->roll_accel_kp);
 	
 	//ERPM Scale
-	rollkp *= roll_erpm_scale(&d->pid,  &d->state, &d->rt, &d->motor, &d->roll_accel_kp, &d->tnt_conf);
+	rollkp *= roll_erpm_scale(&d->pid,  &d->state, &d->motor, &d->roll_accel_kp, &d->tnt_conf);
 	d->debug2 = d->pid.brake_roll ? -rollkp : rollkp;	
 
 	//Apply Roll Boost
