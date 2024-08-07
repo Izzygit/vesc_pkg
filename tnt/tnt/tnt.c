@@ -31,7 +31,6 @@
 #include "runtime.h"
 #include "ride_time.h"
 #include "remote_input.h"
-#include "yaw.h"
 #include "drop.h"
 
 #include "conf/datatypes.h"
