@@ -92,3 +92,21 @@ void configure_runtime(RuntimeData *rt, tnt_config *config) {
 	// Loop time in seconds times 20 for a nice long grace period
 	rt->motor_timeout_s = 20.0f / config->hertz;
 }
+
+
+void ride_timer(RideTimeData *ridetimer, RuntimeData *rt){
+	if(ridetimer->run_flag) { //First trigger run flag and reset last ride time
+		ridetimer->ride_time += rt->current_time - ridetimer->last_ride_time;
+	}
+	ridetimer->run_flag = true;
+	ridetimer->last_ride_time = rt->current_time;
+}
+
+
+void rest_timer(RideTimeData *ridetimer, RuntimeData *rt){
+	if(!ridetimer->run_flag) { //First trigger run flag and reset last rest time
+		ridetimer->rest_time += rt->current_time - ridetimer->last_rest_time;
+	}
+	ridetimer->run_flag = false;
+	ridetimer->last_rest_time = rt->current_time;
+}
