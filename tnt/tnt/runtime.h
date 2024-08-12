@@ -60,8 +60,18 @@ typedef struct {
 	float debug5; //erpm scaler
 } YawDebugData;
 
+typedef struct {
+	float rest_time;
+	float last_rest_time;
+	float ride_time;
+	float last_ride_time;
+	bool run_flag;
+} RideTimeData;
+
 void runtime_data_update(RuntimeData *rt);
 void apply_pitch_filters(RuntimeData *rt, tnt_config *config);
 void calc_yaw_change(YawData *yaw, float yaw_angle, YawDebugData *yaw_dbg);
 void reset_runtime(RuntimeData *rt, YawData *yaw, YawDebugData *yaw_dbg);
 void configure_runtime(RuntimeData *rt, tnt_config *config);
+void rest_timer(RideTimeData *ridetimer, RuntimeData *rt);
+void ride_timer(RideTimeData *ridetimer, RuntimeData *rt);
