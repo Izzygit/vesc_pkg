@@ -32,6 +32,7 @@ typedef struct {
 	float start_accel;		//acceleration that triggers wheelslip
 	float slowed_accel;		//Trigger that shows traction control is working
 	float end_accel;
+	float hold_accel;
 	bool end_accel_hold;
 } TractionData;
 
@@ -56,6 +57,7 @@ typedef struct {
 	bool last_active;
 	float brake_delay;
 	int count;
+	float count_limit;
 } BrakingData;
 
 typedef struct {
@@ -75,5 +77,5 @@ typedef struct {
 void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeData *rt, tnt_config *config, BrakingData *braking, PidData *p, TractionDebug *traction_dbg);
 void reset_traction(TractionData *traction, State *state, BrakingData *braking);
 void deactivate_traction(TractionData *traction, State *state, RuntimeData *rt, TractionDebug *traction_dbg, float exit);
-void configure_traction(TractionData *traction, tnt_config *config, TractionDebug *traction_dbg, BrakingDebug *braking_dbg);
+void configure_traction(TractionData *traction, BrakingData *braking, tnt_config *config, TractionDebug *traction_dbg, BrakingDebug *braking_dbg);
 void check_traction_braking(MotorData *m, BrakingData *braking, State *state, RuntimeData *rt, tnt_config *config, float inputtilt_interpolated, BrakingDebug *braking_dbg);
