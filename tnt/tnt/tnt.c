@@ -30,7 +30,6 @@
 #include "surge.h"
 #include "runtime.h"
 #include "remote_input.h"
-#include "drop.h"
 
 #include "conf/datatypes.h"
 #include "conf/confparser.h"
@@ -145,10 +144,6 @@ typedef struct {
 	//Yaw Boost
 	YawData yaw;
 	YawDebugData yaw_dbg;
-
-	//Drop
-	DropData drop;
-	DropDebug drop_dbg;
 
 	//Debug
 	float debug1, debug2, debug3, debug4, debug5, debug6;
@@ -281,9 +276,6 @@ static void configure(data *d) {
 	//Traction Configure
 	configure_traction(&d->traction, &d->tnt_conf, &d->traction_dbg, &d->braking_dbg);
 	
-	//Drop Configure
-	configure_drop(&d->drop, &d->tnt_conf);
-	
 	if (d->state.state == STATE_DISABLED) {
 	    beep_alert(d, 3, false);
 	} else {
@@ -316,9 +308,6 @@ static void reset_vars(data *d) {
 	
 		// Traction Control
 		reset_traction(&d->traction, &d->state, &d->braking);
-		
-		// Drop
-		reset_drop(&d->drop);		
 
 		// Haptic Buzz:
 		d->haptic_tone_in_progress = false;
@@ -752,8 +741,6 @@ static void tnt_thd(void *arg) {
 		apply_pitch_filters(&d->rt, &d->tnt_conf);
 		motor_data_update(&d->motor);
 		update_remote(&d->tnt_conf, &d->remote);
-		apply_angle_drop(&d->drop, &d->rt); //corrects accel z with angles
-		check_drop(&d->drop, &d->motor, &d->rt, &d->state, &d->drop_dbg);
 		
 		//Footpad Sensor
 	        footpad_sensor_update(&d->footpad_sensor, &d->tnt_conf);
@@ -863,8 +850,7 @@ static void tnt_thd(void *arg) {
 				check_traction_braking(&d->motor, &d->braking, &d->state, &d->rt, &d->tnt_conf, d->remote.inputtilt_interpolated, &d->braking_dbg);
 			
 			// PID value application
-			d->pid.pid_value = (d->state.wheelslip && d->tnt_conf.is_traction_enabled) ? 0 : 
-					((d->drop.active && d->tnt_conf.is_drop_enabled) ? 0 : new_pid_value);
+			d->pid.pid_value = (d->state.wheelslip && d->tnt_conf.is_traction_enabled) ? 0 : new_pid_value;
 			d->pid.pid_value += haptic_buzz(d, 0.3); //Apply haptic buzz
 
 			// Output to motor
@@ -1074,7 +1060,7 @@ static void send_realtime_data(data *d){
 	buffer_append_float32_auto(buffer, d->remote.throttle_val, &ind);
 	buffer_append_float32_auto(buffer, d->rt.current_time - d->traction.timeron , &ind); //Time since last wheelslip
 	buffer_append_float32_auto(buffer, d->rt.current_time - d->surge.timer , &ind); //Time since last surge
-	buffer_append_float32_auto(buffer, d->rt.current_time - d->drop.timeron , &ind); //Time since last drop
+	buffer_append_float32_auto(buffer, d->rt.current_time - d->braking.timeroff , &ind); //Time since last traction braking
 	
 	// Trip
 	if (d->ridetimer.ride_time > 0) {
@@ -1122,17 +1108,8 @@ static void send_realtime_data(data *d){
 		buffer_append_float32_auto(buffer, d->yaw_dbg.debug3, &ind); //max yaw change
 		buffer_append_float32_auto(buffer, d->yaw_dbg.debug4, &ind); //yaw kp 	
 		buffer_append_float32_auto(buffer, d->yaw_dbg.debug2, &ind); //max kp change
-	} else if (d->tnt_conf.is_dropdebug_enabled) {
-		buffer[ind++] = 5;
-		buffer_append_float32_auto(buffer, d->drop.accel_z, &ind); //accel_z
-		buffer_append_float32_auto(buffer, d->drop.applied_correction, &ind); //applied correction
-		buffer_append_float32_auto(buffer, d->drop_dbg.debug5, &ind); //number of drops
-		buffer_append_float32_auto(buffer, d->drop_dbg.debug3, &ind); //end condition
-		buffer_append_float32_auto(buffer, d->drop_dbg.debug4, &ind); //min accel z
-		buffer_append_float32_auto(buffer, d->drop_dbg.debug6, &ind); //ending prop
-		buffer_append_float32_auto(buffer, d->drop_dbg.debug7, &ind); //duration
 	} else if (d->tnt_conf.is_brakingdebug_enabled) {
-		buffer[ind++] = 6;
+		buffer[ind++] = 5;
 		buffer_append_float32_auto(buffer, d->braking_dbg.debug2, &ind); //current duty
 		buffer_append_float32_auto(buffer, d->braking_dbg.debug6, &ind); //max accel
 		buffer_append_float32_auto(buffer, d->braking_dbg.debug3, &ind); //Min ERPM
