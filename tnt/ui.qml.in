@@ -323,7 +323,8 @@ Item {
 				"Duty Ramp Rate      : " + debug2.toFixed(0) + " %/s\n" +
 				"Added Duty          : " + (debug3 * 100).toFixed(1) + " %\n" +
 				"End Proportional    : " + debug5.toFixed(1) + " °\n" +
-				"Last Surge Duration : " + debug6.toFixed(3) + " s\n" 
+				"Last Surge Duration : " + debug6.toFixed(3) + " s\n" +
+            			"End Conditions \n #.# - End Pitch Angle \n 111 - 500ms Timeout \n 222 - Wheelslip Detected \n"
 			} else if (debug_state == 3) {
 				debug.text =
 				"Smooth Pitch        : " + debug1.toFixed(2) + "°\n" +
