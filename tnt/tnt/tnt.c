@@ -692,7 +692,7 @@ static void brake(data *d) {
     }
 
     if (d->rt.current_time > d->brake_timeout ||
-      d->rt.current_time < 5) {
+      d->rt.current_time < 20) {
         return;
     }
 
@@ -912,7 +912,7 @@ static void tnt_thd(void *arg) {
 				}
 			}
 
-			//brake(d);
+			brake(d);
 			break;
 		case (STATE_DISABLED):;
 			// no set_current, no brake_current
