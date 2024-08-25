@@ -687,12 +687,12 @@ void apply_kp_modifiers(data *d, float new_pid_value) {
 static void brake(data *d) {
     // Brake timeout logic
     float brake_timeout_length = 1;  // Brake Timeout hard-coded to 1s
-    if (d->motor.abs_erpm > 1 || d->brake_timeout == 0) {
+    if (d->motor.abs_erpm > 5 || d->brake_timeout == 0) {
         d->brake_timeout = d->rt.current_time + brake_timeout_length;
     }
 
     if (d->rt.current_time > d->brake_timeout ||
-      d->rt.current_time - d->rt.start_time < 20) {
+      d->rt.current_time - d->rt.start_time < 5) {
         return;
     }
 
