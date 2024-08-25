@@ -274,7 +274,7 @@ static void configure(data *d) {
 	configure_surge(&d->surge, &d->tnt_conf);
 
 	//Traction Configure
-	configure_traction(&d->traction, &d->tnt_conf, &d->traction_dbg, &d->braking_dbg);
+	configure_traction(&d->traction, &d->braking, &d->tnt_conf, &d->traction_dbg, &d->braking_dbg);
 	
 	if (d->state.state == STATE_DISABLED) {
 	    beep_alert(d, 3, false);
