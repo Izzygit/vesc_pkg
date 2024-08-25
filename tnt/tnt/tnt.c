@@ -762,7 +762,7 @@ static void tnt_thd(void *arg) {
 		switch(d->state.state) {
 		case (STATE_STARTUP):
 			// Disable output
-			brake(d);
+			//brake(d);
 			
 			//Rest Timer
 			rest_timer(&d->ridetimer, &d->rt);
@@ -912,7 +912,7 @@ static void tnt_thd(void *arg) {
 				}
 			}
 
-			brake(d);
+			//brake(d);
 			break;
 		case (STATE_DISABLED):;
 			// no set_current, no brake_current
