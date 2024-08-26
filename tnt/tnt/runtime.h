@@ -42,7 +42,6 @@ typedef struct { //Run time values used in various features
 	float disengage_timer;
 	uint32_t loop_time_us;
 	float motor_timeout_s;
-	float start_time;
 } RuntimeData;
 
 typedef struct {
