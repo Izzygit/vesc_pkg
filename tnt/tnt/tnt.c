@@ -691,8 +691,7 @@ static void brake(data *d) {
         d->brake_timeout = d->rt.current_time + brake_timeout_length;
     }
 
-    if (d->rt.current_time > d->brake_timeout ||
-      d->rt.current_time - d->rt.start_time < 5) {
+    if (d->rt.current_time > d->brake_timeout) {
         return;
     }
 
