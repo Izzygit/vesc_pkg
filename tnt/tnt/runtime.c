@@ -27,7 +27,6 @@ void runtime_data_update(RuntimeData *rt) {
 	rt->current_time = VESC_IF->system_time();
 	if (rt->last_time == 0) {
 		rt->last_time = rt->current_time;
-		rt->start_time = rt->current_time;
 	}
 	rt->diff_time = rt->current_time - rt->last_time;
 	rt->last_time = rt->current_time;
@@ -92,8 +91,6 @@ void configure_runtime(RuntimeData *rt, tnt_config *config) {
 
 	// Loop time in seconds times 20 for a nice long grace period
 	rt->motor_timeout_s = 20.0f / config->hertz;
-
-	rt->last_time = 0;
 }
 
 
