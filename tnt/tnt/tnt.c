@@ -603,7 +603,7 @@ static void play_tone(data *d, float note_period) {
 	}
 
 	if (d->tone_in_progress) {
-		VESC_if->foc_play_tone(0, d->tone_mode, 2);
+		VESC_IF->foc_play_tone(0, d->tone_mode, 2);
 		if (fabsf(d->tone_timer - d->rt.current_time) > note_period) {
 			d->tone_in_progress = false;
 			d->tone_timer = d->rt.current_time;
@@ -612,7 +612,7 @@ static void play_tone(data *d, float note_period) {
 		d->tone_mode = 0;
 		d->tone_timer = d->rt.current_time;
 		d->tone_in_progress = false;
-		VESC_if->foc_stop_audio(true);
+		VESC_IF->foc_stop_audio(true);
 	}
 }
 
