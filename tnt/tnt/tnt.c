@@ -134,9 +134,9 @@ typedef struct {
 	KpArray yaw_brake_kp;
 
 	//Haptic Buzz
-	float applied_haptic_current, haptic_timer;
-	int haptic_counter, haptic_mode, haptic_type, haptic_freq;
-	bool haptic_tone_in_progress;
+	float tone_timer;
+	int tone_mode, tone_type;
+	bool tone_in_progress;
 
 	//Trip Debug
 	RideTimeData ridetimer;
@@ -236,9 +236,6 @@ static void configure(data *d) {
 	d->switch_warn_beep_erpm = d->tnt_conf.is_footbeep_enabled ? 2000 : 100000;
 
 	d->beeper_enabled = d->tnt_conf.is_beeper_enabled;
-
-	//Haptic Buzz
-	d->haptic_freq = max(1,d->tnt_conf.hertz / 832) * 2; //audible2 from float pkg
 	
 	//Remote
 	configure_remote_features(&d->tnt_conf, &d->remote, &d->st_tilt);
@@ -310,9 +307,8 @@ static void reset_vars(data *d) {
 		reset_traction(&d->traction, &d->state, &d->braking);
 
 		// Haptic Buzz:
-		d->haptic_tone_in_progress = false;
-		d->haptic_timer = d->rt.current_time;
-		d->applied_haptic_current = 0;
+		d->tone_in_progress = false;
+		d->tone_timer = d->rt.current_time;
 	}
 	state_engage(&d->state);
 }
@@ -594,41 +590,30 @@ static void apply_noseangling(data *d){
 	d->rt.setpoint += d->noseangling_interpolated;
 }
 
-static float haptic_buzz(data *d, float note_period) {
+static void play_tone(data *d, float note_period) {
 	if (d->surge.high_current_buzz) {
-		d->haptic_type = d->tnt_conf.haptic_buzz_current ? d->haptic_freq : 0;
+		d->tone_type = d->tnt_conf.haptic_buzz_current ? 495.0 : 0;
 	} else if (d->state.sat == SAT_PB_DUTY) {
-		d->haptic_type = d->tnt_conf.haptic_buzz_duty ? d->haptic_freq : 0;
-	} else { d->haptic_type = 0;}
+		d->tone_type = d->tnt_conf.haptic_buzz_duty ? 460.0 : 0;
+	} else { d->tone_type = 0;}
 
-	if (d->haptic_type != 0 && !d->haptic_tone_in_progress) {
-		d->haptic_tone_in_progress = true;	// This kicks it off till at least one ~300ms tone is completed
-		d->haptic_mode = d->haptic_type; 	// lock in haptic type for note period
+	if (d->tone_type != 0 && !d->tone_in_progress) {
+		d->tone_in_progress = true;	// This kicks it off till at least one ~300ms tone is completed
+		d->tone_mode = d->tone_type; 	// lock in haptic type for note period
 	}
 
-	if (d->haptic_tone_in_progress) {
-		float buzz_current = min(d->tnt_conf.haptic_buzz_intensity, 
-			lerp(0, 10000, d->tnt_conf.haptic_buzz_min, d->tnt_conf.haptic_buzz_intensity, d->motor.abs_erpm));
-		d->debug6 = buzz_current;
-		if (d->haptic_counter > d->haptic_mode)  //use mode here so it still works after type turns to 0 during note period
-			d->haptic_counter = 0; //reset counter after every period
-		
-		if (d->haptic_counter == 0) { //alternate current affter period
-			d->applied_haptic_current = d->applied_haptic_current > 0 ? -buzz_current : buzz_current;
-			if (fabsf(d->haptic_timer - d->rt.current_time) > note_period) {
-				d->haptic_tone_in_progress = false;
-				d->haptic_timer = d->rt.current_time;
-			}
+	if (d->tone_in_progress) {
+		VESC_if->foc_play_tone(0, d->tone_mode, 2);
+		if (fabsf(d->tone_timer - d->rt.current_time) > note_period) {
+			d->tone_in_progress = false;
+			d->tone_timer = d->rt.current_time;
 		}
-		d->haptic_counter += 1; 
+	} else {
+		d->tone_mode = 0;
+		d->tone_timer = d->rt.current_time;
+		d->tone_in_progress = false;
+		VESC_if->foc_stop_audio(true);
 	}
-	else {
-		d->haptic_mode = 0;
-		d->haptic_counter = 0;
-		d->haptic_timer = d->rt.current_time;
-		d->applied_haptic_current = 0;
-	}
-	return d->applied_haptic_current;
 }
 
 float apply_pitch_kp(data *d) {
@@ -851,7 +836,7 @@ static void tnt_thd(void *arg) {
 			
 			// PID value application
 			d->pid.pid_value = (d->state.wheelslip && d->tnt_conf.is_traction_enabled) ? 0 : new_pid_value;
-			d->pid.pid_value += haptic_buzz(d, 0.3); //Apply haptic buzz
+			play_tone(d, 0.3); //Apply haptic buzz
 
 			// Output to motor
 			if (d->surge.active) { 	
