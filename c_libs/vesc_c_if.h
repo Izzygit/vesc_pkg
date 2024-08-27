@@ -592,6 +592,14 @@ typedef struct {
 	void (*foc_set_openloop_phase)(float current, float phase);
 	void (*foc_set_openloop_duty)(float dutyCycle, float rpm);
 	void (*foc_set_openloop_duty_phase)(float dutyCycle, float phase);
+
+	// FOC Audio
+	bool (*foc_beep)(float freq, float time, float voltage);
+	bool (*foc_play_tone)(int channel, float freq, float voltage);
+	void (*foc_stop_audio)(bool reset);
+	bool (*foc_set_audio_sample_table)(int channel, float *samples, int len);
+	const float* (*foc_get_audio_sample_table)(int channel);
+	bool (*foc_play_audio_samples)(const int8_t *samples, int num_samp, float f_samp, float voltage);
 } vesc_c_if;
 
 typedef struct {
