@@ -135,7 +135,7 @@ typedef struct {
 
 	//Haptic Buzz
 	float tone_timer;
-	int tone_mode, tone_type;
+	float tone_mode, tone_type;
 	bool tone_in_progress;
 
 	//Trip Debug
@@ -607,12 +607,12 @@ static void play_tone(data *d, float note_period) {
 		if (fabsf(d->tone_timer - d->rt.current_time) > note_period) {
 			d->tone_in_progress = false;
 			d->tone_timer = d->rt.current_time;
+			VESC_IF->foc_stop_audio(true);
 		}
 	} else {
 		d->tone_mode = 0;
 		d->tone_timer = d->rt.current_time;
 		d->tone_in_progress = false;
-		VESC_IF->foc_stop_audio(true);
 	}
 }
 
