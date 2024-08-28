@@ -135,7 +135,7 @@ typedef struct {
 
 	//Haptic Buzz
 	float tone_timer;
-	float tone_mode, tone_type;
+	float tone_volt, tone_freq;
 	bool tone_in_progress;
 
 	//Trip Debug
@@ -592,13 +592,18 @@ static void apply_noseangling(data *d){
 
 static void play_tone(data *d, float note_period) {
 	if (d->surge.high_current_buzz) {
-		d->tone_type = d->tnt_conf.haptic_buzz_current ? 495.0 : 0;
+		d->tone_freq = d->tnt_conf.haptic_buzz_current ? d->tnt_conf.tone_freq_high_current : 0;
+		d->tone_volt = d->tnt_conf.haptic_buzz_current ? d->tnt_conf.tone_volt_high_current : 0;
 	} else if (d->state.sat == SAT_PB_DUTY) {
-		d->tone_type = d->tnt_conf.haptic_buzz_duty ? 460.0 : 0;
-	} else { d->tone_type = 0;}
+		d->tone_freq = d->tnt_conf.haptic_buzz_duty ? d->tnt_conf.tone_freq_high_duty : 0;
+		d->tone_volt = d->tnt_conf.haptic_buzz_duty ? d->tnt_conf.tone_volt_high_duty : 0;
+	} else { 
+		d->tone_freq = 0;
+		d->tone_volt = 0;
+	}
 
-	if (d->tone_type != 0 && !d->tone_in_progress) 
-		d->tone_in_progress = VESC_IF->foc_play_tone(0, d->tone_type, 2);	// This kicks it off till at least one ~300ms tone is completed
+	if (d->tone_freq != 0 && !d->tone_in_progress) 
+		d->tone_in_progress = VESC_IF->foc_play_tone(0, d->tone_freq, d->tone_volt);	// This kicks it off till at least one ~300ms tone is completed
 
 	if (d->tone_in_progress) {
 		if (fabsf(d->tone_timer - d->rt.current_time) > note_period) {
@@ -668,7 +673,7 @@ void apply_kp_modifiers(data *d, float new_pid_value) {
 static void brake(data *d) {
     // Brake timeout logic
     float brake_timeout_length = 1;  // Brake Timeout hard-coded to 1s
-    if (d->motor.abs_erpm > 5 || d->brake_timeout == 0) {
+    if (d->motor.abs_erpm > 10 || d->brake_timeout == 0) {
         d->brake_timeout = d->rt.current_time + brake_timeout_length;
     }
 
