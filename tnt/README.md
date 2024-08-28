@@ -43,13 +43,38 @@ Default settings are based on 20s battery, Hypercore (Future Motion motor), and 
 * Traction Control
   * Should work well for most boards. Light riders on powerful boards may need to increase Start Condition to prevent nuisance trips.
   * Decrease End Condition for smoother landings but beware going too low.
-* Haptic Buzz
+* FOC Play Tones
   * Activated for high duty and high current
   * Riders with cannoncore or superflux motors should disable high current haptic buzz until you correct the high current conditions.
 
 For more instructions on setting up your board please refer to the [Set Up Guide.](https://github.com/Izzygit/TrickandTrailReleases/wiki/Set-Up-Guide) https://github.com/Izzygit/TrickandTrailReleases/wiki/Set-Up-Guide
 
 ## Change Log
+### 1.4
+* **This version requires 6.05 firmware to fuction properly**
+* **Version 1.4 parameters are not compatible with v1.3 and will be set to default. Screenshot your tunes to save.**
+* Continued code refactoring
+* _Features_
+  * New Feature - Traction Control Braking (beta)
+    * Utilizes VESC set brake fuctionality to apply current with no wheel spin
+    * Several parameters used to filter and monitor duty to apply traction braking at appropriate times
+    * Parameter that allows traction braking only when a minimum nose down angle is requested via remote
+  * Traction Control Improvements
+    * Added low pass filter to ERPM which is used to calculate motor acceleration.
+    * New parameter to adjust low pass filter frequency.
+    * Now end conditions consist of transition, end and hold conditions
+    * Absolute value of motor acceleration must be less than transition condition to allow end condition
+    * Absolute value of motor acceleration must be greater than end condition to end traction control
+    * Absolute value of motor acceleration must be less than hold condition to allow another traction control engagement.
+    * New parameter allows for the termination of traction control when a pitch angle threshold is met.
+  * FOC Play Tones
+    * FOC play tones now replaces haptic buzz.
+    * New parameters allow for frequency and voltage (volume) adjustment.
+    * Only applied for high duty and high current but more to come.
+* _Fixes/Improvements_
+   * Added a list of end conditions to AppUI for Surge and Traction Control debugs.
+   * Added a timer to AppUI to show the last time Traction Control Braking was used.
+   * Increased ERPM required to engage idle brake to 10.
 ### 1.3
 * **Version 1.3 parameters are not compatible with v1.2 and will be set to default. Screenshot your tunes to save.**
 * Code refactored thanks to contributions from Lukas Hrazky, author of Refloat.
