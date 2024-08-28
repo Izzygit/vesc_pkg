@@ -597,20 +597,16 @@ static void play_tone(data *d, float note_period) {
 		d->tone_type = d->tnt_conf.haptic_buzz_duty ? 460.0 : 0;
 	} else { d->tone_type = 0;}
 
-	if (d->tone_type != 0 && !d->tone_in_progress) {
-		d->tone_in_progress = true;	// This kicks it off till at least one ~300ms tone is completed
-		d->tone_mode = d->tone_type; 	// lock in haptic type for note period
-	}
+	if (d->tone_type != 0 && !d->tone_in_progress) 
+		d->tone_in_progress = VESC_IF->foc_play_tone(0, d->tone_type, 2);	// This kicks it off till at least one ~300ms tone is completed
 
 	if (d->tone_in_progress) {
-		VESC_IF->foc_play_tone(0, d->tone_mode, 2);
 		if (fabsf(d->tone_timer - d->rt.current_time) > note_period) {
 			d->tone_in_progress = false;
 			d->tone_timer = d->rt.current_time;
 			VESC_IF->foc_stop_audio(true);
 		}
 	} else {
-		d->tone_mode = 0;
 		d->tone_timer = d->rt.current_time;
 		d->tone_in_progress = false;
 	}
@@ -833,10 +829,10 @@ static void tnt_thd(void *arg) {
 				check_surge(&d->motor, &d->surge, &d->state, &d->rt, &d->pid, &d->tnt_conf, &d->surge_dbg);
 			if (d->tnt_conf.is_tc_braking_enabled)
 				check_traction_braking(&d->motor, &d->braking, &d->state, &d->rt, &d->tnt_conf, d->remote.inputtilt_interpolated, &d->braking_dbg);
-			
+			play_tone(d, 0.3); //Apply haptic buzz
+
 			// PID value application
 			d->pid.pid_value = (d->state.wheelslip && d->tnt_conf.is_traction_enabled) ? 0 : new_pid_value;
-			play_tone(d, 0.3); //Apply haptic buzz
 
 			// Output to motor
 			if (d->surge.active) { 	
