@@ -73,8 +73,8 @@ typedef struct {
 
 	// Beeper
 	int beep_num_left;
-	int beep_duration;
-	int beep_countdown;
+	float beep_duration;
+	float beep_countdown;
 	int beep_reason;
 	bool beeper_enabled;
 
@@ -153,15 +153,6 @@ typedef struct {
 static void brake(data *d);
 static void set_current(data *d, float current);
 
-const VESC_PIN beeper_pin = VESC_PIN_PPM; //BUZZER / BEEPER on Servo Pin
-
-#define EXT_BEEPER_ON()  VESC_IF->io_write(beeper_pin, 1)
-#define EXT_BEEPER_OFF() VESC_IF->io_write(beeper_pin, 0)
-
-void beeper_init() {
-	VESC_IF->io_set_mode(beeper_pin, VESC_PIN_MODE_OUTPUT);
-}
-
 void beeper_update(data *d) {
 	if (d->beeper_enabled && (d->beep_num_left > 0)) {
 		d->beep_countdown--;
@@ -169,17 +160,10 @@ void beeper_update(data *d) {
 			d->beep_countdown = d->beep_duration;
 			d->beep_num_left--;	
 			if (d->beep_num_left & 0x1)
-				EXT_BEEPER_ON();
+				VESC_IF->foc_play_tone(0, 600, 2);
 			else
-				EXT_BEEPER_OFF();
+				VESC_IF->foc_stop_audio(true);
 		}
-	}
-}
-
-void beeper_enable(data *d, bool enable) {
-	d->beeper_enabled = enable;
-	if (!enable) {
-		EXT_BEEPER_OFF();
 	}
 }
 
@@ -188,7 +172,7 @@ void beep_alert(data *d, int num_beeps, bool longbeep) {
 		return;
 	if (d->beep_num_left == 0) {
 		d->beep_num_left = num_beeps * 2 + 1;
-		d->beep_duration = longbeep ? 300 : 80;
+		d->beep_duration = (longbeep ? 300 : 80) / 832 * d->tnt_conf.hertz;
 		d->beep_countdown = d->beep_duration;
 	}
 }
@@ -197,7 +181,7 @@ void beep_off(data *d, bool force)
 {
 	// don't mess with the beeper if we're in the process of doing a multi-beep
 	if (force || (d->beep_num_left == 0))
-		EXT_BEEPER_OFF();
+		VESC_IF->foc_stop_audio(true);
 }
 
 void beep_on(data *d, bool force)
@@ -206,7 +190,7 @@ void beep_on(data *d, bool force)
 		return;
 	// don't mess with the beeper if we're in the process of doing a multi-beep
 	if (force || (d->beep_num_left == 0))
-		EXT_BEEPER_ON();
+		VESC_IF->foc_play_tone(0, 600, 2);
 }
 
 static void configure(data *d) {
@@ -1256,10 +1240,6 @@ INIT_FUN(lib_info *info) {
 	info->arg = d;
 	
 	VESC_IF->conf_custom_add_config(get_cfg, set_cfg, get_cfg_xml);
-
-	if ((d->tnt_conf.is_beeper_enabled) || (d->tnt_conf.inputtilt_remote_type != INPUTTILT_PPM)) {
-		beeper_init();
-	}
 
 	VESC_IF->ahrs_init_attitude_info(&d->rt.m_att_ref);
 	d->rt.m_att_ref.acc_confidence_decay = 0.1;
