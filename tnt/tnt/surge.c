@@ -68,7 +68,7 @@ void check_surge(MotorData *m, SurgeData *surge, State *state, RuntimeData *rt, 
 	}
 }
 
-void check_current(MotorData *m, SurgeData *surge, State *state, RuntimeData *rt, tnt_config *config, ToneData *tone) {
+void check_current(MotorData *m, SurgeData *surge, State *state, tnt_config *config, ToneData *tone) {
 	float scale_start_current = lerp(1.0 * config->surge_scaleduty / 100.0, .95, config->surge_startcurrent, config->surge_start_hd_current, m->duty_cycle);
 	surge->start_current = fminf(config->surge_startcurrent, scale_start_current); 
 	if ((m->current_filtered * m->erpm_sign > surge->start_current - config->overcurrent_margin) && 	//High current condition 
