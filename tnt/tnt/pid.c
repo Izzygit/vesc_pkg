@@ -259,3 +259,28 @@ void configure_pid(PidData *p, tnt_config *config) {
 	// Feature: Soft Start
 	p->softstart_step_size = 100.0 / config->hertz;
 }
+
+void tone_update(ToneData *tone, RuntimeData *rt) {
+	if (!tone->tone_in_progress && tone->freq != 0) {
+		tone->tone_in_progress = VESC_IF->foc_play_tone(0,  tone->freq, tone->volt);
+		tone->timer = rt->current_time;
+	} else if (rt->current_time - tone->timer > tone->duration && tone->tone_in_progress) {
+		VESC_IF->foc_stop_audio(true);
+		tone->tone_in_progress = false;
+		tone->freq = 0; // reset to zero after duration to require another call from play_tone
+	}
+}
+
+void play_tone(ToneData *tone, float freq, float voltage, float duration) {
+	if (!tone->tone_in_progress) {
+		tone->freq = freq;
+		tone->volt = voltage;
+		tone->duration = duration;
+	}
+}
+
+void end_tone(ToneData *tone) {
+	tone->freq = 0;
+	tone->volt = 0;
+	tone->duration = 0;
+}
