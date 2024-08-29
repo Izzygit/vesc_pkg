@@ -22,6 +22,7 @@
 #include "runtime.h"
 #include "motor_data_tnt.h"
 #include "state_tnt.h"
+#include "vesc_c_if.h"
 
 typedef struct {
 	float angle_kp[7][2];
@@ -46,6 +47,14 @@ typedef struct {
 	bool brake_pitch, brake_roll, brake_yaw;
 } PidData;
 
+typedef struct {
+	float freq;
+	float voltage;
+	float duration;
+	bool tone_in_progress;
+	float timer;
+} ToneData;
+
 void pitch_kp_configure(const tnt_config *config, KpArray *k, int mode);
 void roll_kp_configure(const tnt_config *config, KpArray *k, int mode);
 void yaw_kp_configure(const tnt_config *config, KpArray *k, int mode);
@@ -58,3 +67,6 @@ float roll_erpm_scale(PidData *p, State *state, MotorData *m, KpArray *roll_acce
 void reset_pid(PidData *p);
 void apply_soft_start(PidData *p, MotorData *m);
 void configure_pid(PidData *p, tnt_config *config);
+void tone_update(ToneData *tone, RuntimeData *rt);
+void play_tone(ToneData *tone, float freq, float voltage, float duration);
+void end_tone(ToneData *tone);
