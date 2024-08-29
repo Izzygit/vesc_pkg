@@ -282,10 +282,6 @@ static void reset_vars(data *d) {
 	
 		// Traction Control
 		reset_traction(&d->traction, &d->state, &d->braking);
-
-		// Haptic Buzz:
-		d->tone_in_progress = false;
-		d->tone_timer = d->rt.current_time;
 	}
 	state_engage(&d->state);
 }
@@ -539,8 +535,8 @@ static void calculate_setpoint_target(data *d) {
 	if (d->state.sat == SAT_PB_DUTY) {
 		if (d->tnt_conf.haptic_buzz_duty)
 			play_tone(&d->tone, d->tnt_conf.tone_freq_high_duty, d->tnt_conf.tone_volt_high_duty, 600);
-	} else if (d->tone_in_progress && d->tone_duration == 600) {
-		end_tone(data *d);
+	} else if (d->tone.tone_in_progress && d->tone.duration == 600) {
+		end_tone(&->tone);
 	}
 }
 
@@ -700,7 +696,7 @@ static void tnt_thd(void *arg) {
 
 	while (!VESC_IF->should_terminate()) {
 		beeper_update(d);
-		tone_update(d);
+		tone_update(&d->tone, &d->rt);
 		runtime_data_update(&d->rt);
 		apply_pitch_filters(&d->rt, &d->tnt_conf);
 		motor_data_update(&d->motor);
@@ -804,7 +800,7 @@ static void tnt_thd(void *arg) {
 			if (fabsf(new_pid_value) > current_limit) {
 				new_pid_value = sign(new_pid_value) * current_limit;
 			}
-			check_current(&d->motor, &d->surge, &d->state, &d->rt,  &d->tnt_conf); // Check for high current conditions
+			check_current(&d->motor, &d->surge, &d->state, &d->rt,  &d->tnt_conf, &d->tone); // Check for high current conditions
 			
 			// Modifiers to PID control
 			check_traction(&d->motor, &d->traction, &d->state, &d->rt, &d->tnt_conf, &d->braking, &d->pid, &d->traction_dbg);
