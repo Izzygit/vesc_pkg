@@ -536,7 +536,7 @@ static void calculate_setpoint_target(data *d) {
 		if (d->tnt_conf.haptic_buzz_duty)
 			play_tone(&d->tone, d->tnt_conf.tone_freq_high_duty, d->tnt_conf.tone_volt_high_duty, 600);
 	} else if (d->tone.tone_in_progress && d->tone.duration == 600) {
-		end_tone(&->tone);
+		end_tone(&d->tone);
 	}
 }
 
