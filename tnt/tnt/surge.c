@@ -78,8 +78,8 @@ void check_current(MotorData *m, SurgeData *surge, State *state, RuntimeData *rt
 	     (m->erpm_sign_check) &&									//Prevents surge if direction has changed rapidly, like a situation with hard brake and wheelslip
 	     (state->sat != SAT_CENTERING)) { 							//Not during startup
 		// High current, just haptic buzz don't actually limit currents
-		if (!surge->high_current && d->tnt_conf.haptic_buzz_current)
-			play_tone(&tone, config->tone_freq_high_current, config->tone_volt_high_current, config->overcurrent_period);
+		if (!surge->high_current && config->haptic_buzz_current)
+			play_tone(tone, config->tone_freq_high_current, config->tone_volt_high_current, config->overcurrent_period);
 		surge->high_current = true;
 	} else { surge->high_current = false; } 
 }
