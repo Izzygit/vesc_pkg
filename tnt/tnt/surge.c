@@ -68,7 +68,7 @@ void check_surge(MotorData *m, SurgeData *surge, State *state, RuntimeData *rt, 
 	}
 }
 
-void check_current(MotorData *m, SurgeData *surge, State *state, RuntimeData *rt, tnt_config *config) {
+void check_current(MotorData *m, SurgeData *surge, State *state, RuntimeData *rt, tnt_config *config, ToneData *tone) {
 	float scale_start_current = lerp(1.0 * config->surge_scaleduty / 100.0, .95, config->surge_startcurrent, config->surge_start_hd_current, m->duty_cycle);
 	surge->start_current = fminf(config->surge_startcurrent, scale_start_current); 
 	if ((m->current_filtered * m->erpm_sign > surge->start_current - config->overcurrent_margin) && 	//High current condition 
@@ -78,15 +78,10 @@ void check_current(MotorData *m, SurgeData *surge, State *state, RuntimeData *rt
 	     (m->erpm_sign_check) &&									//Prevents surge if direction has changed rapidly, like a situation with hard brake and wheelslip
 	     (state->sat != SAT_CENTERING)) { 							//Not during startup
 		// High current, just haptic buzz don't actually limit currents
+		if (!surge->high_current && d->tnt_conf.haptic_buzz_current)
+			play_tone(&tone, config->tone_freq_high_current, config->tone_volt_high_current, config->overcurrent_period);
 		surge->high_current = true;
-		if (rt->current_time - surge->high_current_timer < config->overcurrent_period) {		//Limit haptic buzz duration
-			surge->high_current_buzz = true;
-		} else {surge->high_current_buzz = false;}
-	} else { 
-		surge->high_current_buzz = false;
-		surge->high_current = false;
-		surge->high_current_timer = rt->current_time; 
-	} 
+	} else { surge->high_current = false; } 
 }
 
 void configure_surge(SurgeData *surge, tnt_config *config){
