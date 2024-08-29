@@ -70,6 +70,7 @@ typedef struct {
 
   	MotorData motor;
 	PidData pid;
+	ToneData tone;
 
 	// Beeper
 	int beep_num_left;
@@ -85,9 +86,6 @@ typedef struct {
 	float noseangling_step_size;
 	bool duty_beeping;
 	float tiltback_duty;
-
-	// Feature: Soft Start
-	float softstart_pid_limit, softstart_ramp_step_size;
 
 	// Runtime values grouped for easy access in ancillary functions
 	RuntimeData rt; 		// pitch_angle proportional pid_value setpoint current_time roll_angle  last_accel_z  accel[3]
@@ -132,11 +130,6 @@ typedef struct {
 	KpArray roll_brake_kp;
 	KpArray yaw_accel_kp;
 	KpArray yaw_brake_kp;
-
-	//Haptic Buzz
-	float tone_timer;
-	float tone_volt, tone_freq;
-	bool tone_in_progress;
 
 	//Trip Debug
 	RideTimeData ridetimer;
@@ -545,7 +538,7 @@ static void calculate_setpoint_target(data *d) {
 	//Duty FOC Tone
 	if (d->state.sat == SAT_PB_DUTY) {
 		if (d->tnt_conf.haptic_buzz_duty)
-			play_tone(data *d, d->tnt_conf.tone_freq_high_duty, d->tnt_conf.tone_volt_high_duty, 600);
+			play_tone(&d->tone, d->tnt_conf.tone_freq_high_duty, d->tnt_conf.tone_volt_high_duty, 600);
 	} else if (d->tone_in_progress && d->tone_duration == 600) {
 		end_tone(data *d);
 	}
@@ -572,30 +565,6 @@ static void apply_noseangling(data *d){
 	d->rt.setpoint += d->noseangling_interpolated;
 }
 
-static void tone_update(data *d) {
-	if (!d->tone_in_progress && d->tone_freq != 0) {
-		d->tone_in_progress = VESC_IF->foc_play_tone(0,  d->tone_freq, d->tone_volt);
-		d->tone_timeron = d->rt.current_time;
-	} else if (d->rt.current_time - d->tone_timeron > d->tone_duration && d->tone_in_progress) {
-		VESC_IF->foc_stop_audio(true);
-		d->tone_in_progress = false;
-		d->tone_freq = 0; // reset to zero after duration to require another call from play_tone
-	}
-}
-
-static void play_tone(data *d, float freq, float voltage, float duration) {
-	if (!d->tone_in_progress) {
-		d->tone_freq = freq;
-		d->tone_volt = voltage;
-		d->tone_duration = duration;
-	}
-}
-
-static void end_tone(data *d) {
-	d->tone_freq = 0;
-	d->tone_volt = 0;
-	d->tone_duration = 0;
-}
 /*
 static void play_tone(data *d, float note_period) {
 	if (d->surge.high_current_buzz) {
@@ -624,6 +593,7 @@ static void play_tone(data *d, float note_period) {
 	}
 }
 */
+
 float apply_pitch_kp(data *d) {
 	//Select and Apply Pitch kp  
 	float kp_mod, new_pid_value;
