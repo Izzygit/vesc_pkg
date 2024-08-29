@@ -71,6 +71,7 @@ For more instructions on setting up your board please refer to the [Set Up Guide
     * FOC play tones now replaces haptic buzz.
     * New parameters allow for frequency and voltage (volume) adjustment.
     * Only applied for high duty and high current but more to come.
+    * Beeper is now replaced with FOC play tones
 * _Fixes/Improvements_
    * Added a list of end conditions to AppUI for Surge and Traction Control debugs.
    * Added a timer to AppUI to show the last time Traction Control Braking was used.
