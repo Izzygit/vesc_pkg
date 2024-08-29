@@ -457,13 +457,17 @@ static void calculate_setpoint_target(data *d) {
 			d->setpoint_target = d->rt.pitch_angle + d->tnt_conf.surge_pitchmargin * d->motor.erpm_sign;
 			d->state.sat = SAT_SURGE;
 		}
-	 } else if (d->motor.duty_cycle > d->tiltback_duty) {
+	} else if (d->motor.duty_cycle > d->tiltback_duty) {
 		if (d->motor.erpm > 0) {
 			d->setpoint_target = d->tnt_conf.tiltback_duty_angle;
 		} else {
 			d->setpoint_target = -d->tnt_conf.tiltback_duty_angle;
 		}
 		d->state.sat = SAT_PB_DUTY;
+	} else if (d->motor.duty_cycle > d->tiltback_duty - .1 &&
+	    d->tnt_conf.is_dutybeep_enabled) {
+		beep_alert(d, 4, false);
+		d->beep_reason = BEEP_DUTY;
 	} else if (d->motor.duty_cycle > 0.05 && input_voltage > d->tnt_conf.tiltback_hv) {
 		d->beep_reason = BEEP_HV;
 		beep_alert(d, 3, false);
@@ -538,18 +542,12 @@ static void calculate_setpoint_target(data *d) {
 	        d->setpoint_target = 0;
 	}
 	
-	//Duty beep
+	//Duty FOC Tone
 	if (d->state.sat == SAT_PB_DUTY) {
-		if (d->tnt_conf.is_dutybeep_enabled || (d->tnt_conf.tiltback_duty_angle == 0)) {
-			beep_on(d, true);
-			d->beep_reason = BEEP_DUTY;
-			d->duty_beeping = true;
-		}
-	}
-	else {
-		if (d->duty_beeping) {
-			beep_off(d, false);
-		}
+		if (d->tnt_conf.haptic_buzz_duty)
+			play_tone(data *d, d->tnt_conf.tone_freq_high_duty, d->tnt_conf.tone_volt_high_duty, 600);
+	} else if (d->tone_in_progress && d->tone_duration == 600) {
+		end_tone(data *d);
 	}
 }
 
@@ -574,6 +572,31 @@ static void apply_noseangling(data *d){
 	d->rt.setpoint += d->noseangling_interpolated;
 }
 
+static void tone_update(data *d) {
+	if (!d->tone_in_progress && d->tone_freq != 0) {
+		d->tone_in_progress = VESC_IF->foc_play_tone(0,  d->tone_freq, d->tone_volt);
+		d->tone_timeron = d->rt.current_time;
+	} else if (d->rt.current_time - d->tone_timeron > d->tone_duration && d->tone_in_progress) {
+		VESC_IF->foc_stop_audio(true);
+		d->tone_in_progress = false;
+		d->tone_freq = 0; // reset to zero after duration to require another call from play_tone
+	}
+}
+
+static void play_tone(data *d, float freq, float voltage, float duration) {
+	if (!d->tone_in_progress) {
+		d->tone_freq = freq;
+		d->tone_volt = voltage;
+		d->tone_duration = duration;
+	}
+}
+
+static void end_tone(data *d) {
+	d->tone_freq = 0;
+	d->tone_volt = 0;
+	d->tone_duration = 0;
+}
+/*
 static void play_tone(data *d, float note_period) {
 	if (d->surge.high_current_buzz) {
 		d->tone_freq = d->tnt_conf.haptic_buzz_current ? d->tnt_conf.tone_freq_high_current : 0;
@@ -600,7 +623,7 @@ static void play_tone(data *d, float note_period) {
 		d->tone_in_progress = false;
 	}
 }
-
+*/
 float apply_pitch_kp(data *d) {
 	//Select and Apply Pitch kp  
 	float kp_mod, new_pid_value;
@@ -707,6 +730,7 @@ static void tnt_thd(void *arg) {
 
 	while (!VESC_IF->should_terminate()) {
 		beeper_update(d);
+		tone_update(d);
 		runtime_data_update(&d->rt);
 		apply_pitch_filters(&d->rt, &d->tnt_conf);
 		motor_data_update(&d->motor);
@@ -715,7 +739,7 @@ static void tnt_thd(void *arg) {
 		//Footpad Sensor
 	        footpad_sensor_update(&d->footpad_sensor, &d->tnt_conf);
 	        if (d->footpad_sensor.state == FS_NONE && d->state.state == STATE_RUNNING &&
-	            d->state.mode != MODE_FLYWHEEL && d->motor.abs_erpm > d->switch_warn_beep_erpm) {
+	            d->motor.abs_erpm > d->switch_warn_beep_erpm) {
 	            // If we're at riding speed and the switch is off => ALERT the user
 	            // set force=true since this could indicate an imminent shutdown/nosedive
 	            beep_on(d, true);
@@ -818,7 +842,6 @@ static void tnt_thd(void *arg) {
 				check_surge(&d->motor, &d->surge, &d->state, &d->rt, &d->pid, &d->tnt_conf, &d->surge_dbg);
 			if (d->tnt_conf.is_tc_braking_enabled)
 				check_traction_braking(&d->motor, &d->braking, &d->state, &d->rt, &d->tnt_conf, d->remote.inputtilt_interpolated, &d->braking_dbg);
-			play_tone(d, 0.3); //Apply haptic buzz
 
 			// PID value application
 			d->pid.pid_value = (d->state.wheelslip && d->tnt_conf.is_traction_enabled) ? 0 : new_pid_value;
