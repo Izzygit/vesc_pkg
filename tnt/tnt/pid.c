@@ -262,7 +262,7 @@ void configure_pid(PidData *p, tnt_config *config) {
 
 void tone_update(ToneData *tone, RuntimeData *rt) {
 	if (!tone->tone_in_progress && tone->freq != 0) {
-		tone->tone_in_progress = VESC_IF->foc_play_tone(0,  tone->freq, tone->volt);
+		tone->tone_in_progress = VESC_IF->foc_play_tone(0,  tone->freq, tone->voltage);
 		tone->timer = rt->current_time;
 	} else if (rt->current_time - tone->timer > tone->duration && tone->tone_in_progress) {
 		VESC_IF->foc_stop_audio(true);
@@ -274,13 +274,13 @@ void tone_update(ToneData *tone, RuntimeData *rt) {
 void play_tone(ToneData *tone, float freq, float voltage, float duration) {
 	if (!tone->tone_in_progress) {
 		tone->freq = freq;
-		tone->volt = voltage;
+		tone->voltage = voltage;
 		tone->duration = duration;
 	}
 }
 
 void end_tone(ToneData *tone) {
 	tone->freq = 0;
-	tone->volt = 0;
+	tone->voltage = 0;
 	tone->duration = 0;
 }
