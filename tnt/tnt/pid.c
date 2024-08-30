@@ -260,31 +260,56 @@ void configure_pid(PidData *p, tnt_config *config) {
 	p->softstart_step_size = 100.0 / config->hertz;
 }
 
-void tone_update(ToneData *tone, RuntimeData *rt) {
-	if (!tone->tone_in_progress && tone->freq != 0) {
-		tone->tone_in_progress = VESC_IF->foc_play_tone(0,  tone->freq, tone->voltage);
-		tone->timer = rt->current_time;
-	} else if (rt->current_time - tone->timer > tone->duration && tone->tone_in_progress) {
-		VESC_IF->foc_stop_audio(true);
-		tone->tone_in_progress = false;
-		tone->freq = 0; // reset to zero after duration to require another call from play_tone
-	}
+void tone_update(ToneData *tone, RuntimeData *rt, State *state) {
+	if (!tone->pause) { //only play or stop if pause has not been activated
+		tone->pause_timer = rt->current_time; // keep updated until we are in pause state
+		if (!tone->tone_in_progress && tone->times != 0) {
+			if (state->state == STATE_RUNNING) {
+				tone->tone_in_progress = VESC_IF->foc_play_tone(0,  tone->freq, tone->voltage);
+			} else { tone->tone_in_progress = VESC_IF->foc_beep(tome->freq, tone->duration, tone->voltage);
+			tone->timer = rt->current_time;
+		} else if (rt->current_time - tone->timer > tone->duration && tone->tone_in_progress) {
+			if (state->state == STATE_RUNNING)
+				VESC_IF->foc_stop_audio(true);
+			tone->times--; 
+			if (tone->times > 0) {
+				tone->pause = true; //put in pause if there is another play to do
+			} else { tone->tone_in_progress = false; }
+		}
+	else if (rt->current_time - tone->pause_timer > 0.3) {
+		tone->pause = false;
 }
 
-void play_tone(ToneData *tone, float freq, float voltage, float duration) {
-	if (!tone->tone_in_progress) {
-		tone->freq = freq;
-		tone->voltage = voltage;
-		tone->duration = duration;
+void play_tone(ToneData *tone, ToneConfig *config) {
+	//Used to play limited duration, repeating, or continuous tones
+	if (!tone->tone_in_progress || tone->priority < priority) {
+		tone->freq = config->freq;
+		tone->voltage = config->voltage;
+		tone->duration = config->duration;
+		tone->priority = config->priority;
+		tone->times = config->times;
+		tone->pause = false;
 	}
 }
 
 void end_tone(ToneData *tone) {
+	//Used to end continous tones
 	tone->freq = 0;
 	tone->voltage = 0;
 	tone->duration = 0;
+	tone->times = 0;
+	tone->priority = 0;
 }
 
 void tone_reset(ToneData *tone) {
 	tone->tone_in_progress = false;
+	end_tone(tone);
+}
+
+void tone_configure(ToneConfig *config, float freq, float voltage, float duration, int times, int priority) {
+	config->freq = freq;
+	config->voltage = voltage;
+	config->duration = duration;
+	config->times = times;
+	config->priority = priority;
 }
