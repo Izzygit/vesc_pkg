@@ -51,9 +51,21 @@ typedef struct {
 	float freq;
 	float voltage;
 	float duration;
+	int priority;
+	int times;
 	bool tone_in_progress;
 	float timer;
+	bool pause;
+	float pause_timer;
 } ToneData;
+
+typedef struct {
+	float freq;
+	float voltage;
+	float duration;
+	int priority;
+	int times;
+} ToneConfig;
 
 void pitch_kp_configure(const tnt_config *config, KpArray *k, int mode);
 void roll_kp_configure(const tnt_config *config, KpArray *k, int mode);
@@ -67,7 +79,8 @@ float roll_erpm_scale(PidData *p, State *state, MotorData *m, KpArray *roll_acce
 void reset_pid(PidData *p);
 void apply_soft_start(PidData *p, MotorData *m);
 void configure_pid(PidData *p, tnt_config *config);
-void tone_update(ToneData *tone, RuntimeData *rt);
-void play_tone(ToneData *tone, float freq, float voltage, float duration);
+void tone_update(ToneData *tone, RuntimeData *rt, State *state);
+void play_tone(ToneData *tone, ToneConfig *config);
 void end_tone(ToneData *tone);
 void tone_reset(ToneData *tone);
+void tone_configure(ToneConfig *config, float freq, float voltage, float duration, int times, int priority);
