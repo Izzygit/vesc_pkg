@@ -261,12 +261,14 @@ void configure_pid(PidData *p, tnt_config *config) {
 }
 
 void tone_update(ToneData *tone, RuntimeData *rt, State *state) {
+	int index;
 	if (!tone->pause) { //only play or stop if pause has not been activated
 		tone->pause_timer = rt->current_time; // keep updated until we are in pause state
 		if (!tone->tone_in_progress && tone->times != 0) {
+			index = tone->times - 1;
 			if (state->state == STATE_RUNNING) {
-				tone->tone_in_progress = VESC_IF->foc_play_tone(0,  tone->freq, tone->voltage);
-			} else { tone->tone_in_progress = VESC_IF->foc_beep(tome->freq, tone->duration, tone->voltage);
+				tone->tone_in_progress = VESC_IF->foc_play_tone(0,  tone->freq[index], tone->voltage);
+			} else { tone->tone_in_progress = VESC_IF->foc_beep(tome->freq[index], tone->duration, tone->voltage);
 			tone->timer = rt->current_time;
 		} else if (rt->current_time - tone->timer > tone->duration && tone->tone_in_progress) {
 			if (state->state == STATE_RUNNING)
@@ -283,7 +285,9 @@ void tone_update(ToneData *tone, RuntimeData *rt, State *state) {
 void play_tone(ToneData *tone, ToneConfig *config) {
 	//Used to play limited duration, repeating, or continuous tones
 	if (!tone->tone_in_progress || tone->priority < priority) {
-		tone->freq = config->freq;
+		tone->freq[0] = config->freq[0];
+		tone->freq[1] = config->freq[1];
+		tone->freq[2] = config->freq[2];
 		tone->voltage = config->voltage;
 		tone->duration = config->duration;
 		tone->priority = config->priority;
@@ -294,7 +298,9 @@ void play_tone(ToneData *tone, ToneConfig *config) {
 
 void end_tone(ToneData *tone) {
 	//Used to end continous tones
-	tone->freq = 0;
+	tone->freq[0] = 0;
+	tone->freq[1] = 0;
+	tone->freq[2] = 0;
 	tone->voltage = 0;
 	tone->duration = 0;
 	tone->times = 0;
@@ -306,8 +312,10 @@ void tone_reset(ToneData *tone) {
 	end_tone(tone);
 }
 
-void tone_configure(ToneConfig *config, float freq, float voltage, float duration, int times, int priority) {
-	config->freq = freq;
+void tone_configure(ToneConfig *config, float freq1, float freq2, float freq3, float voltage, float duration, int times, int priority) {
+	config->freq[0] = freq1;
+	config->freq[1] = freq2;
+	config->freq[2] = freq3;
 	config->voltage = voltage;
 	config->duration = duration;
 	config->times = times;
