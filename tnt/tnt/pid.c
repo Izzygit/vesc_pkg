@@ -276,7 +276,7 @@ void tone_update(ToneData *tone, RuntimeData *rt, State *state) {
 				tone->pause = true; //put in pause if there is another play to do
 			} else { tone->tone_in_progress = false; }
 		}
-	else if (rt->current_time - tone->pause_timer > 0.3) {
+	else if (rt->current_time - tone->pause_timer > 0.1) {
 		tone->pause = false;
 }
 
