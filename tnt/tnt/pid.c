@@ -282,16 +282,16 @@ void tone_update(ToneData *tone, RuntimeData *rt, State *state) {
 		tone->pause = false;
 }
 
-void play_tone(ToneData *tone, ToneConfig *config) {
+void play_tone(ToneData *tone, ToneConfig *toneconfig) {
 	//Used to play limited duration, repeating, or continuous tones
 	if (!tone->tone_in_progress || tone->priority < priority) {
-		tone->freq[0] = config->freq[0];
-		tone->freq[1] = config->freq[1];
-		tone->freq[2] = config->freq[2];
-		tone->voltage = config->voltage;
-		tone->duration = config->duration;
-		tone->priority = config->priority;
-		tone->times = config->times;
+		tone->freq[0] = toneconfig->freq[0];
+		tone->freq[1] = toneconfig->freq[1];
+		tone->freq[2] = toneconfig->freq[2];
+		tone->voltage = toneconfig->voltage;
+		tone->duration = toneconfig->duration;
+		tone->priority = toneconfig->priority;
+		tone->times = toneconfig->times;
 		tone->pause = false;
 	}
 }
@@ -312,12 +312,31 @@ void tone_reset(ToneData *tone) {
 	end_tone(tone);
 }
 
-void tone_configure(ToneConfig *config, float freq1, float freq2, float freq3, float voltage, float duration, int times, int priority) {
-	config->freq[0] = freq1;
-	config->freq[1] = freq2;
-	config->freq[2] = freq3;
-	config->voltage = voltage;
-	config->duration = duration;
-	config->times = times;
-	config->priority = priority;
+void tone_configure(ToneConfig *toneconfig, float freq1, float freq2, float freq3, float voltage, float duration, int times, int priority) {
+	toneconfig->freq[0] = freq1;
+	toneconfig->freq[1] = freq2;
+	toneconfig->freq[2] = freq3;
+	toneconfig->voltage = voltage;
+	toneconfig->duration = duration;
+	toneconfig->times = times;
+	toneconfig->priority = priority;
+}
+
+void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config) {
+	tone_configure(&toneconfig->continuous1, 800, 0, 0, 2, 601, 1, 1);
+	tone_configure(&toneconfig->continuous2, 1000, 0, 0, 2, 602, 1, 1);
+	tone_configure(&toneconfig->fastdouble1, 800, 800, 0, 2, .2, 2, 1);
+	tone_configure(&toneconfig->fastdouble2, 1000, 1000, 0, 2, .2, 2, 1);
+	tone_configure(&toneconfig->slowdouble1, 800, 800, 0, 2, .5, 2, 1);
+	tone_configure(&toneconfig->slowdouble2, 1000, 1000, 0, 2, .5, 2, 1);
+	tone_configure(&toneconfig->fasttriple1, 800, 800, 800, 2, .2, 3, 1);
+	tone_configure(&toneconfig->fasttriple2, 1000, 1000, 1000, 2, .2, 3, 1);
+	tone_configure(&toneconfig->slowtriple1, 800, 800, 800, 2, .5, 3, 1);
+	tone_configure(&toneconfig->slowtriple2, 1000, 1000, 1000, 2, .5, 3, 1);
+	tone_configure(&toneconfig->fasttripleup,700, 800, 1000, 2, .2, 3, 1);
+	tone_configure(&toneconfig->fasttripledown, 1000, 800, 700, 2, .2, 3, 1);
+	tone_configure(&toneconfig->slowtripleup, 700, 800, 1000, 2, .5, 3, 1);
+	tone_configure(&toneconfig->slowtripledown, 1000, 800, 700, 2, .5, 3, 1);
+	tone_configure(&toneconfig->dutytone, config->tone_freq_high_duty, 0, 0, config->tone_volt_high_duty, 600, 1, 8);
+	tone_configure(&toneconfig->currenttone, config->tone_freq_high_current, 0, 0, config->tone_volt_high_current, config->overcurrent_period, 1, 6);
 }
