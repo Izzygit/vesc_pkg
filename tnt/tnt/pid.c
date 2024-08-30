@@ -278,7 +278,7 @@ void tone_update(ToneData *tone, RuntimeData *rt, State *state) {
 				tone->pause = true; //put in pause if there is another play to do
 			} else { tone->tone_in_progress = false; }
 		}
-	} else if (rt->current_time - tone->pause_timer > 0.1) {
+	} else if (rt->current_time - tone->pause_timer > 0.3) {
 		tone->pause = false;
 	}
 }
@@ -332,18 +332,18 @@ void tone_configure(ToneConfig *toneconfig, float freq1, float freq2, float freq
 void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config) {
 	tone_configure(&toneconfig->continuous1, 800, 0, 0, 1.5, 601, 1, 0, 1);
 	tone_configure(&toneconfig->continuous2, 1000, 0, 0, 1.5, 602, 1, 0, 1);
-	tone_configure(&toneconfig->fastdouble1, 800, 800, 0, 1.5, .2, 2, 30, 1);
-	tone_configure(&toneconfig->fastdouble2, 1000, 1000, 0, 1.5, .2, 2, 30, 1);
+	tone_configure(&toneconfig->fastdouble1, 800, 800, 0, 1.5, .2, 2, 10, 1);
+	tone_configure(&toneconfig->fastdouble2, 1000, 1000, 0, 1.5, .2, 2, 0, 1);
 	tone_configure(&toneconfig->slowdouble1, 800, 800, 0, 1.5, .5, 2, 30, 1);
 	tone_configure(&toneconfig->slowdouble2, 1000, 1000, 0, 1.5, .5, 2, 30, 1);
 	tone_configure(&toneconfig->fasttriple1, 800, 800, 800, 1.5, .2, 3, 30, 1);
 	tone_configure(&toneconfig->fasttriple2, 1000, 1000, 1000, 1.5, .2, 3, 30, 1);
-	tone_configure(&toneconfig->slowtriple1, 800, 800, 800, 1.5, .5, 3, 30, 1);
-	tone_configure(&toneconfig->slowtriple2, 1000, 1000, 1000, 1.5, .5, 3, 30, 1);
-	tone_configure(&toneconfig->fasttripleup,700, 800, 1000, 1.5, .2, 3, 30, 1);
+	tone_configure(&toneconfig->slowtriple1, 800, 800, 800, 1.5, .5, 3, 10, 1);
+	tone_configure(&toneconfig->slowtriple2, 1000, 1000, 1000, 1.5, .5, 3, 10, 1);
+	tone_configure(&toneconfig->fasttripleup,700, 800, 1000, 1.5, .2, 3, 5, 1);
 	tone_configure(&toneconfig->fasttripledown, 1000, 800, 700, 1.5, .2, 3, 30, 1);
-	tone_configure(&toneconfig->slowtripleup, 700, 800, 1000, 1.5, .5, 3, 30, 1);
-	tone_configure(&toneconfig->slowtripledown, 1000, 800, 700, 1.5, .5, 3, 30, 1);
+	tone_configure(&toneconfig->slowtripleup, 700, 800, 1000, 1.5, .5, 3, 5, 1);
+	tone_configure(&toneconfig->slowtripledown, 1000, 800, 700, 1.5, .5, 3, 5, 1);
 	tone_configure(&toneconfig->dutytone, config->tone_freq_high_duty, 0, 0, config->tone_volt_high_duty, 600, 1, 0, 8);
 	tone_configure(&toneconfig->currenttone, config->tone_freq_high_current, 0, 0, config->tone_volt_high_current, config->overcurrent_period, 1, 0, 6);
 }
