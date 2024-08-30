@@ -336,7 +336,7 @@ void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config) {
 	tone_configure(&toneconfig->fastdouble2, 1000, 1000, 0, 1.5, .2, 2, 0, 1);
 	tone_configure(&toneconfig->slowdouble1, 800, 800, 0, 1.5, .5, 2, 30, 1);
 	tone_configure(&toneconfig->slowdouble2, 1000, 1000, 0, 1.5, .5, 2, 30, 1);
-	tone_configure(&toneconfig->fasttriple1, 800, 800, 800, 1.5, .2, 3, 30, 1);
+	tone_configure(&toneconfig->fasttriple1, 800, 800, 800, 1.5, .2, 3, 0, 1);
 	tone_configure(&toneconfig->fasttriple2, 1000, 1000, 1000, 1.5, .2, 3, 30, 1);
 	tone_configure(&toneconfig->slowtriple1, 800, 800, 800, 1.5, .5, 3, 10, 1);
 	tone_configure(&toneconfig->slowtriple2, 1000, 1000, 1000, 1.5, .5, 3, 10, 1);
