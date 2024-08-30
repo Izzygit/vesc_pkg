@@ -48,7 +48,7 @@ typedef struct {
 } PidData;
 
 typedef struct {
-	float freq;
+	float freq[2];
 	float voltage;
 	float duration;
 	int priority;
@@ -60,7 +60,7 @@ typedef struct {
 } ToneData;
 
 typedef struct {
-	float freq;
+	float freq[2];
 	float voltage;
 	float duration;
 	int priority;
