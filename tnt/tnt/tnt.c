@@ -153,7 +153,7 @@ void beeper_update(data *d) {
 			d->beep_countdown = d->beep_duration;
 			d->beep_num_left--;	
 			if (d->beep_num_left & 0x1)
-				VESC_IF->foc_play_tone(0, 600, 2);
+				VESC_IF->foc_play_tone(0, 800, 2);
 			else
 				VESC_IF->foc_stop_audio(true);
 		}
