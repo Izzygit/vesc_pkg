@@ -278,16 +278,16 @@ void tone_update(ToneData *tone, RuntimeData *rt, State *state) {
 				tone->pause = true; //put in pause if there is another play to do
 			} else { tone->tone_in_progress = false; }
 		}
-	else if (rt->current_time - tone->pause_timer > 0.1) {
+	} else if (rt->current_time - tone->pause_timer > 0.1) {
 		tone->pause = false;
+	}
 }
 
 void play_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt, int beep_reason) {
 	//Used to play limited duration, repeating, or continuous tones
 	if (rt->current_time - tone->timer < toneconfig->delay && 
-	    tone->beep_reason == beep_reason) {
+	    tone->beep_reason == beep_reason) 
 		return;			// If we have the same beep reason as the last and we are within the delay period do not update tone->times to prevent beep
-	}
 	
 	if (!tone->tone_in_progress || tone->priority < toneconfig->priority) {
 		tone->freq[0] = toneconfig->freq[0];
