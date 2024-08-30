@@ -88,22 +88,6 @@ typedef struct {
 	ToneConfig currenttone;
 } ToneConfigs;
 
-typedef enum {
-	BEEP_NONE = 0,
-	BEEP_LV = 1,
-	BEEP_HV = 2,
-	BEEP_TEMPFET = 3,
-	BEEP_TEMPMOT = 4,
-	BEEP_CURRENT = 5,
-	BEEP_DUTY = 6,
-	BEEP_SENSORS = 7,
-	BEEP_LOWBATT = 8,
-	BEEP_IDLE = 9,
-	BEEP_ERROR = 10,
-	TONE_CURRENT = 11,
-	TONE_DUTY = 12
-} BeepReason;
-
 void pitch_kp_configure(const tnt_config *config, KpArray *k, int mode);
 void roll_kp_configure(const tnt_config *config, KpArray *k, int mode);
 void yaw_kp_configure(const tnt_config *config, KpArray *k, int mode);
