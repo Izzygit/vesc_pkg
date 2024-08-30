@@ -57,6 +57,7 @@ typedef struct {
 	float timer;
 	bool pause;
 	float pause_timer;
+	int beep_reason;
 } ToneData;
 
 typedef struct {
@@ -65,6 +66,7 @@ typedef struct {
 	float duration;
 	int priority;
 	int times;
+	float delay;
 } ToneConfig;
 
 typedef struct {
@@ -86,6 +88,22 @@ typedef struct {
 	ToneConfig currenttone;
 } ToneConfigs;
 
+typedef enum {
+	BEEP_NONE = 0,
+	BEEP_LV = 1,
+	BEEP_HV = 2,
+	BEEP_TEMPFET = 3,
+	BEEP_TEMPMOT = 4,
+	BEEP_CURRENT = 5,
+	BEEP_DUTY = 6,
+	BEEP_SENSORS = 7,
+	BEEP_LOWBATT = 8,
+	BEEP_IDLE = 9,
+	BEEP_ERROR = 10,
+	TONE_CURRENT = 11,
+	TONE_DUTY = 12
+} BeepReason;
+
 void pitch_kp_configure(const tnt_config *config, KpArray *k, int mode);
 void roll_kp_configure(const tnt_config *config, KpArray *k, int mode);
 void yaw_kp_configure(const tnt_config *config, KpArray *k, int mode);
@@ -99,8 +117,8 @@ void reset_pid(PidData *p);
 void apply_soft_start(PidData *p, MotorData *m);
 void configure_pid(PidData *p, tnt_config *config);
 void tone_update(ToneData *tone, RuntimeData *rt, State *state);
-void play_tone(ToneData *tone, ToneConfig *toneconfig);
+void play_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt, int beep_reason);
 void end_tone(ToneData *tone);
 void tone_reset(ToneData *tone);
-void tone_configure(ToneConfig *toneconfig, float freq, float voltage, float duration, int times, int priority);
+void tone_configure(ToneConfig *toneconfig, float freq1, float freq2, float freq3, float voltage, float duration, int times, float delay, int priority);
 void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config);
