@@ -284,3 +284,7 @@ void end_tone(ToneData *tone) {
 	tone->voltage = 0;
 	tone->duration = 0;
 }
+
+void tone_reset(ToneData *tone) {
+	tone->tone_in_progress = false;
+}
