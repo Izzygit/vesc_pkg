@@ -68,7 +68,7 @@ void check_surge(MotorData *m, SurgeData *surge, State *state, RuntimeData *rt, 
 	}
 }
 
-void check_current(MotorData *m, SurgeData *surge, State *state, tnt_config *config, ToneData *tone, ToneConfig *high_current) {
+void check_current(MotorData *m, SurgeData *surge, State *state, tnt_config *config, ToneData *tone, ToneConfig *currenttone) {
 	float scale_start_current = lerp(1.0 * config->surge_scaleduty / 100.0, .95, config->surge_startcurrent, config->surge_start_hd_current, m->duty_cycle);
 	surge->start_current = fminf(config->surge_startcurrent, scale_start_current); 
 	if ((m->current_filtered * m->erpm_sign > surge->start_current - config->overcurrent_margin) && 	//High current condition 
@@ -79,7 +79,7 @@ void check_current(MotorData *m, SurgeData *surge, State *state, tnt_config *con
 	     (state->sat != SAT_CENTERING)) { 							//Not during startup
 		// High current, just haptic buzz don't actually limit currents
 		if (!surge->high_current && config->haptic_buzz_current)
-			play_tone(tone, high_current);
+			play_tone(tone, currenttone);
 		surge->high_current = true;
 	} else { surge->high_current = false; } 
 }
