@@ -70,3 +70,4 @@ void configure_pid(PidData *p, tnt_config *config);
 void tone_update(ToneData *tone, RuntimeData *rt);
 void play_tone(ToneData *tone, float freq, float voltage, float duration);
 void end_tone(ToneData *tone);
+void tone_reset(ToneData *tone);
