@@ -218,9 +218,9 @@ Item {
                 }else if(beep_reason == 4){
                     beepString = "Motor Temp"
                 }else if(beep_reason == 5){
-                    beepString = "Overcurrent"
+                    beepString = "High Current Beep"
                 }else if(beep_reason == 6){
-                    beepString = "Duty Cycle"
+                    beepString = "Duty Cycle Beep"
                 }else if(beep_reason == 7){
                     beepString = "Foot Sensors"
                 }else if(beep_reason == 8){
@@ -229,8 +229,12 @@ Item {
                     beepString = "Board Idle"
                 }else if(beep_reason == 10){
                     beepString = "Other"
-                }
-        
+                }else if(beep_reason == 11){
+                    beepString = "High Current Tone"
+                }else if(beep_reason == 12){
+                    beepString = "Duty Cycle Tone"
+		}
+  
                 var switchString
                 if(switch_state == 0){
                     switchString = "Off"
