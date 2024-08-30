@@ -980,12 +980,20 @@ static void send_realtime_data(data *d){
 		buffer_append_float32_auto(buffer, d->surge_dbg.debug8, &ind); //ramp rate
 	} else if (d->tnt_conf.is_tunedebug_enabled) {
 		buffer[ind++] = 3;
+		buffer_append_float32_auto(buffer, d->rt.current_time - d->tone.pause_timer, &ind); //smooth pitch	
+		buffer_append_float32_auto(buffer, d->rt.current_time - d->tone.timer, &ind); // scaled angle P
+		buffer_append_float32_auto(buffer, d->tone.times, &ind); // added stiffnes pitch kp
+		buffer_append_float32_auto(buffer, d->tone.pause ? 1 : 0, &ind); // added stability rate P
+		buffer_append_float32_auto(buffer, d->tone.freq[2], &ind);
+		buffer_append_float32_auto(buffer, d->tone.freq[1], &ind); //rollkp d->debug2
+		/*
 		buffer_append_float32_auto(buffer, d->rt.pitch_smooth_kalman, &ind); //smooth pitch	
 		buffer_append_float32_auto(buffer, d->debug1, &ind); // scaled angle P
 		buffer_append_float32_auto(buffer, d->debug1*d->pid.stabl*d->tnt_conf.stabl_pitch_max_scale/100.0, &ind); // added stiffnes pitch kp
 		buffer_append_float32_auto(buffer, d->debug3, &ind); // added stability rate P
 		buffer_append_float32_auto(buffer, d->pid.stabl, &ind);
-		buffer_append_float32_auto(buffer, d->debug2, &ind); //rollkp d->debug2
+		buffer_append_float32_auto(buffer, d->debug2, &ind); //rollkp d->debug2 
+  		*/
 	} else if (d->tnt_conf.is_yawdebug_enabled) {
 		buffer[ind++] = 4;
 		buffer_append_float32_auto(buffer, d->rt.yaw_angle, &ind); //yaw angle
