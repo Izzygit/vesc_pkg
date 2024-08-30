@@ -53,7 +53,9 @@ typedef enum {
 	BEEP_SENSORS = 7,
 	BEEP_LOWBATT = 8,
 	BEEP_IDLE = 9,
-	BEEP_ERROR = 10
+	BEEP_ERROR = 10,
+	TONE_CURRENT = 11,
+	TONE_DUTY = 12
 } BeepReason;
 
 // This is all persistent state of the application, which will be allocated in init. It
@@ -76,7 +78,6 @@ typedef struct {
 	ToneConfigs tone_config;
 
 	// Beeper
-	int beep_reason;
 	bool beeper_enabled;
 
 	// Config values
@@ -413,11 +414,9 @@ static void calculate_setpoint_target(data *d) {
 		d->state.sat = SAT_PB_DUTY;
 	} else if (d->motor.duty_cycle > d->tiltback_duty - .1 &&
 	    d->tnt_conf.is_dutybeep_enabled) {
-		play_tone(&d->tone, &d->tone_config.fasttripleup);
-		d->beep_reason = BEEP_DUTY;
+		play_tone(&d->tone, &d->tone_config.fasttripleup, BEEP_DUTY);
 	} else if (d->motor.duty_cycle > 0.05 && input_voltage > d->tnt_conf.tiltback_hv) {
-		d->beep_reason = BEEP_HV;
-		play_tone(&d->tone, &d->tone_config.slowtripleup);
+		play_tone(&d->tone, &d->tone_config.slowtripleup, BEEP_HV);
 		if (((d->rt.current_time - d->tb_highvoltage_timer) > .5) ||
 		   (input_voltage > d->tnt_conf.tiltback_hv + 1)) {
 		// 500ms have passed or voltage is another volt higher, time for some tiltback
@@ -434,8 +433,7 @@ static void calculate_setpoint_target(data *d) {
 		}
 	} else if (VESC_IF->mc_temp_fet_filtered() > d->motor.mc_max_temp_fet) {
 		// Use the angle from Low-Voltage tiltback, but slower speed from High-Voltage tiltback
-		play_tone(&d->tone, &d->tone_config.slowtriple2);
-		d->beep_reason = BEEP_TEMPFET;
+		play_tone(&d->tone, &d->tone_config.slowtriple2, BEEP_TEMPFET);
 		if (VESC_IF->mc_temp_fet_filtered() > (d->motor.mc_max_temp_fet + 1)) {
 			if (d->motor.erpm > 0) {
 				d->setpoint_target = d->tnt_conf.tiltback_ht_angle;
@@ -449,8 +447,7 @@ static void calculate_setpoint_target(data *d) {
 		}
 	} else if (VESC_IF->mc_temp_motor_filtered() > d->motor.mc_max_temp_mot) {
 		// Use the angle from Low-Voltage tiltback, but slower speed from High-Voltage tiltback
-		play_tone(&d->tone, &d->tone_config.slowtriple1);
-		d->beep_reason = BEEP_TEMPMOT;
+		play_tone(&d->tone, &d->tone_config.slowtriple1, BEEP_TEMPMOT);
 		if (VESC_IF->mc_temp_motor_filtered() > (d->motor.mc_max_temp_mot + 1)) {
 			if (d->motor.erpm > 0) {
 				d->setpoint_target = d->tnt_conf.tiltback_ht_angle;
@@ -463,8 +460,7 @@ static void calculate_setpoint_target(data *d) {
 			d->state.sat = SAT_NONE;
 		}
 	} else if (d->motor.duty_cycle > 0.05 && input_voltage < d->tnt_conf.tiltback_lv) {
-		play_tone(&d->tone, &d->tone_config.slowtripledown);
-		d->beep_reason = BEEP_LV;
+		play_tone(&d->tone, &d->tone_config.slowtripledown, BEEP_LV);
 		float abs_motor_current = fabsf(d->motor.current);
 		float vdelta = 1.0 * d->tnt_conf.tiltback_lv - input_voltage;
 		float ratio = vdelta * 20 / abs_motor_current;
@@ -492,7 +488,7 @@ static void calculate_setpoint_target(data *d) {
 	//Duty FOC Tone
 	if (d->state.sat == SAT_PB_DUTY) {
 		if (d->tnt_conf.haptic_buzz_duty) {
-			play_tone(&d->tone, &d->tone_config.dutytone);
+			play_tone(&d->tone, &d->tone_config.dutytone, TONE_DUTY);
 		}
 	} else if (d->tone.tone_in_progress && d->tone.duration == 600) {
 		end_tone(&d->tone);
@@ -638,8 +634,7 @@ static void tnt_thd(void *arg) {
 	            d->motor.abs_erpm > d->switch_warn_beep_erpm) {
 	            // If we're at riding speed and the switch is off => ALERT the user
 	            // set force=true since this could indicate an imminent shutdown/nosedive
-		    play_tone(&d->tone, &d->tone_config.continuous1);
-	            d->beep_reason = BEEP_SENSORS;
+		    play_tone(&d->tone, &d->tone_config.continuous1, BEEP_SENSORS);
 	        } else {
 	            // if the switch comes back on we stop beeping
 	            end_tone(&d->tone);
@@ -665,11 +660,10 @@ static void tnt_thd(void *arg) {
 				float bat_volts = VESC_IF->mc_get_input_voltage_filtered();
 				float threshold = d->tnt_conf.tiltback_lv + 5;
 				if (bat_volts < threshold) {
-					play_tone(&d->tone, &d->tone_config.slowdouble1);
-					d->beep_reason = BEEP_LOWBATT;
+					play_tone(&d->tone, &d->tone_config.slowdouble1, BEEP_LOWBATT);
 				} else {
 					// Let the rider know that the board is ready (one long beep)
-					play_tone(&d->tone, &d->tone_config.fastdouble1);
+					play_tone(&d->tone, &d->tone_config.fastdouble1, BEEP_NONE);
 				}
             		}
            		break;
@@ -767,8 +761,7 @@ static void tnt_thd(void *arg) {
 						d->idle_voltage = input_voltage;
 					}
 					else {
-						play_tone(&d->tone, &d->tone_config.slowdouble2);
-						d->beep_reason = BEEP_IDLE;
+						play_tone(&d->tone, &d->tone_config.slowdouble2, BEEP_IDLE);
 					}
 				}
 			} else {
@@ -938,7 +931,7 @@ static void send_realtime_data(data *d){
 	// Board State
 	buffer[ind++] = d->state.wheelslip ? 4 : d->state.state; 
 	buffer[ind++] = d->state.sat; 
-	buffer[ind++] = (d->footpad_sensor.state & 0xF) + (d->beep_reason << 4);
+	buffer[ind++] = (d->footpad_sensor.state & 0xF) + (d->tone.beep_reason << 4);
 	buffer[ind++] = d->state.stop_condition;
 	buffer_append_float32_auto(buffer, d->footpad_sensor.adc1, &ind);
 	buffer_append_float32_auto(buffer, d->footpad_sensor.adc2, &ind);
