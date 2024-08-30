@@ -70,7 +70,19 @@ typedef struct {
 
   	MotorData motor;
 	PidData pid;
+	
+	//FOC play tones
 	ToneData tone;
+	ToneConfig fastdouble1;
+	ToneConfig fastdouble2;
+	ToneConfig slowdouble1;
+	ToneConfig slowdouble2;
+	ToneConfig fasttriple1;
+	ToneConfig fasttriple2;
+	ToneConfig slowtriple1;
+	ToneConfig slowtriple2;	
+	ToneConfig high_duty;
+	ToneConfig high_current;
 
 	// Beeper
 	int beep_num_left;
@@ -249,7 +261,26 @@ static void configure(data *d) {
 
 	//Traction Configure
 	configure_traction(&d->traction, &d->braking, &d->tnt_conf, &d->traction_dbg, &d->braking_dbg);
-	
+
+	//FOC play tones
+	//void tone_configure(ToneConfig *config, float freq1, float freq2, float freq3, float voltage, float duration, int times, int priority)
+	tone_configure(&d->continuous1, 800, 0, 0, 2, 600, 1, 1);
+	tone_configure(&d->continuous2, 1000, 0, 0, 2, 600, 1, 1);
+	tone_configure(&d->fastdouble1, 800, 800, 0, 2, .2, 2, 1);
+	tone_configure(&d->fastdouble2, 1000, 1000, 0, 2, .2, 2, 1);
+	tone_configure(&d->slowdouble1, 800, 800, 0, 2, .5, 2, 1);
+	tone_configure(&d->slowdouble2, 1000, 1000, 0, 2, .5, 2, 1);
+	tone_configure(&d->fasttriple1, 800, 800, 800, 2, .2, 3, 1);
+	tone_configure(&d->fasttriple2, 1000, 1000, 1000, 2, .2, 3, 1);
+	tone_configure(&d->slowtriple1, 800, 800, 800, 2, .5, 3, 1);
+	tone_configure(&d->slowtriple2, 1000, 1000, 1000, 2, .5, 3, 1);
+	tone_configure(&d->fasttripleup,700, 800, 1000, 2, .2, 3, 1);
+	tone_configure(&d->fasttripledown, 1000, 800, 700, 2, .2, 3, 1);
+	tone_configure(&d->slowtripleup, 700, 800, 1000, 2, .5, 3, 1);
+	tone_configure(&d->slowtripledown, 1000, 800, 700, 2, .5, 3, 1);
+	tone_configure(&d->high_duty, d->tnt_conf.tone_freq_high_duty, 0, 0, d->tnt_conf.tone_volt_high_duty, 600, 1, 8);
+	tone_configure(&d->high_current, d->tnt_conf.tone_freq_high_current, 0, 0, d->tnt_conf.tone_volt_high_current, d->tnt_conf.overcurrent_period, 1, 6);
+
 	if (d->state.state == STATE_DISABLED) {
 	    beep_alert(d, 3, false);
 	} else {
@@ -535,7 +566,7 @@ static void calculate_setpoint_target(data *d) {
 	//Duty FOC Tone
 	if (d->state.sat == SAT_PB_DUTY) {
 		if (d->tnt_conf.haptic_buzz_duty) {
-			play_tone(&d->tone, d->tnt_conf.tone_freq_high_duty, d->tnt_conf.tone_volt_high_duty, 600);
+			play_tone(&d->tone, &d->high_duty);
 		}
 	} else if (d->tone.tone_in_progress && d->tone.duration == 600) {
 		end_tone(&d->tone);
@@ -710,11 +741,11 @@ static void tnt_thd(void *arg) {
 	            d->motor.abs_erpm > d->switch_warn_beep_erpm) {
 	            // If we're at riding speed and the switch is off => ALERT the user
 	            // set force=true since this could indicate an imminent shutdown/nosedive
-	            beep_on(d, true);
+		    play_tone(&d->tone, &d->continuous1);
 	            d->beep_reason = BEEP_SENSORS;
 	        } else {
 	            // if the switch comes back on we stop beeping
-	            beep_off(d, false);
+	            end_tone(&d->tone);
 	        }
 
 		float new_pid_value = 0;		
