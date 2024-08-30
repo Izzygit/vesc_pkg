@@ -67,6 +67,25 @@ typedef struct {
 	int times;
 } ToneConfig;
 
+typedef struct {
+	ToneConfig continuous1;
+	ToneConfig continuous2;
+	ToneConfig fastdouble1;
+	ToneConfig fastdouble2;
+	ToneConfig slowdouble1;
+	ToneConfig slowdouble2;
+	ToneConfig fasttriple1;
+	ToneConfig fasttriple2;
+	ToneConfig slowtriple1;
+	ToneConfig slowtriple2;
+	ToneConfig fasttripleup;
+	ToneConfig fasttripledown;
+	ToneConfig slowtripleup;
+	ToneConfig slowtripledown;
+	ToneConfig dutytone;
+	ToneConfig currenttone;
+} ToneConfigs;
+
 void pitch_kp_configure(const tnt_config *config, KpArray *k, int mode);
 void roll_kp_configure(const tnt_config *config, KpArray *k, int mode);
 void yaw_kp_configure(const tnt_config *config, KpArray *k, int mode);
@@ -80,7 +99,8 @@ void reset_pid(PidData *p);
 void apply_soft_start(PidData *p, MotorData *m);
 void configure_pid(PidData *p, tnt_config *config);
 void tone_update(ToneData *tone, RuntimeData *rt, State *state);
-void play_tone(ToneData *tone, ToneConfig *config);
+void play_tone(ToneData *tone, ToneConfig *toneconfig);
 void end_tone(ToneData *tone);
 void tone_reset(ToneData *tone);
-void tone_configure(ToneConfig *config, float freq, float voltage, float duration, int times, int priority);
+void tone_configure(ToneConfig *toneconfig, float freq, float voltage, float duration, int times, int priority);
+void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config);
