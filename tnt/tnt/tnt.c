@@ -414,9 +414,9 @@ static void calculate_setpoint_target(data *d) {
 		d->state.sat = SAT_PB_DUTY;
 	} else if (d->motor.duty_cycle > d->tiltback_duty - .1 &&
 	    d->tnt_conf.is_dutybeep_enabled) {
-		play_tone(&d->tone, &d->tone_config.fasttripleup, BEEP_DUTY);
+		play_tone(&d->tone, &d->tone_config.fasttripleup, &d->rt, BEEP_DUTY);
 	} else if (d->motor.duty_cycle > 0.05 && input_voltage > d->tnt_conf.tiltback_hv) {
-		play_tone(&d->tone, &d->tone_config.slowtripleup, BEEP_HV);
+		play_tone(&d->tone, &d->tone_config.slowtripleup, &d->rt, BEEP_HV);
 		if (((d->rt.current_time - d->tb_highvoltage_timer) > .5) ||
 		   (input_voltage > d->tnt_conf.tiltback_hv + 1)) {
 		// 500ms have passed or voltage is another volt higher, time for some tiltback
@@ -433,7 +433,7 @@ static void calculate_setpoint_target(data *d) {
 		}
 	} else if (VESC_IF->mc_temp_fet_filtered() > d->motor.mc_max_temp_fet) {
 		// Use the angle from Low-Voltage tiltback, but slower speed from High-Voltage tiltback
-		play_tone(&d->tone, &d->tone_config.slowtriple2, BEEP_TEMPFET);
+		play_tone(&d->tone, &d->tone_config.slowtriple2, &d->rt, BEEP_TEMPFET);
 		if (VESC_IF->mc_temp_fet_filtered() > (d->motor.mc_max_temp_fet + 1)) {
 			if (d->motor.erpm > 0) {
 				d->setpoint_target = d->tnt_conf.tiltback_ht_angle;
@@ -447,7 +447,7 @@ static void calculate_setpoint_target(data *d) {
 		}
 	} else if (VESC_IF->mc_temp_motor_filtered() > d->motor.mc_max_temp_mot) {
 		// Use the angle from Low-Voltage tiltback, but slower speed from High-Voltage tiltback
-		play_tone(&d->tone, &d->tone_config.slowtriple1, BEEP_TEMPMOT);
+		play_tone(&d->tone, &d->tone_config.slowtriple1, &d->rt, BEEP_TEMPMOT);
 		if (VESC_IF->mc_temp_motor_filtered() > (d->motor.mc_max_temp_mot + 1)) {
 			if (d->motor.erpm > 0) {
 				d->setpoint_target = d->tnt_conf.tiltback_ht_angle;
@@ -460,7 +460,7 @@ static void calculate_setpoint_target(data *d) {
 			d->state.sat = SAT_NONE;
 		}
 	} else if (d->motor.duty_cycle > 0.05 && input_voltage < d->tnt_conf.tiltback_lv) {
-		play_tone(&d->tone, &d->tone_config.slowtripledown, BEEP_LV);
+		play_tone(&d->tone, &d->tone_config.slowtripledown, &d->rt, BEEP_LV);
 		float abs_motor_current = fabsf(d->motor.current);
 		float vdelta = 1.0 * d->tnt_conf.tiltback_lv - input_voltage;
 		float ratio = vdelta * 20 / abs_motor_current;
@@ -488,7 +488,7 @@ static void calculate_setpoint_target(data *d) {
 	//Duty FOC Tone
 	if (d->state.sat == SAT_PB_DUTY) {
 		if (d->tnt_conf.haptic_buzz_duty) {
-			play_tone(&d->tone, &d->tone_config.dutytone, TONE_DUTY);
+			play_tone(&d->tone, &d->tone_config.dutytone, &d->rt, TONE_DUTY);
 		}
 	} else if (d->tone.tone_in_progress && d->tone.duration == 600) {
 		end_tone(&d->tone);
@@ -634,7 +634,7 @@ static void tnt_thd(void *arg) {
 	            d->motor.abs_erpm > d->switch_warn_beep_erpm) {
 	            // If we're at riding speed and the switch is off => ALERT the user
 	            // set force=true since this could indicate an imminent shutdown/nosedive
-		    play_tone(&d->tone, &d->tone_config.continuous1, BEEP_SENSORS);
+		    play_tone(&d->tone, &d->tone_config.continuous1, &d->rt, BEEP_SENSORS);
 	        } else {
 	            // if the switch comes back on we stop beeping
 	            end_tone(&d->tone);
@@ -660,10 +660,10 @@ static void tnt_thd(void *arg) {
 				float bat_volts = VESC_IF->mc_get_input_voltage_filtered();
 				float threshold = d->tnt_conf.tiltback_lv + 5;
 				if (bat_volts < threshold) {
-					play_tone(&d->tone, &d->tone_config.slowdouble1, BEEP_LOWBATT);
+					play_tone(&d->tone, &d->tone_config.slowdouble1, &d->rt, BEEP_LOWBATT);
 				} else {
 					// Let the rider know that the board is ready (one long beep)
-					play_tone(&d->tone, &d->tone_config.fastdouble1, BEEP_NONE);
+					play_tone(&d->tone, &d->tone_config.fastdouble1, &d->rt, BEEP_NONE);
 				}
             		}
            		break;
@@ -761,7 +761,7 @@ static void tnt_thd(void *arg) {
 						d->idle_voltage = input_voltage;
 					}
 					else {
-						play_tone(&d->tone, &d->tone_config.slowdouble2, BEEP_IDLE);
+						play_tone(&d->tone, &d->tone_config.slowdouble2, &d->rt, BEEP_IDLE);
 					}
 				}
 			} else {
@@ -839,7 +839,7 @@ static void write_cfg_to_eeprom(data *d) {
    	}
 
 	// Emit 1 short beep to confirm writing all settings to eeprom
-	play_tone(&d->tone, &d->tone_config.fastdouble2);
+	play_tone(&d->tone, &d->tone_config.fastdouble2, &d->rt, BEEP_NONE);
 }
 
 static void read_cfg_from_eeprom(tnt_config *config) {
