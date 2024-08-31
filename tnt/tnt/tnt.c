@@ -405,14 +405,14 @@ static void calculate_setpoint_target(data *d) {
 			d->setpoint_target = d->rt.pitch_angle + d->tnt_conf.surge_pitchmargin * d->motor.erpm_sign;
 			d->state.sat = SAT_SURGE;
 		}
-	} else if (d->motor.duty_cycle > d->tiltback_duty) {
+	} else if (d->motor.duty_filtered > d->tiltback_duty) {
 		if (d->motor.erpm > 0) {
 			d->setpoint_target = d->tnt_conf.tiltback_duty_angle;
 		} else {
 			d->setpoint_target = -d->tnt_conf.tiltback_duty_angle;
 		}
 		d->state.sat = SAT_PB_DUTY;
-	} else if (d->motor.duty_cycle > d->tiltback_duty - .1 &&
+	} else if (d->motor.duty_filtered > d->tiltback_duty - .1 &&
 	    d->tnt_conf.is_dutybeep_enabled) {
 		play_tone(&d->tone, &d->tone_config.fasttripleup, &d->rt, BEEP_DUTY);
 	} else if (d->motor.duty_cycle > 0.05 && input_voltage > d->tnt_conf.tiltback_hv) {
