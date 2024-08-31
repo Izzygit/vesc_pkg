@@ -330,20 +330,20 @@ void tone_configure(ToneConfig *toneconfig, float freq1, float freq2, float freq
 }
 
 void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config) {
-	tone_configure(&toneconfig->continuous1, 800, 0, 0, 1.5, 601, 1, 0, 1);
-	tone_configure(&toneconfig->continuous2, 1000, 0, 0, 1.5, 602, 1, 0, 1);
-	tone_configure(&toneconfig->fastdouble1, 800, 800, 0, 1.5, .1, 2, 10, 1);
-	tone_configure(&toneconfig->fastdouble2, 1000, 1000, 0, 1.5, .1, 2, 0, 1);
-	tone_configure(&toneconfig->slowdouble1, 800, 800, 0, 1.5, .3, 2, 30, 1);
-	tone_configure(&toneconfig->slowdouble2, 1000, 1000, 0, 1.5, .3, 2, 30, 1);
-	tone_configure(&toneconfig->fasttriple1, 800, 800, 800, 1.5, .1, 3, 0, 1);
-	tone_configure(&toneconfig->fasttriple2, 1000, 1000, 1000, 1.5, .1, 3, 30, 1);
-	tone_configure(&toneconfig->slowtriple1, 800, 800, 800, 1.5, .3, 3, 10, 1);
-	tone_configure(&toneconfig->slowtriple2, 1000, 1000, 1000, 1.5, .3, 3, 10, 1);
-	tone_configure(&toneconfig->fasttripleup,1000, 800, 700, 1.5, .1, 3, 10, 1);
-	tone_configure(&toneconfig->fasttripledown, 700, 800, 1000, 1.5, .1, 3, 30, 1);
-	tone_configure(&toneconfig->slowtripleup, 1000, 800, 700, 1.5, .3, 3, 5, 1);
-	tone_configure(&toneconfig->slowtripledown, 7000, 800, 1000, 1.5, .3, 3, 5, 1);
+	tone_configure(&toneconfig->continuous1, 784, 0, 0, 1.5, 601, 1, 0, 1);
+	tone_configure(&toneconfig->continuous2, 880, 0, 0, 1.5, 602, 1, 0, 1);
+	tone_configure(&toneconfig->fastdouble1, 784, 784, 0, 1.5, .1, 2, 10, 1);
+	tone_configure(&toneconfig->fastdouble2, 880, 880, 0, 1.5, .1, 2, 0, 1);
+	tone_configure(&toneconfig->slowdouble1, 784, 784, 0, 1.5, .3, 2, 30, 1);
+	tone_configure(&toneconfig->slowdouble2, 880, 880, 0, 1.5, .3, 2, 30, 1);
+	tone_configure(&toneconfig->fasttriple1, 784, 784, 784, 1.5, .1, 3, 0, 1);
+	tone_configure(&toneconfig->fasttriple2, 880, 880, 880, 1.5, .1, 3, 30, 1);
+	tone_configure(&toneconfig->slowtriple1, 784, 784, 784, 1.5, .3, 3, 10, 1);
+	tone_configure(&toneconfig->slowtriple2, 880, 880, 880, 1.5, .3, 3, 10, 1);
+	tone_configure(&toneconfig->fasttripleup,880, 784, 698.5, 1.5, .1, 3, 10, 1);
+	tone_configure(&toneconfig->fasttripledown, 698.5, 784, 880, 1.5, .1, 3, 30, 1);
+	tone_configure(&toneconfig->slowtripleup, 880, 784, 698.5, 1.5, .3, 3, 5, 1);
+	tone_configure(&toneconfig->slowtripledown, 698.5, 784, 880, 1.5, .3, 3, 5, 1);
 	tone_configure(&toneconfig->dutytone, config->tone_freq_high_duty, 0, 0, config->tone_volt_high_duty, 600, 1, 0, 8);
 	tone_configure(&toneconfig->currenttone, config->tone_freq_high_current, 0, 0, config->tone_volt_high_current, config->overcurrent_period, 1, 0, 6);
 }
