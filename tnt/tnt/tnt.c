@@ -486,8 +486,13 @@ static void calculate_setpoint_target(data *d) {
 	}
 	
 	//Duty FOC Tone
-	if (d->state.sat == SAT_PB_DUTY && d->tnt_conf.haptic_buzz_duty) 
-		play_tone(&d->tone, &d->tone_config.dutytone, &d->rt, TONE_DUTY); 
+	if (d->state.sat == SAT_PB_DUTY) {
+		if (d->tnt_conf.haptic_buzz_duty) {
+			play_tone(&d->tone, &d->tone_config.dutytone, &d->rt, TONE_DUTY);
+		}
+	} else if (d->tone.tone_in_progress && d->tone.duration == 600) {
+		end_tone(&d->tone);
+	}
 }
 
 static void calculate_setpoint_interpolated(data *d) {
