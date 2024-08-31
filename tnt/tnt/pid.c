@@ -324,7 +324,7 @@ void tone_configure(ToneConfig *toneconfig, float freq1, float freq2, float freq
 	toneconfig->freq[2] = freq3;
 	toneconfig->voltage = voltage;
 	toneconfig->duration = duration;
-	toneconfig->times = times;
+	toneconfig->times = 3;
 	toneconfig->delay = delay;
 	toneconfig->priority = priority;
 }
