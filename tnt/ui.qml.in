@@ -98,11 +98,9 @@ Item {
             }
             if (msgtype == 1) {
 		var state = dv.getInt8(ind); ind += 1;
-                var state_sat = dv.getInt8(ind); ind += 1; // state >> 4;
-                //state = state &0xF;
+                var state_sat = dv.getInt8(ind); ind += 1; 
                 var switch_state = dv.getInt8(ind); ind += 1;
-              	var new_beep_reason = switch_state >> 4;
-		switch_state = switch_state & 0x3;
+              	var new_beep_reason = dv.getInt8(ind); ind += 1;
   		var state_stop = dv.getInt8(ind); ind += 1;
                 var adc1 = dv.getFloat32(ind); ind += 4;
                 var adc2 = dv.getFloat32(ind); ind += 4;
@@ -207,8 +205,12 @@ Item {
 		}else if(state == 4){		
                     stateString = "WHEELSLIP";
 		}
-
-                var beepString
+		
+  		if(new_beep_reason > 0) {
+		    beep_reason = new_beep_reason;
+		}
+                
+		var beepString
                 if(beep_reason == 1){
                     beepString = "Low Voltage"
                 }else if(beep_reason == 2){
@@ -245,10 +247,6 @@ Item {
 		}else{
                     switchString = "On"
                 }
-
-        		if(new_beep_reason > 0) {
-        		    beep_reason = new_beep_reason;
-        		}
 
   		var wheelsliptime1 = ("0" + Math.trunc(lastwheelslip/3600)).slice(-2);
     		var wheelsliptime2 = ("0" + Math.trunc(lastwheelslip/60 - wheelsliptime1*60)).slice(-2);
