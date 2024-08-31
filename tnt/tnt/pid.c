@@ -270,7 +270,7 @@ void tone_update(ToneData *tone, RuntimeData *rt, State *state) {
 				tone->tone_in_progress = VESC_IF->foc_play_tone(0,  tone->freq[index], tone->voltage);
 			} else { tone->tone_in_progress = VESC_IF->foc_beep(tone->freq[index], tone->duration, tone->voltage); }
 			tone->timer = rt->current_time;
-			tone->times--; 
+			tone->times-= 1; 
 		} else if (rt->current_time - tone->timer > tone->duration && tone->tone_in_progress) {
 			if (state->state == STATE_RUNNING)
 				VESC_IF->foc_stop_audio(true);
