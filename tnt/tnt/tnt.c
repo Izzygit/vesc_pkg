@@ -486,13 +486,8 @@ static void calculate_setpoint_target(data *d) {
 	}
 	
 	//Duty FOC Tone
-	if (d->state.sat == SAT_PB_DUTY) {
-		if (d->tnt_conf.haptic_buzz_duty) {
-			play_tone(&d->tone, &d->tone_config.dutytone, &d->rt, TONE_DUTY);
-		}
-	} else if (d->tone.tone_in_progress && d->tone.duration == 600) {
-		end_tone(&d->tone);
-	}
+	if (d->state.sat == SAT_PB_DUTY && d->tnt_conf.haptic_buzz_duty) 
+		play_tone(&d->tone, &d->tone_config.dutytone, &d->rt, TONE_DUTY); 
 }
 
 static void calculate_setpoint_interpolated(data *d) {
@@ -752,8 +747,9 @@ static void tnt_thd(void *arg) {
 				end_tone(&d->tone);					//End any tones currently playing
 			}
 			
-			if (d->rt.current_time - d->rt.disengage_timer > 60) {	// alert user after 30 minutes
-				if (d->rt.current_time - d->nag_timer > 30) {		// beep every 60 seconds
+			if (d->rt.current_time - d->rt.disengage_timer > 2100 &&	// alert user after 35 minutes
+			   d->rt.current_time - d->rt.disengage_timer < 3000) {		// give up after 50 minutes
+				if (d->rt.current_time - d->nag_timer > 60) {		// beep every 60 seconds
 					d->nag_timer = d->rt.current_time;
 					float input_voltage = VESC_IF->mc_get_input_voltage_filtered();
 					if (input_voltage > d->idle_voltage) {
