@@ -340,10 +340,10 @@ void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config) {
 	tone_configure(&toneconfig->fasttriple2, 1000, 1000, 1000, 1.5, .1, 3, 30, 1);
 	tone_configure(&toneconfig->slowtriple1, 800, 800, 800, 1.5, .3, 3, 10, 1);
 	tone_configure(&toneconfig->slowtriple2, 1000, 1000, 1000, 1.5, .3, 3, 10, 1);
-	tone_configure(&toneconfig->fasttripleup,700, 800, 1000, 1.5, .1, 3, 10, 1);
-	tone_configure(&toneconfig->fasttripledown, 1000, 800, 700, 1.5, .1, 3, 30, 1);
-	tone_configure(&toneconfig->slowtripleup, 700, 800, 1000, 1.5, .3, 3, 5, 1);
-	tone_configure(&toneconfig->slowtripledown, 1000, 800, 700, 1.5, .3, 3, 5, 1);
+	tone_configure(&toneconfig->fasttripleup,1000, 800, 700, 1.5, .1, 3, 10, 1);
+	tone_configure(&toneconfig->fasttripledown, 700, 800, 1000, 1.5, .1, 3, 30, 1);
+	tone_configure(&toneconfig->slowtripleup, 1000, 800, 700, 1.5, .3, 3, 5, 1);
+	tone_configure(&toneconfig->slowtripledown, 7000, 800, 1000, 1.5, .3, 3, 5, 1);
 	tone_configure(&toneconfig->dutytone, config->tone_freq_high_duty, 0, 0, config->tone_volt_high_duty, 600, 1, 0, 8);
 	tone_configure(&toneconfig->currenttone, config->tone_freq_high_current, 0, 0, config->tone_volt_high_current, config->overcurrent_period, 1, 0, 6);
 }
