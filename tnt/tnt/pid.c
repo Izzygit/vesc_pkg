@@ -264,16 +264,16 @@ void tone_update(ToneData *tone, RuntimeData *rt, State *state) {
 	int index;
 	if (!tone->pause) { //only play or stop if pause has not been activated
 		tone->pause_timer = rt->current_time; // keep updated until we are in pause state
-		if (!tone->tone_in_progress && tone->times != 0) {
+		if (tone->times != 0) {
 			index = tone->times - 1;
 			if (state->state == STATE_RUNNING) {
 				tone->tone_in_progress = VESC_IF->foc_play_tone(0,  tone->freq[index], tone->voltage);
 			} else { tone->tone_in_progress = VESC_IF->foc_beep(tone->freq[index], tone->duration, tone->voltage); }
 			tone->timer = rt->current_time;
+			tone->times--; 
 		} else if (rt->current_time - tone->timer > tone->duration && tone->tone_in_progress) {
 			if (state->state == STATE_RUNNING)
 				VESC_IF->foc_stop_audio(true);
-			tone->times--; 
 			if (tone->times > 0) {
 				tone->pause = true; //put in pause if there is another play to do
 			} else { tone->tone_in_progress = false; }
