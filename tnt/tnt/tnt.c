@@ -491,7 +491,7 @@ static void calculate_setpoint_target(data *d) {
 			play_tone(&d->tone, &d->tone_config.dutytone, &d->rt, TONE_DUTY);
 		}
 	} else if (d->tone.tone_in_progress && d->tone.duration == 600) {
-		//end_tone(&d->tone);
+		end_tone(&d->tone);
 	}
 }
 
@@ -637,7 +637,7 @@ static void tnt_thd(void *arg) {
 		    play_tone(&d->tone, &d->tone_config.continuous1, &d->rt, BEEP_SENSORS);
 	        } else if (d->tone.tone_in_progress && d->tone.beep_reason == BEEP_SENSORS) { 
 	            // if the switch comes back on we stop beeping
-	            //end_tone(&d->tone);
+	            end_tone(&d->tone);
 	        }
 
 		float new_pid_value = 0;		
@@ -749,7 +749,7 @@ static void tnt_thd(void *arg) {
 		case (STATE_READY):
 			if (d->rt.current_time - d->rt.disengage_timer > 0.5 &&
 			    d->rt.current_time - d->rt.disengage_timer < 1) {	
-				//end_tone(&d->tone);					//End any tones currently playing
+				end_tone(&d->tone);					//End any tones currently playing
 			}
 			
 			if (d->rt.current_time - d->rt.disengage_timer > 1800) {	// alert user after 30 minutes
