@@ -752,8 +752,8 @@ static void tnt_thd(void *arg) {
 				end_tone(&d->tone);					//End any tones currently playing
 			}
 			
-			if (d->rt.current_time - d->rt.disengage_timer > 1800) {	// alert user after 30 minutes
-				if (d->rt.current_time - d->nag_timer > 60) {		// beep every 60 seconds
+			if (d->rt.current_time - d->rt.disengage_timer > 60) {	// alert user after 30 minutes
+				if (d->rt.current_time - d->nag_timer > 30) {		// beep every 60 seconds
 					d->nag_timer = d->rt.current_time;
 					float input_voltage = VESC_IF->mc_get_input_voltage_filtered();
 					if (input_voltage > d->idle_voltage) {
