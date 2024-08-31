@@ -289,7 +289,12 @@ void play_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt, int beep
 	    tone->beep_reason == beep_reason) 
 		return;			// If we have the same beep reason as the last and we are within the delay period do not update tone->times to prevent beep
 	
-	if (!tone->tone_in_progress || tone->priority < toneconfig->priority) {
+	if (tone->priority < toneconfig->priority) { //Allow for immediate override of higher priority
+		tone->tone_in_progress = false;
+		VESC_IF->foc_stop_audio(true);
+	}
+	
+	if (!tone->tone_in_progress) {
 		tone->freq[0] = toneconfig->freq[0];
 		tone->freq[1] = toneconfig->freq[1];
 		tone->freq[2] = toneconfig->freq[2];
