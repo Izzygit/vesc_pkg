@@ -231,7 +231,7 @@ static void reset_vars(data *d) {
 		
 		//Control variables
 		reset_pid(&d->pid);
-		tone_reset(&d->tone);
+		//tone_reset(&d->tone);
 
 		//Remote
 		reset_remote(&d->remote, &d->st_tilt);
@@ -491,7 +491,7 @@ static void calculate_setpoint_target(data *d) {
 			play_tone(&d->tone, &d->tone_config.dutytone, &d->rt, TONE_DUTY);
 		}
 	} else if (d->tone.tone_in_progress && d->tone.duration == 600) {
-		end_tone(&d->tone);
+		//end_tone(&d->tone);
 	}
 }
 
@@ -637,7 +637,7 @@ static void tnt_thd(void *arg) {
 		    play_tone(&d->tone, &d->tone_config.continuous1, &d->rt, BEEP_SENSORS);
 	        } else if (d->tone.tone_in_progress && d->tone.beep_reason == BEEP_SENSORS) { 
 	            // if the switch comes back on we stop beeping
-	            end_tone(&d->tone);
+	            //end_tone(&d->tone);
 	        }
 
 		float new_pid_value = 0;		
