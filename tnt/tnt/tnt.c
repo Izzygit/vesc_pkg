@@ -635,7 +635,7 @@ static void tnt_thd(void *arg) {
 	            // If we're at riding speed and the switch is off => ALERT the user
 	            // set force=true since this could indicate an imminent shutdown/nosedive
 		    play_tone(&d->tone, &d->tone_config.continuous1, &d->rt, BEEP_SENSORS);
-	        } else {
+	        } else if (d->tone.tone_in_progress && d->tone.beep_reason == BEEP_SENSORS) { 
 	            // if the switch comes back on we stop beeping
 	            end_tone(&d->tone);
 	        }
