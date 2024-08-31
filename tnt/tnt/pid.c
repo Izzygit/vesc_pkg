@@ -296,7 +296,7 @@ void play_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt, int beep
 		tone->voltage = toneconfig->voltage;
 		tone->duration = toneconfig->duration;
 		tone->priority = toneconfig->priority;
-		tone->times = toneconfig->times;
+		tone->times = 3; //toneconfig->times;
 		tone->pause = false;
 		tone->beep_reason = beep_reason;
 	}
@@ -324,7 +324,7 @@ void tone_configure(ToneConfig *toneconfig, float freq1, float freq2, float freq
 	toneconfig->freq[2] = freq3;
 	toneconfig->voltage = voltage;
 	toneconfig->duration = duration;
-	toneconfig->times = 3;
+	toneconfig->times = times;
 	toneconfig->delay = delay;
 	toneconfig->priority = priority;
 }
