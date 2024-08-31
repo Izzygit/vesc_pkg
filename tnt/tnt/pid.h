@@ -23,6 +23,10 @@
 #include "motor_data_tnt.h"
 #include "state_tnt.h"
 #include "vesc_c_if.h"
+#include <stdbool.h>
+#include <stdint.h>
+
+#define FREQ_ARRAY_SIZE 5
 
 typedef struct {
 	float angle_kp[7][2];
@@ -48,7 +52,7 @@ typedef struct {
 } PidData;
 
 typedef struct {
-	float freq[3];
+	float freq[FREQ_ARRAY_SIZE];
 	float voltage;
 	float duration;
 	int priority;
@@ -61,7 +65,7 @@ typedef struct {
 } ToneData;
 
 typedef struct {
-	float freq[3];
+	float freq[FREQ_ARRAY_SIZE];
 	float voltage;
 	float duration;
 	int priority;
