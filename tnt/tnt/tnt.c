@@ -749,7 +749,7 @@ static void tnt_thd(void *arg) {
 		case (STATE_READY):
 			if (d->rt.current_time - d->rt.disengage_timer > 0.5 &&
 			    d->rt.current_time - d->rt.disengage_timer < 1) {	
-				end_tone(&d->tone);					//End any tones currently playing
+				//end_tone(&d->tone);					//End any tones currently playing
 			}
 			
 			if (d->rt.current_time - d->rt.disengage_timer > 1800) {	// alert user after 30 minutes
