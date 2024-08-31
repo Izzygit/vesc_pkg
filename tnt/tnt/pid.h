@@ -56,7 +56,7 @@ typedef struct {
 	float voltage;
 	float duration;
 	int priority;
-	int times;
+	float times;
 	bool tone_in_progress;
 	float timer;
 	bool pause;
