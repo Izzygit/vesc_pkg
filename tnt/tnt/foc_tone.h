@@ -34,10 +34,10 @@ typedef struct {
 	bool pause;
 	float pause_timer;
 	int beep_reason;
-	bool midvolt_warning;
-	bool lowvolt_warning;
-	bool motortemp_warning;
-	bool fettemp_warning;
+	bool midvolt_activated;
+	bool lowvolt_activated;
+	bool motortemp_activated;
+	bool fettemp_activated;
 	float idlevoltage;
 } ToneData;
 
