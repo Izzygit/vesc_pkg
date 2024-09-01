@@ -83,8 +83,8 @@ void end_tone(ToneData *tone) {
 }
 
 void tone_reset(ToneData *tone) {
-	tone->midvolt_warning = false;
-	tone->lowvolt_warning = false;
+	tone->midvolt_activated = false;
+	tone->lowvolt_activated = false;
 }
 
 void tone_configure(ToneConfig *toneconfig, float freq1, float freq2, float freq3, float voltage, float duration, int times, float delay, int priority) {
@@ -139,12 +139,12 @@ void idle_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt) {
 
 void temp_recovery_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt, MotorData *motor) {
 	if (VESC_IF->mc_temp_motor_filtered() < motor->mc_max_temp_mot - 7 &&
-	    tone->motortemp_warning) {
+	    tone->motortemp_activated) {
 		play_tone(tone, tone_config, rt, 16);
-		tone->motortemp_warning = false;
+		tone->motortemp_activated = false;
 	} else if (VESC_IF->mc_temp_fet_filtered() < motor->mc_max_temp_fet - 7 &&
-	    tone->fettemp_warning) {
+	    tone->fettemp_activated) {
 		play_tone(tone, tone_config, rt, 15);
-		tone->fettemp_warning = false;
+		tone->fettemp_activated = false;
 	}
 }
