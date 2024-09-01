@@ -58,7 +58,9 @@ typedef enum {
 	TONE_CURRENT = 11,
 	TONE_DUTY = 12,
 	BEEP_MW = 13,
-	BEEP_LW = 14
+	BEEP_LW = 14,
+	BEEP_FETREC = 15,
+	BEEP_MOTREC = 16
 } BeepReason;
 
 // This is all persistent state of the application, which will be allocated in init. It
@@ -436,6 +438,7 @@ static void calculate_setpoint_target(data *d) {
 	} else if (VESC_IF->mc_temp_fet_filtered() > d->motor.mc_max_temp_fet) {
 		// Use the angle from Low-Voltage tiltback, but slower speed from High-Voltage tiltback
 		play_tone(&d->tone, &d->tone_config.slowtriple2, &d->rt, BEEP_TEMPFET);
+		d->tone.fettemp_warning = true;
 		if (VESC_IF->mc_temp_fet_filtered() > (d->motor.mc_max_temp_fet + 1)) {
 			if (d->motor.erpm > 0) {
 				d->setpoint_target = d->tnt_conf.tiltback_ht_angle;
@@ -450,6 +453,7 @@ static void calculate_setpoint_target(data *d) {
 	} else if (VESC_IF->mc_temp_motor_filtered() > d->motor.mc_max_temp_mot) {
 		// Use the angle from Low-Voltage tiltback, but slower speed from High-Voltage tiltback
 		play_tone(&d->tone, &d->tone_config.slowtriple1, &d->rt, BEEP_TEMPMOT);
+		d->tone.motortemp_warning = true;
 		if (VESC_IF->mc_temp_motor_filtered() > (d->motor.mc_max_temp_mot + 1)) {
 			if (d->motor.erpm > 0) {
 				d->setpoint_target = d->tnt_conf.tiltback_ht_angle;
@@ -766,23 +770,8 @@ static void tnt_thd(void *arg) {
 			break;
 
 		case (STATE_READY):
-			if (d->rt.current_time - d->rt.disengage_timer > 2100 &&	// alert user after 35 minutes
-			   d->rt.current_time - d->rt.disengage_timer < 3000) {		// give up after 50 minutes
-				if (d->rt.current_time - d->nag_timer > 60) {		// beep every 60 seconds
-					d->nag_timer = d->rt.current_time;
-					float input_voltage = VESC_IF->mc_get_input_voltage_filtered();
-					if (input_voltage > d->idle_voltage) {
-						// don't beep if the voltage keeps increasing (board is charging)
-						d->idle_voltage = input_voltage;
-					}
-					else {
-						play_tone(&d->tone, &d->tone_config.slowdouble2, &d->rt, BEEP_IDLE);
-					}
-				}
-			} else {
-				d->nag_timer = d->rt.current_time;
-				d->idle_voltage = 0;
-			}
+			idle_tone(&d->tone, &d->tone_config.slowdouble2, &d->rt);
+			temp_recovery_tone(&d->tone, &d->tone_configs.fasttripleup, &d->rt);
 
 			if ((d->rt.current_time - d->fault_angle_pitch_timer) > 1) {
 				// 1 second after disengaging - set startup tolerance back to normal (aka tighter)
