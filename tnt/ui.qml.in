@@ -216,9 +216,9 @@ Item {
                 }else if(beep_reason == 2){
                     beepString = "High Voltage Alert"
                 }else if(beep_reason == 3){
-                    beepString = "Controller Temp"
+                    beepString = "High FET Temp"
                 }else if(beep_reason == 4){
-                    beepString = "Motor Temp"
+                    beepString = "High Motor Temp"
                 }else if(beep_reason == 5){
                     beepString = "High Current Beep"
                 }else if(beep_reason == 6){
@@ -239,6 +239,10 @@ Item {
                     beepString = "Mid Voltage Warning"
 		}else if(beep_reason == 14){
                     beepString = "Low Voltage Warning"
+                }else if(beep_reason == 15){
+                    beepString = "FET Temp Recovery"
+		}else if(beep_reason == 16){
+                    beepString = "Motor Temp Recovery"
 		}
   
                 var switchString
