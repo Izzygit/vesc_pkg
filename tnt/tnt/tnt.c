@@ -438,7 +438,7 @@ static void calculate_setpoint_target(data *d) {
 	} else if (VESC_IF->mc_temp_fet_filtered() > d->motor.mc_max_temp_fet) {
 		// Use the angle from Low-Voltage tiltback, but slower speed from High-Voltage tiltback
 		play_tone(&d->tone, &d->tone_config.slowtriple2, &d->rt, BEEP_TEMPFET);
-		d->tone.fettemp_warning = true;
+		d->tone.fettemp_activated = true;
 		if (VESC_IF->mc_temp_fet_filtered() > (d->motor.mc_max_temp_fet + 1)) {
 			if (d->motor.erpm > 0) {
 				d->setpoint_target = d->tnt_conf.tiltback_ht_angle;
@@ -453,7 +453,7 @@ static void calculate_setpoint_target(data *d) {
 	} else if (VESC_IF->mc_temp_motor_filtered() > d->motor.mc_max_temp_mot) {
 		// Use the angle from Low-Voltage tiltback, but slower speed from High-Voltage tiltback
 		play_tone(&d->tone, &d->tone_config.slowtriple1, &d->rt, BEEP_TEMPMOT);
-		d->tone.motortemp_warning = true;
+		d->tone.motortemp_activated = true;
 		if (VESC_IF->mc_temp_motor_filtered() > (d->motor.mc_max_temp_mot + 1)) {
 			if (d->motor.erpm > 0) {
 				d->setpoint_target = d->tnt_conf.tiltback_ht_angle;
