@@ -660,10 +660,10 @@ static void tnt_thd(void *arg) {
 				float bat_volts = VESC_IF->mc_get_input_voltage_filtered();
 				float threshold = d->tnt_conf.tiltback_lv + 5;
 				if (bat_volts < threshold) {
-					play_tone(&d->tone, &d->tone_config.slowdouble1, &d->rt, BEEP_LOWBATT);
+					play_tone(&d->tone, &d->tone_config.slowtripledown, &d->rt, BEEP_LOWBATT);
 				} else {
 					// Let the rider know that the board is ready (one long beep)
-					play_tone(&d->tone, &d->tone_config.fastdouble1, &d->rt, BEEP_NONE);
+					//play_tone(&d->tone, &d->tone_config.fastdouble1, &d->rt, BEEP_NONE);
 				}
             		}
            		break;
@@ -749,11 +749,6 @@ static void tnt_thd(void *arg) {
 			break;
 
 		case (STATE_READY):
-			if (d->rt.current_time - d->rt.disengage_timer > 0.5 &&
-			    d->rt.current_time - d->rt.disengage_timer < 1) {	
-				end_tone(&d->tone);					//End any tones currently playing
-			}
-			
 			if (d->rt.current_time - d->rt.disengage_timer > 2100 &&	// alert user after 35 minutes
 			   d->rt.current_time - d->rt.disengage_timer < 3000) {		// give up after 50 minutes
 				if (d->rt.current_time - d->nag_timer > 60) {		// beep every 60 seconds
