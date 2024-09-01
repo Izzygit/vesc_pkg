@@ -136,7 +136,7 @@ void check_traction_braking(MotorData *m, BrakingData *braking, State *state, Ru
 	bool check_last = braking->last_active ||  rt->current_time - braking->brake_delay > config->tc_braking_end_delay / 1000.0; //we were just traction braking or we are beyond the brake delay
 
 	//Check that conditions for traciton braking are satified and add to counter
-	if (-inputtilt_interpolated * m->erpm_sign >= config->tc_braking_angle && //Minimum nose down angle from remote, can be 0
+	if (-inputtilt_interpolated * m->erpm_sign_soft >= config->tc_braking_angle && //Minimum nose down angle from remote, can be 0
 	    state->braking_pos_smooth &&						// braking position active
 	    m->duty_filtered > config->tc_braking_duty_limit / 100.0) {		// above the minimum duty
 		braking->count +=1;
