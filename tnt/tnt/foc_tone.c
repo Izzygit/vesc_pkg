@@ -118,21 +118,21 @@ void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config) {
 }
 
 void idle_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt) {
-	if (d->rt.current_time - d->rt.disengage_timer > 2100 &&	// alert user after 35 minutes
-	   d->rt.current_time - d->rt.disengage_timer < 3000) {		// give up after 50 minutes
-		if (d->rt.current_time - d->rt.nag_timer > 60) {		// beep every 60 seconds
-			d->rt.nag_timer = d->rt.current_time;
+	if (rt->current_time - rt->disengage_timer > 2100 &&	// alert user after 35 minutes
+	   rt->current_time - rt->disengage_timer < 3000) {		// give up after 50 minutes
+		if (rt->current_time - rt->nag_timer > 60) {		// beep every 60 seconds
+			rt->nag_timer = rt->current_time;
 			float input_voltage = VESC_IF->mc_get_input_voltage_filtered();
-			if (input_voltage > d->tone.idle_voltage) {
+			if (input_voltage > tone->idle_voltage) {
 				// don't beep if the voltage keeps increasing (board is charging)
-				d->tone.idle_voltage = input_voltage;
+				tone->idle_voltage = input_voltage;
 			}
 			else {
 				play_tone(tone, toneconfig, rt, 9);
 			}
 		}
 	} else {
-		d->rt.nag_timer = d->rt.current_time;
+		rt->nag_timer = rt->current_time;
 		d->tone.idle_voltage = 0;
 	}
 }
@@ -140,11 +140,11 @@ void idle_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt) {
 void temp_recovery_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt, MotorData *motor) {
 	if (VESC_IF->mc_temp_motor_filtered() < motor->mc_max_temp_mot - 7 &&
 	    tone->motortemp_activated) {
-		play_tone(tone, tone_config, rt, 16);
+		play_tone(tone, toneconfig, rt, 16);
 		tone->motortemp_activated = false;
 	} else if (VESC_IF->mc_temp_fet_filtered() < motor->mc_max_temp_fet - 7 &&
 	    tone->fettemp_activated) {
-		play_tone(tone, tone_config, rt, 15);
+		play_tone(tone, toneconfig, rt, 15);
 		tone->fettemp_activated = false;
 	}
 }
