@@ -26,8 +26,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define FREQ_ARRAY_SIZE 5
-
 typedef struct {
 	float angle_kp[7][2];
 	int count;
@@ -51,47 +49,6 @@ typedef struct {
 	bool brake_pitch, brake_roll, brake_yaw;
 } PidData;
 
-typedef struct {
-	float freq[FREQ_ARRAY_SIZE];
-	float voltage;
-	float duration;
-	int priority;
-	int times;
-	bool tone_in_progress;
-	float timer;
-	bool pause;
-	float pause_timer;
-	int beep_reason;
-} ToneData;
-
-typedef struct {
-	float freq[FREQ_ARRAY_SIZE];
-	float voltage;
-	float duration;
-	int priority;
-	int times;
-	float delay;
-} ToneConfig;
-
-typedef struct {
-	ToneConfig continuous1;
-	ToneConfig continuous2;
-	ToneConfig fastdouble1;
-	ToneConfig fastdouble2;
-	ToneConfig slowdouble1;
-	ToneConfig slowdouble2;
-	ToneConfig fasttriple1;
-	ToneConfig fasttriple2;
-	ToneConfig slowtriple1;
-	ToneConfig slowtriple2;
-	ToneConfig fasttripleup;
-	ToneConfig fasttripledown;
-	ToneConfig slowtripleup;
-	ToneConfig slowtripledown;
-	ToneConfig dutytone;
-	ToneConfig currenttone;
-} ToneConfigs;
-
 void pitch_kp_configure(const tnt_config *config, KpArray *k, int mode);
 void roll_kp_configure(const tnt_config *config, KpArray *k, int mode);
 void yaw_kp_configure(const tnt_config *config, KpArray *k, int mode);
@@ -104,9 +61,3 @@ float roll_erpm_scale(PidData *p, State *state, MotorData *m, KpArray *roll_acce
 void reset_pid(PidData *p);
 void apply_soft_start(PidData *p, MotorData *m);
 void configure_pid(PidData *p, tnt_config *config);
-void tone_update(ToneData *tone, RuntimeData *rt, State *state);
-void play_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt, int beep_reason);
-void end_tone(ToneData *tone);
-void tone_reset(ToneData *tone);
-void tone_configure(ToneConfig *toneconfig, float freq1, float freq2, float freq3, float voltage, float duration, int times, float delay, int priority);
-void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config);
