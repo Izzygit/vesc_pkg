@@ -21,6 +21,7 @@
 #include "runtime.h"
 #include "state_tnt.h"
 #include "vesc_c_if.h"
+#include "motor_data.h"
 
 typedef struct {
 	float freq[3];
