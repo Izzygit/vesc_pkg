@@ -23,7 +23,7 @@ void tone_update(ToneData *tone, RuntimeData *rt, State *state) {
 	
 	if (tone->duration > 30 &&		//Don't allow continuous tones outiside run state
 	    state->state != STATE_RUNNING) {	
-		end_tone(&d->tone);
+		end_tone(tone);
 	}
 	
 	if (!tone->pause) { 					//only play or stop if pause has not been activated
