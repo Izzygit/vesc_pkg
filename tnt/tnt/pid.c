@@ -335,17 +335,17 @@ void tone_configure(ToneConfig *toneconfig, float freq1, float freq2, float freq
 }
 
 void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config) {
-	tone_configure(&toneconfig->continuous1, 784, 0, 0, 1.5, 601, 1, 0, 1);
+	tone_configure(&toneconfig->continuous1, 698, 0, 0, 1.5, 601, 1, 0, 1);
 	tone_configure(&toneconfig->continuous2, 880, 0, 0, 1.5, 602, 1, 0, 1);
-	tone_configure(&toneconfig->fastdouble1, 784, 784, 0, 1.5, .1, 2, 10, 1);
+	tone_configure(&toneconfig->fastdouble1, 698, 698, 0, 1.5, .1, 2, 10, 1);
 	tone_configure(&toneconfig->fastdouble2, 880, 880, 0, 1.5, .1, 2, 0, 1);
-	tone_configure(&toneconfig->slowdouble1, 784, 784, 0, 1.5, .3, 2, 30, 1);
+	tone_configure(&toneconfig->slowdouble1, 698, 698, 0, 1.5, .3, 2, 30, 1);
 	tone_configure(&toneconfig->slowdouble2, 880, 880, 0, 1.5, .3, 2, 30, 1);
-	tone_configure(&toneconfig->fasttriple1, 784, 784, 784, 1.5, .1, 3, 0, 1);
+	tone_configure(&toneconfig->fasttriple1, 698, 698, 698, 1.5, .1, 3, 0, 1);
 	tone_configure(&toneconfig->fasttriple2, 880, 880, 880, 1.5, .1, 3, 30, 1);
-	tone_configure(&toneconfig->slowtriple1, 784, 784, 784, 1.5, .3, 3, 10, 1);
-	tone_configure(&toneconfig->slowtriple2, 880, 880, 880, 1.5, .3, 3, 10, 1);
-	tone_configure(&toneconfig->fasttripleup,880, 784, 698.5, 1.5, .1, 3, 10, 1);
+	tone_configure(&toneconfig->slowtriple1, 698, 698, 698, 1.5, .3, 3, 10, 4);
+	tone_configure(&toneconfig->slowtriple2, 880, 880, 880, 1.5, .3, 3, 10, 3);
+	tone_configure(&toneconfig->fasttripleup,880, 784, 698.5, 1.5, .1, 3, 10, 5);
 	tone_configure(&toneconfig->fasttripledown, 698.5, 784, 880, 1.5, .1, 3, 30, 1);
 	tone_configure(&toneconfig->slowtripleup, 880, 784, 698.5, 1.5, .3, 3, 5, 1);
 	tone_configure(&toneconfig->slowtripledown, 698.5, 784, 880, 1.5, .3, 3, 5, 1);
