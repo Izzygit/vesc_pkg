@@ -262,23 +262,29 @@ void configure_pid(PidData *p, tnt_config *config) {
 
 void tone_update(ToneData *tone, RuntimeData *rt, State *state) {
 	int index;
-	if (!tone->pause) { //only play or stop if pause has not been activated
-		tone->pause_timer = rt->current_time; // keep updated until we are in pause state
+	
+	if (tone->duration > 30 &&		//Don't allow continuous tones outiside run state
+	    state->state != STATE_RUNNING) {	
+		end_tone(&d->tone);
+	}
+	
+	if (!tone->pause) { 					//only play or stop if pause has not been activated
+		tone->pause_timer = rt->current_time; 		// keep updated until we are in pause state
 		if (!tone->tone_in_progress && tone->times != 0) {
-			index = tone->times - 1;
-			if (state->state == STATE_RUNNING) {
+			index = tone->times - 1;		//Frequencies play in reverser order: 3 2 1
+			if (state->state == STATE_RUNNING) { 	//Choose function based on state
 				tone->tone_in_progress = VESC_IF->foc_play_tone(0,  tone->freq[index], tone->voltage);
 			} else { tone->tone_in_progress = VESC_IF->foc_beep(tone->freq[index], tone->duration, tone->voltage); }
 			tone->timer = rt->current_time;
-			tone->times--; 
+			tone->times--; 				//Decrement the times property until 0
 		} else if (rt->current_time - tone->timer > tone->duration && tone->tone_in_progress) {
 			if (state->state == STATE_RUNNING)
-				VESC_IF->foc_stop_audio(true);
-			if (tone->times > 0) 
-				tone->pause = true; //put in pause if there is another play to do
+				VESC_IF->foc_stop_audio(true);	//stop foc play tone after duration
+			if (tone->times > 0) 		
+				tone->pause = true; 		//put in pause if there is another play to do
 			tone->tone_in_progress = false; 
 		}
-	} else if (rt->current_time - tone->pause_timer > 0.1) {
+	} else if (rt->current_time - tone->pause_timer > 0.1) { //Hard coded pause of 100 ms
 		tone->pause = false;
 	}
 }
@@ -335,7 +341,7 @@ void tone_configure(ToneConfig *toneconfig, float freq1, float freq2, float freq
 }
 
 void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config) {
-	tone_configure(&toneconfig->continuous1, 698, 0, 0, 1.5, 601, 1, 0, 1);
+	tone_configure(&toneconfig->continuous1, 698, 0, 0, 1.5, 601, 1, 0, 2);
 	tone_configure(&toneconfig->continuous2, 880, 0, 0, 1.5, 602, 1, 0, 1);
 	tone_configure(&toneconfig->fastdouble1, 698, 698, 0, 1.5, .1, 2, 10, 1);
 	tone_configure(&toneconfig->fastdouble2, 880, 880, 0, 1.5, .1, 2, 0, 1);
