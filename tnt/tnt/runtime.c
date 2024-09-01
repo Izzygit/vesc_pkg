@@ -95,6 +95,8 @@ void configure_runtime(RuntimeData *rt, tnt_config *config) {
 
 
 void ride_timer(RideTimeData *ridetimer, RuntimeData *rt){
+	rt->disengage_timer = rt->current_time;
+	
 	if(ridetimer->run_flag) { //First trigger run flag and reset last ride time
 		ridetimer->ride_time += rt->current_time - ridetimer->last_ride_time;
 	}
