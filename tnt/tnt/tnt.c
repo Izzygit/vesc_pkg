@@ -771,7 +771,7 @@ static void tnt_thd(void *arg) {
 
 		case (STATE_READY):
 			idle_tone(&d->tone, &d->tone_config.slowdouble2, &d->rt);
-			temp_recovery_tone(&d->tone, &d->tone_configs.fasttripleup, &d->rt, &d->motor);
+			temp_recovery_tone(&d->tone, &d->tone_config.fasttripleup, &d->rt, &d->motor);
 
 			if ((d->rt.current_time - d->fault_angle_pitch_timer) > 1) {
 				// 1 second after disengaging - set startup tolerance back to normal (aka tighter)
