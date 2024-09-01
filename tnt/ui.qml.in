@@ -212,9 +212,9 @@ Item {
                 
 		var beepString
                 if(beep_reason == 1){
-                    beepString = "Low Voltage"
+                    beepString = "Low Voltage Alert"
                 }else if(beep_reason == 2){
-                    beepString = "High Voltage"
+                    beepString = "High Voltage Alert"
                 }else if(beep_reason == 3){
                     beepString = "Controller Temp"
                 }else if(beep_reason == 4){
@@ -235,6 +235,10 @@ Item {
                     beepString = "High Current Tone"
                 }else if(beep_reason == 12){
                     beepString = "Duty Cycle Tone"
+                }else if(beep_reason == 13){
+                    beepString = "Mid Voltage Warning"
+		}else if(beep_reason == 14){
+                    beepString = "Low Voltage Warning"
 		}
   
                 var switchString
