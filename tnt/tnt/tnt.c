@@ -646,25 +646,14 @@ static void tnt_thd(void *arg) {
 	configure(d);
 
 	while (!VESC_IF->should_terminate()) {
-		tone_update(&d->tone, &d->rt, &d->state);
 		runtime_data_update(&d->rt);
 		apply_pitch_filters(&d->rt, &d->tnt_conf);
 		motor_data_update(&d->motor);
 		update_remote(&d->tnt_conf, &d->remote);
-		
-		//Footpad Sensor
+		temp_recovery_tone(&d->tone, &d->tone_config.fasttripleup, &d->rt, &d->motor);		
+		tone_update(&d->tone, &d->rt, &d->state);
 	        footpad_sensor_update(&d->footpad_sensor, &d->tnt_conf);
-	        if (d->footpad_sensor.state == FS_NONE && d->state.state == STATE_RUNNING &&
-	            d->motor.abs_erpm > d->switch_warn_beep_erpm) {
-	            // If we're at riding speed and the switch is off => ALERT the user
-	            // set force=true since this could indicate an imminent shutdown/nosedive
-		    play_tone(&d->tone, &d->tone_config.continuous1, &d->rt, BEEP_SENSORS);
-	        } else if (d->tone.tone_in_progress && d->tone.beep_reason == BEEP_SENSORS) { 
-	            // if the switch comes back on we stop beeping
-	            end_tone(&d->tone);
-	        }
-
-		float new_pid_value = 0;		
+	      	float new_pid_value = 0;		
 
 		// Control Loop State Logic
 		switch(d->state.state) {
@@ -699,8 +688,13 @@ static void tnt_thd(void *arg) {
 				break;
 			}
 			d->odometer_dirty = 1;
-			d->rt.disengage_timer = d->rt.current_time;
 			
+			if (d->footpad_sensor.state == FS_NONE &&
+		            d->motor.abs_erpm > d->switch_warn_beep_erpm) {
+			    play_tone(&d->tone, &d->tone_config.continuous1, &d->rt, BEEP_SENSORS);
+		        } else if (d->tone.tone_in_progress && d->tone.beep_reason == BEEP_SENSORS) { 
+		            end_tone(&d->tone);
+		        }
 			//Ride Timer
 			ride_timer(&d->ridetimer, &d->rt);
 			
@@ -729,11 +723,10 @@ static void tnt_thd(void *arg) {
 			d->pid.prop_smooth = d->rt.setpoint - d->rt.pitch_smooth_kalman;
 			d->pid.abs_prop_smooth = fabsf(d->pid.prop_smooth);
 
-			//Check for braking conditions and braking curves
+			//Check for braking conditions and braking curves, and kp values for pitch roll and yaw
 			d->state.braking_pos = sign(d->pid.proportional) != d->motor.erpm_sign;
 			d->state.braking_pos_smooth = sign(d->pid.prop_smooth) != d->motor.erpm_sign;
-
-			check_brake_kp(&d->pid,  &d->state,  &d->tnt_conf,  &d->roll_brake_kp,  &d->yaw_brake_kp); //Check that there are appropriate kp values for pitch roll and yaw
+			check_brake_kp(&d->pid,  &d->state,  &d->tnt_conf,  &d->roll_brake_kp,  &d->yaw_brake_kp);
 
 			//Apply Pitch, Roll, Yaw Kp, and Soft Start
 			new_pid_value = apply_pitch_kp(d);
@@ -759,19 +752,17 @@ static void tnt_thd(void *arg) {
 			d->pid.pid_value = (d->state.wheelslip && d->tnt_conf.is_traction_enabled) ? 0 : new_pid_value;
 
 			// Output to motor
-			if (d->surge.active) { 	
+			if (d->surge.active)
 				set_dutycycle(d, d->surge.new_duty_cycle); 		// Set the duty to surge
-			} else if (d->braking.active) {
+			else if (d->braking.active) 
 				set_brake(d, d->pid.pid_value);				// Use braking function for traction control
-			} else {
+			else
 				set_current(d, d->pid.pid_value); 			// Set current as normal.
-			}
 
 			break;
 
 		case (STATE_READY):
 			idle_tone(&d->tone, &d->tone_config.slowdouble2, &d->rt);
-			temp_recovery_tone(&d->tone, &d->tone_config.fasttripleup, &d->rt, &d->motor);
 
 			if ((d->rt.current_time - d->fault_angle_pitch_timer) > 1) {
 				// 1 second after disengaging - set startup tolerance back to normal (aka tighter)
