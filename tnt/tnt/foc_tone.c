@@ -133,7 +133,7 @@ void idle_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt) {
 		}
 	} else {
 		rt->nag_timer = rt->current_time;
-		d->tone.idle_voltage = 0;
+		tone->idle_voltage = 0;
 	}
 }
 
