@@ -36,8 +36,7 @@ void tone_update(ToneData *tone, RuntimeData *rt, State *state) {
 			tone->timer = rt->current_time;
 			tone->times--; 				//Decrement the times property until 0
 		} else if (rt->current_time - tone->timer > tone->duration && tone->tone_in_progress) {
-			if (state->state == STATE_RUNNING)
-				VESC_IF->foc_stop_audio(true);	//stop foc play tone after duration
+			VESC_IF->foc_stop_audio(true);	//stop foc play tone after duration
 			if (tone->times > 0) 		
 				tone->pause = true; 		//put in pause if there is another play to do
 			tone->tone_in_progress = false; 
