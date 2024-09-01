@@ -152,7 +152,7 @@ typedef struct {
 	uint16_t tiltback_lv_speed;
 	float tiltback_lv;
 	float midvolt_warning;
-	float lowvolt-warning;
+	float lowvolt_warning;
 	uint16_t tiltback_ht_angle;
 	uint16_t tiltback_ht_speed;
 	uint16_t tiltback_return_speed;
