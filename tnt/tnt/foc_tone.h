@@ -38,7 +38,7 @@ typedef struct {
 	bool lowvolt_activated;
 	bool motortemp_activated;
 	bool fettemp_activated;
-	float idlevoltage;
+	float idle_voltage;
 } ToneData;
 
 typedef struct {
