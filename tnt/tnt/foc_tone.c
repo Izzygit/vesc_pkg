@@ -137,12 +137,12 @@ void idle_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt) {
 	}
 }
 
-void temp_recovery_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt) {
-	if (VESC_IF->mc_temp_motor_filtered() < d->motor.mc_max_temp_mot - 7 &&
+void temp_recovery_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt, MotorData *motor) {
+	if (VESC_IF->mc_temp_motor_filtered() < motor->mc_max_temp_mot - 7 &&
 	    tone->motortemp_warning) {
 		play_tone(tone, tone_config, rt, 16);
 		tone->motortemp_warning = false;
-	} else if (VESC_IF->mc_temp_fet_filtered() < d->motor.mc_max_temp_fet - 7 &&
+	} else if (VESC_IF->mc_temp_fet_filtered() < motor->mc_max_temp_fet - 7 &&
 	    tone->fettemp_warning) {
 		play_tone(tone, tone_config, rt, 15);
 		tone->fettemp_warning = false;
