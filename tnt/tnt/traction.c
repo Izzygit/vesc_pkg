@@ -64,7 +64,7 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 			if (m->erpm_sign == sign(m->erpm_history[m->last_erpm_idx])) { 							//Check sign of the motor at the start of acceleration
 				if (fabsf(m->erpm_filtered) > fabsf(m->erpm_history[m->last_erpm_idx])) { 						//If signs the same check for magnitude increase
 					start_condition1 = sign(m->current) * m->accel_avg > traction->start_accel * erpmfactor &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
-			   	    !state->braking_pos && (rt->current_time - braking->brake_delay > 0.2);									// Do not apply for braking 								
+			  		    !state->braking_pos && !braking->active;									// Do not apply for braking 								
 				} // else if (...TODO Put working braking condition here
 			} else if (sign(m->erpm_sign_soft) != sign(m->accel_avg)) {				// If the motor is back spinning engage but don't allow wheelslip on landing
 				start_condition2 = sign(m->current) * m->accel_avg > traction->start_accel * erpmfactor &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
@@ -137,7 +137,7 @@ void check_traction_braking(MotorData *m, BrakingData *braking, State *state, Ru
 
 	//Check that conditions for traciton braking are satified and add to counter
 	if (-inputtilt_interpolated * m->erpm_sign >= config->tc_braking_angle && //Minimum nose down angle from remote, can be 0
-	    state->braking_pos &&						// braking position active
+	    state->braking_pos_smooth &&						// braking position active
 	    m->duty_filtered > config->tc_braking_duty_limit / 100.0) {		// above the minimum duty
 		braking->count +=1;
 	} else { braking->count = 0; }
@@ -182,7 +182,7 @@ void check_traction_braking(MotorData *m, BrakingData *braking, State *state, Ru
 			
 			if (-inputtilt_interpolated * m->erpm_sign < config->tc_braking_angle) {
 				braking_dbg->debug4 = braking_dbg->debug4 * 10 + 1;
-			} else if (!state->braking_pos) {
+			} else if (!state->braking_pos_smooth) {
 				braking_dbg->debug4 = braking_dbg->debug4 * 10 + 2;
 			} else if (m->duty_filtered < config->tc_braking_duty_limit / 100.0) {
 				braking_dbg->debug4 = braking_dbg->debug4 * 10 + 3;
