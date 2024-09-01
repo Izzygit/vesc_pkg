@@ -490,7 +490,7 @@ static void calculate_setpoint_target(data *d) {
 		float vdelta = 1.0 * d->tnt_conf.midvolt_warning - input_voltage;
 		float ratio = vdelta * 20 / abs_motor_current;
 		if ((vdelta > 2 || abs_motor_current < 5 || ratio > 1) &&
-		    !d->tone-.modvolt_activated) {
+		    !d->tone.modvolt_activated) {
 			play_tone(&d->tone, &d->tone_config.slowtripledown, &d->rt, BEEP_MW);
 			d->tone.midvolt_activated = true;
 		}
@@ -499,7 +499,7 @@ static void calculate_setpoint_target(data *d) {
 		float vdelta = 1.0 * d->tnt_conf.lowvolt_warning - input_voltage;
 		float ratio = vdelta * 20 / abs_motor_current;
 		if ((vdelta > 2 || abs_motor_current < 5 || ratio > 1) &&
-		    !d->tone-.lowvolt_activated) {
+		    !d->tone.lowvolt_activated) {
 			play_tone(&d->tone, &d->tone_config.slowtripledown, &d->rt, BEEP_LW);
 			d->tone.lowvolt_activated = true;
 		}	
