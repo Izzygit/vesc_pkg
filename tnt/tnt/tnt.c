@@ -710,6 +710,8 @@ static void tnt_thd(void *arg) {
 
 			//Check for braking conditions and braking curves
 			d->state.braking_pos = sign(d->pid.proportional) != d->motor.erpm_sign;
+			d->state.braking_pos_smooth = sign(d->pid.prop_smooth) != d->motor.erpm_sign;
+
 			check_brake_kp(&d->pid,  &d->state,  &d->tnt_conf,  &d->roll_brake_kp,  &d->yaw_brake_kp); //Check that there are appropriate kp values for pitch roll and yaw
 
 			//Apply Pitch, Roll, Yaw Kp, and Soft Start
