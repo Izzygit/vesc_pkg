@@ -29,7 +29,7 @@ void tone_update(ToneData *tone, RuntimeData *rt, State *state) {
 	if (!tone->pause) { 					//only play or stop if pause has not been activated
 		tone->pause_timer = rt->current_time; 		// keep updated until we are in pause state
 		if (!tone->tone_in_progress && tone->times != 0) {
-			index = max(3, tone->times - 1);	//Frequencies play in reverser order: 3 2 1
+			index = max(2, tone->times - 1);	//Frequencies play in reverser order: 3 2 1
 			if (state->state == STATE_RUNNING) { 	//Choose function based on state
 				tone->tone_in_progress = VESC_IF->foc_play_tone(0,  tone->freq[index], tone->voltage);
 			} else { tone->tone_in_progress = VESC_IF->foc_beep(tone->freq[index], tone->duration, tone->voltage); }
