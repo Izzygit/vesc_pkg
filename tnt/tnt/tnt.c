@@ -56,7 +56,9 @@ typedef enum {
 	BEEP_IDLE = 9,
 	BEEP_ERROR = 10,
 	TONE_CURRENT = 11,
-	TONE_DUTY = 12
+	TONE_DUTY = 12,
+	BEEP_MW = 13,
+	BEEP_LW = 14
 } BeepReason;
 
 // This is all persistent state of the application, which will be allocated in init. It
@@ -232,7 +234,6 @@ static void reset_vars(data *d) {
 		
 		//Control variables
 		reset_pid(&d->pid);
-		//tone_reset(&d->tone);
 
 		//Remote
 		reset_remote(&d->remote, &d->st_tilt);
@@ -480,6 +481,24 @@ static void calculate_setpoint_target(data *d) {
 			d->state.sat = SAT_NONE;
 			d->setpoint_target = 0;
 		}
+	} else if (d->motor.duty_cycle > 0.05 && input_voltage < d->tnt_conf.midvolt_warning) {
+		float abs_motor_current = fabsf(d->motor.current);
+		float vdelta = 1.0 * d->tnt_conf.midvolt_warning - input_voltage;
+		float ratio = vdelta * 20 / abs_motor_current;
+		if ((vdelta > 2 || abs_motor_current < 5 || ratio > 1) &&
+		    !d->tone-.modvolt_activated) {
+			play_tone(&d->tone, &d->tone_config.slowtripledown, &d->rt, BEEP_MW);
+			d->tone.midvolt_activated = true;
+		}
+	} else if (d->motor.duty_cycle > 0.05 && input_voltage < d->tnt_conf.lowvolt_warning) {
+		float abs_motor_current = fabsf(d->motor.current);
+		float vdelta = 1.0 * d->tnt_conf.lowvolt_warning - input_voltage;
+		float ratio = vdelta * 20 / abs_motor_current;
+		if ((vdelta > 2 || abs_motor_current < 5 || ratio > 1) &&
+		    !d->tone-.lowvolt_activated) {
+			play_tone(&d->tone, &d->tone_config.slowtripledown, &d->rt, BEEP_LW);
+			d->tone.lowvolt_activated = true;
+		}	
 	} else if (d->state.sat != SAT_CENTERING || d->setpoint_target_interpolated == d->setpoint_target) {
         	// Normal running
          	d->state.sat = SAT_NONE;
@@ -651,20 +670,17 @@ static void tnt_thd(void *arg) {
 			
 			//Rest Timer
 			rest_timer(&d->ridetimer, &d->rt);
-						
+			tone_reset(&d->tone);
+		
 			if (VESC_IF->imu_startup_done()) {
 				reset_vars(d);
 				// set state to READY so we need to meet start conditions to start
 				d->state.state = STATE_READY;
-	
-				// if within 5V of LV tiltback threshold, issue 1 beep for each volt below that
-				float bat_volts = VESC_IF->mc_get_input_voltage_filtered();
-				float threshold = d->tnt_conf.tiltback_lv + 5;
-				if (bat_volts < threshold) {
-					play_tone(&d->tone, &d->tone_config.slowtripledown, &d->rt, BEEP_LOWBATT);
+
+				if (VESC_IF->mc_get_input_voltage_filtered() <  d->tnt_conf.lowvolt_warning) {
+					play_tone(&d->tone, &d->tone_config.slowtripledown, &d->rt, BEEP_LW);
 				} else {
-					// Let the rider know that the board is ready (one long beep)
-					//play_tone(&d->tone, &d->tone_config.fastdouble1, &d->rt, BEEP_NONE);
+					//play_tone(&d->tone, &d->tone_config.fastdouble1, &d->rt, BEEP_NONE); //Board ready
 				}
             		}
            		break;
