@@ -83,8 +83,8 @@ void end_tone(ToneData *tone) {
 }
 
 void tone_reset(ToneData *tone) {
-	tone->tone_in_progress = false;
-	end_tone(tone);
+	tone->midvolt_warning = false;
+	tone->lowvolt_warning = false;
 }
 
 void tone_configure(ToneConfig *toneconfig, float freq1, float freq2, float freq3, float voltage, float duration, int times, float delay, int priority) {
