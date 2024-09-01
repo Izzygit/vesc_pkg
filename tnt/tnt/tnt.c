@@ -30,6 +30,7 @@
 #include "surge.h"
 #include "runtime.h"
 #include "remote_input.h"
+#include "foc_tone.h"
 
 #include "conf/datatypes.h"
 #include "conf/confparser.h"
