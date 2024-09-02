@@ -98,8 +98,7 @@ void tone_configure(ToneConfig *toneconfig, float freq1, float freq2, float freq
 }
 
 void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config) {
-	float beep_voltage =
-	beep_voltage = config->is_beeper_enabled ? config->beep_voltage : 0;
+	float beep_voltage = config->is_beeper_enabled ? config->beep_voltage : 0;
 	tone_configure(&toneconfig->continuous1, 698, 0, 0, beep_voltage, 601, 1, 0, 1);
 	tone_configure(&toneconfig->fastdouble1, 698, 698, 0, beep_voltage, .1, 2, 10, 1);
 	tone_configure(&toneconfig->fastdouble2, 880, 880, 0, beep_voltage, .1, 2, 0, 1);
