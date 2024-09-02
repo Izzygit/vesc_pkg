@@ -64,11 +64,11 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 			if (m->erpm_sign == sign(m->erpm_history[m->last_erpm_idx])) { 							//Check sign of the motor at the start of acceleration
 				if (fabsf(m->erpm_filtered) > fabsf(m->erpm_history[m->last_erpm_idx])) { 						//If signs the same check for magnitude increase
 					start_condition1 = sign(m->current) * m->accel_avg > traction->start_accel * erpmfactor &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
-			  		    !state->braking_pos && !braking->active;									// Do not apply for braking 								
+			  		    !state->braking_pos && (rt->current_time - braking->brake_delay > config->tc_braking_end_delay / 1000.0);// Do not apply for braking 								
 				} // else if (...TODO Put working braking condition here
 			} else if (sign(m->erpm_sign_soft) != sign(m->accel_avg)) {				// If the motor is back spinning engage but don't allow wheelslip on landing
 				start_condition2 = sign(m->current) * m->accel_avg > traction->start_accel * erpmfactor &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
-			   	    !state->braking_pos && (rt->current_time - braking->brake_delay > 0.2);									// Do not apply for braking 
+			   	    !state->braking_pos && (rt->current_time - braking->brake_delay > config->tc_braking_end_delay / 1000.0);	// Do not apply for braking 
 			}
 		}
 		
@@ -133,7 +133,7 @@ void configure_traction(TractionData *traction, BrakingData *braking, tnt_config
 }
 
 void check_traction_braking(MotorData *m, BrakingData *braking, State *state, RuntimeData *rt, tnt_config *config, float inputtilt_interpolated, BrakingDebug *braking_dbg){
-	bool check_last = braking->last_active ||  rt->current_time - braking->brake_delay > config->tc_braking_end_delay / 1000.0; //we were just traction braking or we are beyond the brake delay
+	bool check_last = braking->last_active ||  rt->current_time - braking->brake_delay > 0.02; //we were just traction braking or we are beyond the brake delay
 
 	//Check that conditions for traciton braking are satified and add to counter
 	if (-inputtilt_interpolated * m->erpm_sign_soft >= config->tc_braking_angle && //Minimum nose down angle from remote, can be 0
@@ -177,8 +177,8 @@ void check_traction_braking(MotorData *m, BrakingData *braking, State *state, Ru
 			braking_dbg->debug8 = braking_dbg->debug1; //deactivated on time tracker
 			braking_dbg->debug5 += 1; //count deactivations
 		
-			if (braking_dbg->debug4 > 10000)  //Save 5 of the most recent deactivation reasons
-				braking_dbg->debug4 = braking_dbg->debug4 % 10000;
+			if (braking_dbg->debug4 > 1000000000)  //Save 10 of the most recent deactivation reasons
+				braking_dbg->debug4 = braking_dbg->debug4 % 1000000000;
 			
 			if (-inputtilt_interpolated * m->erpm_sign < config->tc_braking_angle) {
 				braking_dbg->debug4 = braking_dbg->debug4 * 10 + 1;
