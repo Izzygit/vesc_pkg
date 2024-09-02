@@ -592,7 +592,7 @@ static void brake(data *d) {
     }
 
     if (d->rt.current_time > d->brake_timeout ||
-      d->tone.tone_in_progress) { //if foc beep is activated don't allow braking
+      d->tone.tone_in_progres || d->tone.times !=0) { //if foc beep is activated don't allow braking
         return;
     }
 
