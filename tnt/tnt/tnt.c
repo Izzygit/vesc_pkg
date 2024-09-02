@@ -174,11 +174,6 @@ static void configure(data *d) {
 	if (VESC_IF->get_cfg_float(CFG_PARAM_IMU_mahony_kp) != d->tnt_conf.mahony_kp) {
 		VESC_IF->set_cfg_float(CFG_PARAM_IMU_mahony_kp, d->tnt_conf.mahony_kp);
 	}
-
-	// Speed above which to warn users about an impending full switch fault
-	d->switch_warn_beep_erpm = d->tnt_conf.is_footbeep_enabled ? 2000 : 100000;
-
-	d->beeper_enabled = d->tnt_conf.is_beeper_enabled;
 	
 	//Remote
 	configure_remote_features(&d->tnt_conf, &d->remote, &d->st_tilt);
@@ -416,9 +411,6 @@ static void calculate_setpoint_target(data *d) {
 			d->setpoint_target = -d->tnt_conf.tiltback_duty_angle;
 		}
 		d->state.sat = SAT_PB_DUTY;
-	} else if (d->motor.duty_filtered > d->tiltback_duty - .1 &&
-	    d->tnt_conf.is_dutybeep_enabled) {
-		play_tone(&d->tone, &d->tone_config.fasttripleup, &d->rt, BEEP_DUTY);
 	} else if (d->motor.duty_cycle > 0.05 && input_voltage > d->tnt_conf.tiltback_hv) {
 		play_tone(&d->tone, &d->tone_config.slowtripleup, &d->rt, BEEP_HV);
 		if (((d->rt.current_time - d->tb_highvoltage_timer) > .5) ||
@@ -510,13 +502,12 @@ static void calculate_setpoint_target(data *d) {
 	}
 	
 	//Duty FOC Tone
-	if (d->state.sat == SAT_PB_DUTY) {
-		if (d->tnt_conf.haptic_buzz_duty) {
-			play_tone(&d->tone, &d->tone_config.dutytone, &d->rt, TONE_DUTY);
-		}
-	} else if (d->tone.tone_in_progress && d->tone.duration == 600) {
+	if (d->state.sat == SAT_PB_DUTY) 
+		play_tone(&d->tone, &d->tone_config.dutytone, &d->rt, TONE_DUTY);
+	else if (d->tone.tone_in_progress && d->tone.duration == 600) 
 		end_tone(&d->tone);
-	}
+	else if (d->motor.duty_filtered > d->tiltback_duty - .1)
+		play_tone(&d->tone, &d->tone_config.fasttripleupduty, &d->rt, BEEP_DUTY);
 }
 
 static void calculate_setpoint_interpolated(data *d) {
@@ -687,14 +678,17 @@ static void tnt_thd(void *arg) {
 				}
 				break;
 			}
-			d->odometer_dirty = 1;
-			
+
+			//Check footpad
 			if (d->footpad_sensor.state == FS_NONE &&
-		            d->motor.abs_erpm > d->switch_warn_beep_erpm) {
-			    play_tone(&d->tone, &d->tone_config.continuous1, &d->rt, BEEP_SENSORS);
+		            d->motor.abs_erpm > 2000) {
+			    play_tone(&d->tone, &d->tone_config.continuousfootpad, &d->rt, BEEP_SENSORS);
 		        } else if (d->tone.tone_in_progress && d->tone.beep_reason == BEEP_SENSORS) { 
 		            end_tone(&d->tone);
 		        }
+			
+			d->odometer_dirty = 1;
+			
 			//Ride Timer
 			ride_timer(&d->ridetimer, &d->rt);
 			
