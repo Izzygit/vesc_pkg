@@ -52,7 +52,7 @@ typedef struct {
 
 typedef struct {
 	ToneConfig continuous1;
-	ToneConfig continuous2;
+	ToneConfig continuousfootpad;
 	ToneConfig fastdouble1;
 	ToneConfig fastdouble2;
 	ToneConfig slowdouble1;
@@ -62,6 +62,7 @@ typedef struct {
 	ToneConfig slowtriple1;
 	ToneConfig slowtriple2;
 	ToneConfig fasttripleup;
+	ToneConfig fasttripleupduty;
 	ToneConfig fasttripledown;
 	ToneConfig slowtripleup;
 	ToneConfig slowtripledown;
