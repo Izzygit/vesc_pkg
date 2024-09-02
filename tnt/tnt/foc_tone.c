@@ -19,6 +19,7 @@
 #include "utils_tnt.h"
 
 void tone_update(ToneData *tone, RuntimeData *rt, State *state) {
+	//This function is updated every code cycle to execute initiated tones
 	int index;
 	
 	if (tone->duration > 30 &&		//Don't allow continuous tones outiside run state
@@ -26,14 +27,14 @@ void tone_update(ToneData *tone, RuntimeData *rt, State *state) {
 		end_tone(tone);
 	}
 	
-	if (!tone->pause) { 					//only play or stop if pause has not been activated
+	if (!tone->pause) { 					//only play or stop tones outside of pause period
 		tone->pause_timer = rt->current_time; 		// keep updated until we are in pause state
-		if (!tone->tone_in_progress && tone->times != 0) {
-			index = min(2, tone->times - 1);	//Frequencies play in reverser order: 3 2 1
+		if (!tone->tone_in_progress && tone->times != 0) { //times>0 and we are ready for the next tone
+			index = min(2, tone->times - 1);	//Use index/times to play frequencies in reverser order: 3 2 1
 			if (state->state == STATE_RUNNING) { 	//Choose function based on state
 				tone->tone_in_progress = VESC_IF->foc_play_tone(0,  tone->freq[index], tone->voltage);
 			} else { tone->tone_in_progress = VESC_IF->foc_beep(tone->freq[index], tone->duration, tone->voltage); }
-			tone->timer = rt->current_time;
+			tone->timer = rt->current_time;		//Used to track tone duration
 			tone->times--; 				//Decrement the times property until 0
 		} else if (rt->current_time - tone->timer > tone->duration && tone->tone_in_progress) {
 			VESC_IF->foc_stop_audio(true);	//stop foc play tone after duration
@@ -47,17 +48,17 @@ void tone_update(ToneData *tone, RuntimeData *rt, State *state) {
 }
 
 void play_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt, int beep_reason) {
-	//Used to play limited duration, repeating, or continuous tones
-	if (rt->current_time - tone->timer < toneconfig->delay && 
-	    tone->beep_reason == beep_reason) 
-		return;			// If we have the same beep reason as the last and we are within the delay period do not update tone->times to prevent beep
+	//This function is used to initiate tones, and only called in specific instances
+	if (rt->current_time - tone->timer < toneconfig->delay && 	//This section applies delay to prevent constant repetition
+	    tone->beep_reason == beep_reason) 				//if the beep reason remains the same.
+		return;			
 	
 	if (tone->priority < toneconfig->priority) { //Allow for immediate override of higher priority
 		tone->tone_in_progress = false;
 		VESC_IF->foc_stop_audio(true);
 	}
 	
-	if (!tone->tone_in_progress) {
+	if (!tone->tone_in_progress) {		//Applies tone properties and initiates tone with tone->times > 0
 		tone->freq[0] = toneconfig->freq[0];
 		tone->freq[1] = toneconfig->freq[1];
 		tone->freq[2] = toneconfig->freq[2];
@@ -71,7 +72,7 @@ void play_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt, int beep
 }
 
 void end_tone(ToneData *tone) {
-	//Used to end continous tones
+	//Used to end continuous tones
 	tone->freq[0] = 0;
 	tone->freq[1] = 0;
 	tone->freq[2] = 0;
@@ -82,6 +83,7 @@ void end_tone(ToneData *tone) {
 }
 
 void tone_reset(ToneData *tone) {
+	//low voltage warnings reset on board start up
 	tone->midvolt_activated = false;
 	tone->lowvolt_activated = false;
 }
@@ -146,6 +148,7 @@ void idle_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt) {
 }
 
 void temp_recovery_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt, MotorData *motor) {
+	//This function alerts the user once the motor or fets have cooled 10 degrees below the tiltback limit
 	if (VESC_IF->mc_temp_motor_filtered() < motor->mc_max_temp_mot - 7 &&
 	    tone->motortemp_activated) {
 		play_tone(tone, toneconfig, rt, 16);
