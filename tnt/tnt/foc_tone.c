@@ -99,7 +99,7 @@ void tone_configure(ToneConfig *toneconfig, float freq1, float freq2, float freq
 	toneconfig->priority = priority;
 }
 
-void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config) {
+void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config, ToneData *tone) {
 	float beep_voltage = config->is_beeper_enabled ? config->beep_voltage : 0;
 	tone_configure(&toneconfig->continuous1, 698, 0, 0, beep_voltage, 601, 1, 0, 1);
 	tone_configure(&toneconfig->fastdouble1, 698, 698, 0, beep_voltage, .1, 2, 10, 1);
@@ -125,6 +125,10 @@ void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config) {
 
 	beep_voltage = config->haptic_buzz_current ? config->tone_volt_high_current : 0;
 	tone_configure(&toneconfig->currenttone, config->tone_freq_high_current, 0, 0, beep_voltage, config->overcurrent_period, 1, 0, 6);
+
+	tone->beep_duty = 1.0 * d->tnt_conf.tiltback_duty / 100.0 - .1; //10% below titltback duty for beep
+	tone->duty_tone_count_limit = 500.0 / 1000.0 * config->hertz; //require 500 ms above duty to initiate
+	tone->duty_beep_count_limit = 500.0 / 1000.0 * config->hertz; //require 500 ms above duty to initiate
 }
 
 void idle_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt) {
@@ -158,4 +162,24 @@ void temp_recovery_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt,
 		play_tone(tone, toneconfig, rt, 15);
 		tone->fettemp_activated = false;
 	}
+}
+
+
+void check_duty_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt, MotorData *motor) {
+	//Duty FOC Tone/Beep
+	if (state->sat == SAT_PB_DUTY) 
+		tone->duty_tone_count++; 	//A counter is used to track duty cycle to prevent nuisance trips
+	else tone->duty_tone_count = 0;	
+		
+	if (tone->duty_tone_count > tone->duty_tone_count_limit) // After we are above duty for 500ms then play tone
+		play_tone(tone, tone_config->dutytone, rt, 12);
+	else if (tone->tone_in_progress && tone->duration == 600) 
+		end_tone(&d->tone);
+
+	if (motor->duty_cycle > tone->beep_duty)
+		tone->duty_beep_count++; 	//A counter is used to track duty cycle to prevent nuisance trips
+	else tone->duty_beep_count = 0;
+	
+	if (tone->duty_beep_count > tone->duty_beep_count_limit) // After we are above duty for 500ms then play beep
+		play_tone(tone, tone_config->fasttripleupduty, rt, 6);
 }
