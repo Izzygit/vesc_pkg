@@ -80,7 +80,7 @@ void play_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt, int beep
 void end_tone(ToneData *tone);
 void tone_reset(ToneData *tone);
 void tone_configure(ToneConfig *toneconfig, float freq1, float freq2, float freq3, float voltage, float duration, int times, float delay, int priority);
-void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config);
+void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config, ToneData *tone);
 void idle_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt);
 void temp_recovery_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt, MotorData *motor);
 void check_duty_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt, MotorData *motor);
