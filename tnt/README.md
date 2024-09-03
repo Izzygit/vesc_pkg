@@ -67,15 +67,28 @@ For more instructions on setting up your board please refer to the [Set Up Guide
     * Absolute value of motor acceleration must be greater than end condition to end traction control
     * Absolute value of motor acceleration must be less than hold condition to allow another traction control engagement.
     * New parameter allows for the termination of traction control when a pitch angle threshold is met.
+    * Removed intermediate time outs and changed traction control to 1 second time out.
   * FOC Play Tones
     * FOC play tones now replaces haptic buzz.
-    * New parameters allow for frequency and voltage (volume) adjustment.
-    * Only applied for high duty and high current but more to come.
-    * Beeper is now replaced with FOC play tones
+    * New parameters allow for frequency and voltage (volume) adjustment for high current and high duty tones
+    * Beeper is now replaced with FOC play tones with the following alerts implemented
+      * Duty cycle within 10% of tiltback duty cycle- fast triple beep, ascending pitch
+      * High Voltage - slow triple beep, ascending pitch
+      * Low voltage - slow triple beep, descending pitch
+      * High motor temp - slow triple beep, single pitch
+      * High fet temp - slow triple beep, single pitch
+      * New features fet/motor temp recovery activates when 10 degrees below tiltback temperature after activating high temp- fast triple beep, ascending pitch
+      * New features Mid Voltage Warnings provides additional voltage thresholds (i.e. 50% and 25%) for alerts - slow triple beep, descending pitch
+      * Footpad disengaged above 2000 ERPM - continuous single pitch
+      * On write configuration - fast triple beep, single pitch
+      * After 35 minutes idle the beeper will engage every minute for the next 15 minutes - slow double beep, single pitch
+    * New parameter to adjust beeper volume.
+    * Added more Last Beep Reasons to AppUI to identify the new beep features.
 * _Fixes/Improvements_
    * Added a list of end conditions to AppUI for Surge and Traction Control debugs.
    * Added a timer to AppUI to show the last time Traction Control Braking was used.
    * Increased ERPM required to engage idle brake to 10.
+
 ### 1.3
 * **Version 1.3 parameters are not compatible with v1.2 and will be set to default. Screenshot your tunes to save.**
 * Code refactored thanks to contributions from Lukas Hrazky, author of Refloat.
