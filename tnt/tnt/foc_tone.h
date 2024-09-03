@@ -39,6 +39,11 @@ typedef struct {
 	bool motortemp_activated;
 	bool fettemp_activated;
 	float idle_voltage;
+	float beep_duty;
+	int duty_tone_count_limit;
+	int duty_beep_count_limit;
+	int duty_tone_count;
+	int duty_beep_count;
 } ToneData;
 
 typedef struct {
@@ -78,3 +83,4 @@ void tone_configure(ToneConfig *toneconfig, float freq1, float freq2, float freq
 void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config);
 void idle_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt);
 void temp_recovery_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt, MotorData *motor);
+void check_duty_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt, MotorData *motor);
