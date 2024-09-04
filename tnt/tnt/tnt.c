@@ -726,7 +726,7 @@ static void tnt_thd(void *arg) {
 				new_pid_value = sign(new_pid_value) * current_limit;
 			}
 			check_current(&d->motor, &d->surge, &d->state,  &d->tnt_conf, &d->tone, &d->tone_config.currenttone, &d->rt); // Check for high current conditions
-			check_duty_tone(&d->tone, &d->tone_config.dutytone, &d->rt, &d->motor, &d->state);
+			check_duty_tone(&d->tone, &d->tone_config, &d->rt, &d->motor, &d->state);
 			
 			// Modifiers to PID control
 			check_traction(&d->motor, &d->traction, &d->state, &d->rt, &d->tnt_conf, &d->braking, &d->pid, &d->traction_dbg);
