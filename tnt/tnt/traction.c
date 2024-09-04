@@ -132,7 +132,7 @@ void configure_traction(TractionData *traction, BrakingData *braking, tnt_config
 	braking_dbg->freq_factor = traction_dbg->freq_factor;
 }
 
-void check_traction_braking(MotorData *m, BrakingData *braking, State *state, RuntimeData *rt, tnt_config *config, float inputtilt_interpolated, BrakingDebug *braking_dbg){
+void check_traction_braking(MotorData *m, BrakingData *braking, State *state, RuntimeData *rt, tnt_config *config, float inputtilt_interpolated, BrakingDebug *braking_dbg, TractionData *traction){
 	bool check_last = braking->last_active ||  rt->current_time - braking->brake_delay > 0.02; //we were just traction braking or we are beyond the brake delay
 
 	//Check that conditions for traciton braking are satified and add to counter
@@ -169,9 +169,11 @@ void check_traction_braking(MotorData *m, BrakingData *braking, State *state, Ru
 		braking_dbg->debug8 = rt->current_time - braking->timeron + braking_dbg->debug1; //running on time tracker
 	} else { 
 		braking->active = false; 
-		
-		//Debug Section
+
 		if (braking->last_active) {
+			traction->end_accel_hold = true; //activate high accel hold to prevent traction control
+
+			//Debug Section
 			braking->timeroff = rt->current_time;
 			braking_dbg->debug1 += braking->timeroff - braking->timeron; //sum all activation times
 			braking_dbg->debug8 = braking_dbg->debug1; //deactivated on time tracker
