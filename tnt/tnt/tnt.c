@@ -212,7 +212,7 @@ static void configure(data *d) {
 	configure_traction(&d->traction, &d->braking, &d->tnt_conf, &d->traction_dbg, &d->braking_dbg);
 
 	//FOC play tones
-	tone_configure_all(&d->tone_config, &d->tnt_conf);
+	tone_configure_all(&d->tone_config, &d->tnt_conf, &d->tone);
 }
 
 static void reset_vars(data *d) {
@@ -584,7 +584,7 @@ static void brake(data *d) {
     }
 
     if (d->rt.current_time > d->brake_timeout ||
-      d->tone.tone_in_progres || d->tone.times !=0) { //if foc beep is activated don't allow braking
+      d->tone.tone_in_progress || d->tone.times !=0) { //if foc beep is activated don't allow braking
         return;
     }
 
