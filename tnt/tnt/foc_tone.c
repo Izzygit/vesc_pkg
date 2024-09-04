@@ -165,14 +165,14 @@ void temp_recovery_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt,
 }
 
 
-void check_duty_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt, MotorData *motor, State *state) {
+void check_duty_tone(ToneData *tone, ToneConfigs *toneconfigs, RuntimeData *rt, MotorData *motor, State *state) {
 	//Duty FOC Tone/Beep
 	if (state->sat == SAT_PB_DUTY) 
 		tone->duty_tone_count++; 	//A counter is used to track duty cycle to prevent nuisance trips
 	else tone->duty_tone_count = 0;	
 		
 	if (tone->duty_tone_count > tone->duty_tone_count_limit) // After we are above duty for 500ms then play tone
-		play_tone(tone, toneconfig->dutytone, rt, 12);
+		play_tone(tone, toneconfigs->dutytone, rt, 12);
 	else if (tone->tone_in_progress && tone->duration == 600) 
 		end_tone(tone);
 
@@ -181,5 +181,5 @@ void check_duty_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt, Mo
 	else tone->duty_beep_count = 0;
 	
 	if (tone->duty_beep_count > tone->duty_beep_count_limit) // After we are above duty for 500ms then play beep
-		play_tone(tone, toneconfig->fasttripleupduty, rt, 6);
+		play_tone(tone, toneconfigs->fasttripleupduty, rt, 6);
 }
