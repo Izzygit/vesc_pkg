@@ -181,5 +181,5 @@ void check_duty_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt, Mo
 	else tone->duty_beep_count = 0;
 	
 	if (tone->duty_beep_count > tone->duty_beep_count_limit) // After we are above duty for 500ms then play beep
-		play_tone(tone, tone_config->fasttripleupduty, rt, 6);
+		play_tone(tone, toneconfig->fasttripleupduty, rt, 6);
 }
