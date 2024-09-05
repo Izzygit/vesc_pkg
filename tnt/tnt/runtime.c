@@ -93,7 +93,6 @@ void configure_runtime(RuntimeData *rt, tnt_config *config) {
 	rt->motor_timeout_s = 20.0f / config->hertz;
 }
 
-
 void ride_timer(RideTimeData *ridetimer, RuntimeData *rt){
 	rt->disengage_timer = rt->current_time;
 	
@@ -104,11 +103,30 @@ void ride_timer(RideTimeData *ridetimer, RuntimeData *rt){
 	ridetimer->last_ride_time = rt->current_time;
 }
 
-
 void rest_timer(RideTimeData *ridetimer, RuntimeData *rt){
 	if(!ridetimer->run_flag) { //First trigger run flag and reset last rest time
 		ridetimer->rest_time += rt->current_time - ridetimer->last_rest_time;
 	}
 	ridetimer->run_flag = false;
 	ridetimer->last_rest_time = rt->current_time;
+}
+
+void check_odometer(RuntimeData *rt) { 
+	//check_odometer: see if we need to write back the odometer during fault state
+	// Make odometer persistent if we've gone 200m or more
+	if (rt->odometer_dirty > 0) {
+		float stored_odo = VESC_IF->mc_get_odometer();
+		if ((stored_odo > rt->odometer + 200) || (stored_odo < rt->odometer - 10000)) {
+			if (rt->odometer_dirty == 1) {
+				// Wait 10 seconds before writing to avoid writing if immediately continuing to ride
+				rt->odo_timer = rt->rt.current_time;
+				rt->odometer_dirty++;
+			}
+			else if ((rt->current_time - rt->odo_timer) > 10) {
+				VESC_IF->store_backup_data();
+				rt->odometer = VESC_IF->mc_get_odometer();
+				rt->odometer_dirty = 0;
+			}
+		}
+	}
 }
