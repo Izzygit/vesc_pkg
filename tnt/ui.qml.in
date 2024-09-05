@@ -236,9 +236,9 @@ Item {
                 }else if(beep_reason == 12){
                     beepString = "Duty Cycle Tone"
                 }else if(beep_reason == 13){
-                    beepString = "Mid Voltage Warning"
+                    beepString = "Reduced Range Warning"
 		}else if(beep_reason == 14){
-                    beepString = "Low Voltage Warning"
+                    beepString = "Low Range Warning"
                 }else if(beep_reason == 15){
                     beepString = "FET Temp Recovery"
 		}else if(beep_reason == 16){
