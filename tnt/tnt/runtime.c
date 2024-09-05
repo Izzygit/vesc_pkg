@@ -119,7 +119,7 @@ void check_odometer(RuntimeData *rt) {
 		if ((stored_odo > rt->odometer + 200) || (stored_odo < rt->odometer - 10000)) {
 			if (rt->odometer_dirty == 1) {
 				// Wait 10 seconds before writing to avoid writing if immediately continuing to ride
-				rt->odo_timer = rt->rt.current_time;
+				rt->odo_timer = rt->current_time;
 				rt->odometer_dirty++;
 			}
 			else if ((rt->current_time - rt->odo_timer) > 10) {
