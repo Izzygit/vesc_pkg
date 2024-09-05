@@ -176,8 +176,8 @@ void check_tone(ToneData *tone, ToneConfigs *toneconfig, RuntimeData *rt, MotorD
 		
 	if (tone->duty_tone_count > tone->delay_500ms) // After we are above duty for 500ms then play tone
 		play_tone(tone, &toneconfig->dutytone, rt, TONE_DUTY);
-	else if (tone->tone_in_progress && tone->duration == 600) 
-		end_tone(tone);
+	//else if (tone->tone_in_progress && tone->duration == 600) 
+	//	end_tone(tone);
 
 	//Duty FOC Beep
 	if (motor->duty_cycle > tone->beep_duty)
