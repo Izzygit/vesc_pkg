@@ -127,7 +127,9 @@ void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config, ToneData *t
 	tone_configure(&toneconfig->currenttone, config->tone_freq_high_current, 0, 0, beep_voltage, config->overcurrent_period, 1, 0, 6);
 
 	tone->beep_duty = 1.0 * config->tiltback_duty / 100.0 - .1; //10% below titltback duty for beep
-	tone->delay_500ms = 500.0 / 1000.0 * config->hertz;
+	tone->delay_500ms = config->hertz / 2;
+	tone->lowvolt_warning = config->lowvolt_warning
+	tone->midvolt_warning = config->midvolt_warning
 }
 
 void idle_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt) {
@@ -139,8 +141,7 @@ void idle_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt) {
 			if (input_voltage > tone->idle_voltage) {
 				// don't beep if the voltage keeps increasing (board is charging)
 				tone->idle_voltage = input_voltage;
-			}
-			else {
+			} else {
 				play_tone(tone, toneconfig, rt, 9);
 			}
 		}
@@ -185,22 +186,10 @@ void check_tone(ToneData *tone, ToneConfigs *toneconfig, RuntimeData *rt, MotorD
 	
 	if (tone->duty_beep_count > tone->delay_500ms) // After we are above duty for 500ms then play beep
 		play_tone(tone, &toneconfig->fasttripleupduty, rt, BEEP_DUTY);
-
-	//Mid Range Warning
-	if (motor->duty_cycle > 0.05 && 
-	    input_voltage < config->midvolt_warning)
-		tone->midvolt_count++; 	//A counter is used to track duty cycle to prevent nuisance trips
-	else tone->midvolt_count = 0;
-
-	if (!tone->midvolt_activated && 
-	    tone->midvolt_count > tone->delay_500ms) {
-		play_tone(tone, &toneconfig->slowtripledown, rt, BEEP_MW);
-		tone->midvolt_activated = true;
-	}
 	
 	//Low Range Warning
 	if (motor->duty_cycle > 0.05 && 
-	    input_voltage < config->lowvolt_warning)
+	    input_voltage < tone->lowvolt_warning)
 		tone->lowvolt_count++; 	//A counter is used to track duty cycle to prevent nuisance trips
 	else tone->lowvolt_count = 0;
 
@@ -208,5 +197,17 @@ void check_tone(ToneData *tone, ToneConfigs *toneconfig, RuntimeData *rt, MotorD
 	    tone->lowvolt_count > tone->delay_500ms) {
 		play_tone(tone, &toneconfig->slowtripledown, rt, BEEP_LW);
 		tone->lowvolt_activated = true;
+	}
+	
+	//Mid Range Warning
+	if (motor->duty_cycle > 0.05 && 
+	    input_voltage < tone->midvolt_warning)
+		tone->midvolt_count++; 	//A counter is used to track duty cycle to prevent nuisance trips
+	else tone->midvolt_count = 0;
+
+	if (!tone->midvolt_activated && 
+	    tone->midvolt_count > tone->delay_500ms) {
+		play_tone(tone, &toneconfig->slowtripledown, rt, BEEP_MW);
+		tone->midvolt_activated = true;
 	}
 }
