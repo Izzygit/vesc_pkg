@@ -104,4 +104,4 @@ void tone_configure(ToneConfig *toneconfig, float freq1, float freq2, float freq
 void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config, ToneData *tone);
 void idle_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt);
 void temp_recovery_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt, MotorData *motor);
-void check_duty_tone(ToneData *tone, ToneConfigs *toneconfig, RuntimeData *rt, MotorData *motor, State *state);
+void check_tone(ToneData *tone, ToneConfigs *toneconfig, RuntimeData *rt, MotorData *motor, State *state);
