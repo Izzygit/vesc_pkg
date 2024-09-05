@@ -20,6 +20,7 @@
 #include "kalman.h"
 #include "conf/datatypes.h"
 #include "vesc_c_if.h"
+#include <stdint.h>
 
 typedef struct { //Run time values used in various features
 	float pitch_angle;
