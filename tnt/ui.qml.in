@@ -236,7 +236,7 @@ Item {
                 }else if(beep_reason == 12){
                     beepString = "Duty Cycle Tone"
                 }else if(beep_reason == 13){
-                    beepString = "Reduced Range Warning"
+                    beepString = "Mid Range Warning"
 		}else if(beep_reason == 14){
                     beepString = "Low Range Warning"
                 }else if(beep_reason == 15){
