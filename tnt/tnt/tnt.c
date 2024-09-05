@@ -43,26 +43,6 @@
 
 HEADER
 
-typedef enum {
-	BEEP_NONE = 0,
-	BEEP_LV = 1,
-	BEEP_HV = 2,
-	BEEP_TEMPFET = 3,
-	BEEP_TEMPMOT = 4,
-	BEEP_CURRENT = 5,
-	BEEP_DUTY = 6,
-	BEEP_SENSORS = 7,
-	BEEP_LOWBATT = 8,
-	BEEP_IDLE = 9,
-	BEEP_ERROR = 10,
-	TONE_CURRENT = 11,
-	TONE_DUTY = 12,
-	BEEP_MW = 13,
-	BEEP_LW = 14,
-	BEEP_FETREC = 15,
-	BEEP_MOTREC = 16
-} BeepReason;
-
 // This is all persistent state of the application, which will be allocated in init. It
 // is put here because variables can only be read-only when this program is loaded
 // in flash without virtual memory in RAM (as all RAM already is dedicated to the
@@ -477,24 +457,6 @@ static void calculate_setpoint_target(data *d) {
 			d->state.sat = SAT_NONE;
 			d->setpoint_target = 0;
 		}
-	} else if (d->motor.duty_cycle > 0.05 && input_voltage < d->tnt_conf.midvolt_warning) {
-		float abs_motor_current = fabsf(d->motor.current);
-		float vdelta = 1.0 * d->tnt_conf.midvolt_warning - input_voltage;
-		float ratio = vdelta * 20 / abs_motor_current;
-		if ((vdelta > 2 || abs_motor_current < 5 || ratio > 1) &&
-		    !d->tone.midvolt_activated) {
-			play_tone(&d->tone, &d->tone_config.slowtripledown, &d->rt, BEEP_MW);
-			d->tone.midvolt_activated = true;
-		}
-	} else if (d->motor.duty_cycle > 0.05 && input_voltage < d->tnt_conf.lowvolt_warning) {
-		float abs_motor_current = fabsf(d->motor.current);
-		float vdelta = 1.0 * d->tnt_conf.lowvolt_warning - input_voltage;
-		float ratio = vdelta * 20 / abs_motor_current;
-		if ((vdelta > 2 || abs_motor_current < 5 || ratio > 1) &&
-		    !d->tone.lowvolt_activated) {
-			play_tone(&d->tone, &d->tone_config.slowtripledown, &d->rt, BEEP_LW);
-			d->tone.lowvolt_activated = true;
-		}	
 	} else if (d->state.sat != SAT_CENTERING || d->setpoint_target_interpolated == d->setpoint_target) {
         	// Normal running
          	d->state.sat = SAT_NONE;
@@ -726,7 +688,7 @@ static void tnt_thd(void *arg) {
 				new_pid_value = sign(new_pid_value) * current_limit;
 			}
 			check_current(&d->motor, &d->surge, &d->state,  &d->tnt_conf, &d->tone, &d->tone_config.currenttone, &d->rt); // Check for high current conditions
-			check_duty_tone(&d->tone, &d->tone_config, &d->rt, &d->motor, &d->state);
+			check_tone(&d->tone, &d->tone_config, &d->rt, &d->motor, &d->state);
 			
 			// Modifiers to PID control
 			check_traction(&d->motor, &d->traction, &d->state, &d->rt, &d->tnt_conf, &d->braking, &d->pid, &d->traction_dbg);
