@@ -179,8 +179,8 @@ void check_traction_braking(MotorData *m, BrakingData *braking, State *state, Ru
 			braking_dbg->debug8 = braking_dbg->debug1; //deactivated on time tracker
 			braking_dbg->debug5 += 1; //count deactivations
 		
-			if (braking_dbg->debug4 > 1000000000)  //Save 10 of the most recent deactivation reasons
-				braking_dbg->debug4 = braking_dbg->debug4 % 1000000000;
+			if (braking_dbg->debug4 > 1000000)  //Save 7 of the most recent deactivation reasons
+				braking_dbg->debug4 = braking_dbg->debug4 % 1000000;
 			
 			if (-inputtilt_interpolated * m->erpm_sign < config->tc_braking_angle) {
 				braking_dbg->debug4 = braking_dbg->debug4 * 10 + 1;
