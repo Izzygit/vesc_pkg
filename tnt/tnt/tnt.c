@@ -62,9 +62,6 @@ typedef struct {
 	ToneData tone;
 	ToneConfigs tone_config;
 
-	// Beeper
-	bool beeper_enabled;
-
 	// Config values
 	float startup_pitch_trickmargin, startup_pitch_tolerance;
 	float startup_step_size;
@@ -83,12 +80,10 @@ typedef struct {
 
 	float setpoint_target, setpoint_target_interpolated;
 	float noseangling_interpolated;
-	float nag_timer;
 	float idle_voltage;
 	float fault_angle_pitch_timer, fault_angle_roll_timer, fault_switch_timer, fault_switch_half_timer; // Seconds
 	float brake_timeout; // Seconds
 	float tb_highvoltage_timer;
-	float switch_warn_beep_erpm;
 
 	// Odometer
 	float odo_timer;
