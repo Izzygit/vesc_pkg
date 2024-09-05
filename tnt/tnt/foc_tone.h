@@ -45,6 +45,8 @@ typedef struct {
 	int duty_beep_count;
 	int midvolt_count;
 	int lowvolt_count;
+	float midvolt_warning;
+	float lowvolt_warning;
 } ToneData;
 
 typedef struct {
