@@ -127,8 +127,7 @@ void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config, ToneData *t
 	tone_configure(&toneconfig->currenttone, config->tone_freq_high_current, 0, 0, beep_voltage, config->overcurrent_period, 1, 0, 6);
 
 	tone->beep_duty = 1.0 * config->tiltback_duty / 100.0 - .1; //10% below titltback duty for beep
-	tone->duty_tone_count_limit = 500.0 / 1000.0 * config->hertz; //require 500 ms above duty to initiate
-	tone->duty_beep_count_limit = 500.0 / 1000.0 * config->hertz; //require 500 ms above duty to initiate
+	tone->delay_500ms = 500.0 / 1000.0 * config->hertz;
 }
 
 void idle_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt) {
@@ -165,21 +164,49 @@ void temp_recovery_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt,
 }
 
 
-void check_duty_tone(ToneData *tone, ToneConfigs *toneconfig, RuntimeData *rt, MotorData *motor, State *state) {
-	//Duty FOC Tone/Beep
-	if (state->sat == SAT_PB_DUTY) 
+void check_tone(ToneData *tone, ToneConfigs *toneconfig, RuntimeData *rt, MotorData *motor, State *state) {
+	//This function provides a delay before the activation of certain tones
+	float input_voltage = VESC_IF->mc_get_input_voltage_filtered();
+	
+	//Duty FOC Tone
+	if (state->sat == 6) 
 		tone->duty_tone_count++; 	//A counter is used to track duty cycle to prevent nuisance trips
 	else tone->duty_tone_count = 0;	
 		
-	if (tone->duty_tone_count > tone->duty_tone_count_limit) // After we are above duty for 500ms then play tone
-		play_tone(tone, &toneconfig->dutytone, rt, 12);
+	if (tone->duty_tone_count > tone->delay_500ms) // After we are above duty for 500ms then play tone
+		play_tone(tone, &toneconfig->dutytone, rt, TONE_DUTY);
 	else if (tone->tone_in_progress && tone->duration == 600) 
 		end_tone(tone);
 
+	//Duty FOC Beep
 	if (motor->duty_cycle > tone->beep_duty)
 		tone->duty_beep_count++; 	//A counter is used to track duty cycle to prevent nuisance trips
 	else tone->duty_beep_count = 0;
 	
-	if (tone->duty_beep_count > tone->duty_beep_count_limit) // After we are above duty for 500ms then play beep
-		play_tone(tone, &toneconfig->fasttripleupduty, rt, 6);
+	if (tone->duty_beep_count > tone->delay_500ms) // After we are above duty for 500ms then play beep
+		play_tone(tone, &toneconfig->fasttripleupduty, rt, BEEP_DUTY);
+
+	//Mid Range Warning
+	if (motor->duty_cycle > 0.05 && 
+	    input_voltage < config->midvolt_warning)
+		tone->midvolt_count++; 	//A counter is used to track duty cycle to prevent nuisance trips
+	else tone->midvolt_count = 0;
+
+	if (!tone->midvolt_activated && 
+	    tone->midvolt_count > tone->delay_500ms) {
+		play_tone(tone, &toneconfig->slowtripledown, rt, BEEP_MW);
+		tone->midvolt_activated = true;
+	}
+	
+	//Low Range Warning
+	if (motor->duty_cycle > 0.05 && 
+	    input_voltage < config->lowvolt_warning)
+		tone->lowvolt_count++; 	//A counter is used to track duty cycle to prevent nuisance trips
+	else tone->lowvolt_count = 0;
+
+	if (!tone->lowvolt_activated && 
+	    tone->lowvolt_count > tone->delay_500ms) {
+		play_tone(tone, &toneconfig->slowtripledown, rt, BEEP_LW);
+		tone->lowvolt_activated = true;
+	}
 }
