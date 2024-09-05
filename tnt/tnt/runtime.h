@@ -42,6 +42,9 @@ typedef struct { //Run time values used in various features
 	float disengage_timer, nag_timer;
 	uint32_t loop_time_us;
 	float motor_timeout_s;
+	float odo_timer;
+	int odometer_dirty;
+	uint64_t odometer;
 } RuntimeData;
 
 typedef struct {
@@ -75,3 +78,4 @@ void reset_runtime(RuntimeData *rt, YawData *yaw, YawDebugData *yaw_dbg);
 void configure_runtime(RuntimeData *rt, tnt_config *config);
 void rest_timer(RideTimeData *ridetimer, RuntimeData *rt);
 void ride_timer(RideTimeData *ridetimer, RuntimeData *rt);
+void check_odometer(RuntimeData *rt);
