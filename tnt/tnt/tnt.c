@@ -85,11 +85,6 @@ typedef struct {
 	float brake_timeout; // Seconds
 	float tb_highvoltage_timer;
 
-	// Odometer
-	float odo_timer;
-	int odometer_dirty;
-	uint64_t odometer;
-
 	//Remote
 	RemoteData remote;
 	StickyTiltData st_tilt;
@@ -217,30 +212,6 @@ static void reset_vars(data *d) {
 		reset_traction(&d->traction, &d->state, &d->braking);
 	}
 	state_engage(&d->state);
-}
-
-
-/**
- *	check_odometer: see if we need to write back the odometer during fault state
- */
-static void check_odometer(data *d)
-{
-	// Make odometer persistent if we've gone 200m or more
-	if (d->odometer_dirty > 0) {
-		float stored_odo = VESC_IF->mc_get_odometer();
-		if ((stored_odo > d->odometer + 200) || (stored_odo < d->odometer - 10000)) {
-			if (d->odometer_dirty == 1) {
-				// Wait 10 seconds before writing to avoid writing if immediately continuing to ride
-				d->odo_timer = d->rt.current_time;
-				d->odometer_dirty++;
-			}
-			else if ((d->rt.current_time - d->odo_timer) > 10) {
-				VESC_IF->store_backup_data();
-				d->odometer = VESC_IF->mc_get_odometer();
-				d->odometer_dirty = 0;
-			}
-		}
-	}
 }
 
 static float get_setpoint_adjustment_step_size(data *d) {
@@ -636,7 +607,7 @@ static void tnt_thd(void *arg) {
 		            end_tone(&d->tone);
 		        }
 			
-			d->odometer_dirty = 1;
+			d->rt.odometer_dirty = 1;
 			
 			//Ride Timer
 			ride_timer(&d->ridetimer, &d->rt);
@@ -713,7 +684,7 @@ static void tnt_thd(void *arg) {
 				d->startup_pitch_tolerance = d->tnt_conf.startup_pitch_tolerance;
 			}
 
-			check_odometer(d);
+			check_odometer(&d->rt);
 
 			//Rest Timer
 			rest_timer(&d->ridetimer, &d->rt);
@@ -823,7 +794,7 @@ static void read_cfg_from_eeprom(tnt_config *config) {
 static void data_init(data *d) {
     memset(d, 0, sizeof(data));
     read_cfg_from_eeprom(&d->tnt_conf);
-    d->odometer = VESC_IF->mc_get_odometer();
+    d->rt.odometer = VESC_IF->mc_get_odometer();
 }
 
 static float app_get_debug(int index) {
