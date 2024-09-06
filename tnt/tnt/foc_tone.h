@@ -99,7 +99,7 @@ typedef struct {
 } ToneConfigs;
 
 void tone_update(ToneData *tone, RuntimeData *rt, State *state);
-void play_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt, BeepReason beep_reason);
+void play_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt, int beep_reason);
 void end_tone(ToneData *tone);
 void tone_reset(ToneData *tone);
 void tone_configure(ToneConfig *toneconfig, float freq1, float freq2, float freq3, float voltage, float duration, int times, float delay, int priority);
