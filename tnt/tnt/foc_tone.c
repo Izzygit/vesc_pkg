@@ -22,10 +22,10 @@ void tone_update(ToneData *tone, RuntimeData *rt, State *state) {
 	//This function is updated every code cycle to execute initiated tones
 	int index;
 	
-	//if (tone->duration > 30 &&		//Don't allow continuous tones outiside run state
-	//    state->state != STATE_RUNNING) {	
-	//	end_tone(tone);
-	//}
+	if (tone->duration > 30 &&		//Don't allow continuous tones outiside run state
+	    state->state != STATE_RUNNING) {	
+		end_tone(tone);
+	}
 	
 	if (!tone->pause) { 					//only play or stop tones outside of pause period
 		tone->pause_timer = rt->current_time; 		// keep updated until we are in pause state
@@ -47,7 +47,7 @@ void tone_update(ToneData *tone, RuntimeData *rt, State *state) {
 	}
 }
 
-void play_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt, BeepReason beep_reason) {
+void play_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt, int beep_reason) {
 	//This function is used to initiate tones, and only called in specific instances
 	if (rt->current_time - tone->timer < toneconfig->delay && 	//This section applies delay to prevent constant repetition
 	    tone->beep_reason == beep_reason) 				//if the beep reason remains the same.
@@ -127,7 +127,7 @@ void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config, ToneData *t
 	tone_configure(&toneconfig->currenttone, config->tone_freq_high_current, 0, 0, beep_voltage, config->overcurrent_period, 1, 0, 6);
 
 	tone->beep_duty = 1.0 * config->tiltback_duty / 100.0 - .1; //10% below titltback duty for beep
-	tone->delay_500ms = config->hertz / 100;
+	tone->delay_500ms = config->hertz / 2;
 	tone->lowvolt_warning = config->lowvolt_warning;
 	tone->midvolt_warning = config->midvolt_warning;
 }
@@ -186,6 +186,17 @@ void check_tone(ToneData *tone, ToneConfigs *toneconfig, RuntimeData *rt, MotorD
 		end_tone(tone);	
 	else if (tone->duty_beep_count > tone->delay_500ms) // After we are above duty for 500ms then play beep
 		play_tone(tone, &toneconfig->fasttripleupduty, rt, BEEP_DUTY);
+
+	//Mid Range Warning
+	if (input_voltage < tone->midvolt_warning)
+		tone->midvolt_count++; 	//A counter is used to track duty cycle to prevent nuisance trips
+	else tone->midvolt_count = 0;
+
+	if (!tone->midvolt_activated && 
+	    tone->midvolt_count > tone->delay_500ms) {
+		play_tone(tone, &toneconfig->slowtripledown, rt, BEEP_MW);
+		tone->midvolt_activated = true;
+	}
 	
 	//Low Range Warning
 	if (input_voltage < tone->lowvolt_warning)
@@ -196,16 +207,5 @@ void check_tone(ToneData *tone, ToneConfigs *toneconfig, RuntimeData *rt, MotorD
 	    tone->lowvolt_count > tone->delay_500ms) {
 		play_tone(tone, &toneconfig->slowtripledown, rt, BEEP_LW);
 		tone->lowvolt_activated = true;
-	}
-	
-	//Mid Range Warning
-	if (input_voltage < tone->midvolt_warning)
-		tone->midvolt_count++; 	//A counter is used to track duty cycle to prevent nuisance trips
-	else tone->midvolt_count = 0;
-
-	if (!tone->midvolt_activated && 
-	    tone->midvolt_count > tone->delay_500ms) {
-		play_tone(tone, &toneconfig->slowtripledown, rt, BEEP_MW);
-		tone->midvolt_activated = true;
 	}
 }
