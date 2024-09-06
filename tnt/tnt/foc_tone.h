@@ -60,7 +60,7 @@ typedef struct {
 	bool fettemp_activated;
 	float idle_voltage;
 	float beep_duty;
-	int delay_500ms;
+	int delay_100ms;
 	int duty_tone_count;
 	int duty_beep_count;
 	int midvolt_count;
