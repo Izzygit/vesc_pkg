@@ -170,7 +170,7 @@ void check_tone(ToneData *tone, ToneConfigs *toneconfig, RuntimeData *rt, MotorD
 	float input_voltage = VESC_IF->mc_get_input_voltage_filtered();
 	
 	//Duty FOC Tone
-	if (motor->duty_cycle_filtered > tone->beep_duty + .1) 
+	if (motor->duty_filtered > tone->beep_duty + .1) 
 		tone->duty_tone_count++; 	//A counter is used to track duty cycle to prevent nuisance trips
 	else tone->duty_tone_count = 0;	
 		
