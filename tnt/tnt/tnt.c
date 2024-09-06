@@ -210,6 +210,10 @@ static void reset_vars(data *d) {
 	
 		// Traction Control
 		reset_traction(&d->traction, &d->state, &d->braking);
+
+		//FOC tones
+		tone_reset(&d->tone);
+
 	}
 	state_engage(&d->state);
 }
@@ -574,7 +578,6 @@ static void tnt_thd(void *arg) {
 			
 			//Rest Timer
 			rest_timer(&d->ridetimer, &d->rt);
-			tone_reset(&d->tone);
 		
 			if (VESC_IF->imu_startup_done()) {
 				reset_vars(d);
