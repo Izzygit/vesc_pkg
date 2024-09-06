@@ -70,6 +70,7 @@ typedef struct {
 	int lowvolt_count;
 	float midvolt_warning;
 	float lowvolt_warning;
+	int charged_count;
 } ToneData;
 
 typedef struct {
