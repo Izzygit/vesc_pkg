@@ -112,7 +112,7 @@ void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config, ToneData *t
 	tone_configure(&toneconfig->fasttripleup, 880, 784, 698.5, beep_voltage, .1, 3, 10, 2);
 	tone_configure(&toneconfig->fasttripledown, 698.5, 784, 880, beep_voltage, .1, 3, 30, 1);
 	tone_configure(&toneconfig->slowtripleup, 880, 784, 698.5, beep_voltage, .3, 3, 5, 1);
-	tone_configure(&toneconfig->slowtripledown, 698.5, 784, 880, beep_voltage, .3, 3, 5, 1);
+	tone_configure(&toneconfig->slowtripledown, 698.5, 784, 880, beep_voltage, .3, 3, 5, 4);
 	
 	beep_voltage = config->is_dutybeep_enabled ? config->beep_voltage : 0;
 	tone_configure(&toneconfig->fasttripleupduty, 880, 784, 698.5, beep_voltage, .1, 3, 10, 5);
@@ -180,13 +180,13 @@ void check_tone(ToneData *tone, ToneConfigs *toneconfig, RuntimeData *rt, MotorD
 	//	end_tone(tone);
 
 	//Duty FOC Beep
-	if (motor->duty_cycle > tone->beep_duty)
+	/*if (motor->duty_cycle > tone->beep_duty)
 		tone->duty_beep_count++; 	//A counter is used to track duty cycle to prevent nuisance trips
 	else tone->duty_beep_count = 0;
 	
 	if (tone->duty_beep_count > tone->delay_500ms) // After we are above duty for 500ms then play beep
 		play_tone(tone, &toneconfig->fasttripleupduty, rt, BEEP_DUTY);
-	
+	*/
 	//Low Range Warning
 	if (input_voltage < tone->lowvolt_warning)
 		tone->lowvolt_count++; 	//A counter is used to track duty cycle to prevent nuisance trips
