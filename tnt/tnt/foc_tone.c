@@ -127,7 +127,7 @@ void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config, ToneData *t
 	tone_configure(&toneconfig->currenttone, config->tone_freq_high_current, 0, 0, beep_voltage, config->overcurrent_period, 1, 0, 6);
 
 	tone->beep_duty = 1.0 * config->tiltback_duty / 100.0 - .1; //10% below titltback duty for beep
-	tone->delay_500ms = config->hertz / 10;
+	tone->delay_500ms = config->hertz / 100;
 	tone->lowvolt_warning = config->lowvolt_warning;
 	tone->midvolt_warning = config->midvolt_warning;
 }
