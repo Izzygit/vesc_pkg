@@ -23,6 +23,26 @@
 #include "vesc_c_if.h"
 #include "motor_data_tnt.h"
 
+typedef enum {
+	BEEP_NONE = 0,
+	BEEP_LV = 1,
+	BEEP_HV = 2,
+	BEEP_TEMPFET = 3,
+	BEEP_TEMPMOT = 4,
+	BEEP_CURRENT = 5,
+	BEEP_DUTY = 6,
+	BEEP_SENSORS = 7,
+	BEEP_LOWBATT = 8,
+	BEEP_IDLE = 9,
+	BEEP_ERROR = 10,
+	TONE_CURRENT = 11,
+	TONE_DUTY = 12,
+	BEEP_MW = 13,
+	BEEP_LW = 14,
+	BEEP_FETREC = 15,
+	BEEP_MOTREC = 16
+} BeepReason;
+
 typedef struct {
 	float freq[3];
 	float voltage;
@@ -77,26 +97,6 @@ typedef struct {
 	ToneConfig dutytone;
 	ToneConfig currenttone;
 } ToneConfigs;
-
-typedef enum {
-	BEEP_NONE = 0,
-	BEEP_LV = 1,
-	BEEP_HV = 2,
-	BEEP_TEMPFET = 3,
-	BEEP_TEMPMOT = 4,
-	BEEP_CURRENT = 5,
-	BEEP_DUTY = 6,
-	BEEP_SENSORS = 7,
-	BEEP_LOWBATT = 8,
-	BEEP_IDLE = 9,
-	BEEP_ERROR = 10,
-	TONE_CURRENT = 11,
-	TONE_DUTY = 12,
-	BEEP_MW = 13,
-	BEEP_LW = 14,
-	BEEP_FETREC = 15,
-	BEEP_MOTREC = 16
-} BeepReason;
 
 void tone_update(ToneData *tone, RuntimeData *rt, State *state);
 void play_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt, int beep_reason);
