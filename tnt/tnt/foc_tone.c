@@ -47,7 +47,7 @@ void tone_update(ToneData *tone, RuntimeData *rt, State *state) {
 	}
 }
 
-void play_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt, int beep_reason) {
+void play_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt, BeepReason beep_reason) {
 	//This function is used to initiate tones, and only called in specific instances
 	if (rt->current_time - tone->timer < toneconfig->delay && 	//This section applies delay to prevent constant repetition
 	    tone->beep_reason == beep_reason) 				//if the beep reason remains the same.
