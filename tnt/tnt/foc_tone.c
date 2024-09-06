@@ -140,7 +140,7 @@ void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config, ToneData *t
 	tone->delay_500ms = config->hertz / 2;
 	tone->lowvolt_warning = config->lowvolt_warning;
 	tone->midvolt_warning = config->midvolt_warning;
-
+	tone->charged_volt_diff = 0.00005 / config->hertz; // volts per sec converted to volts per cycle
 	tone_reset_on_configure(tone);
 }
 
@@ -148,7 +148,7 @@ void idle_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt) {
 	float input_voltage = VESC_IF->mc_get_input_voltage_filtered();
 	if (input_voltage > tone->idle_voltage) {
 		// don't beep if the voltage keeps increasing (board is charging)
-		if (input_voltage - tone->idle_voltage < .0001) 
+		if (input_voltage - tone->idle_voltage < tone->charged_volt_diff) 
 			tone->charged_count++;
 		else tone->charged_count = 0;
 		tone->idle_voltage = input_voltage;
