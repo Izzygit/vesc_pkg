@@ -82,10 +82,17 @@ void end_tone(ToneData *tone) {
 	tone->priority = 0;
 }
 
-void tone_reset(ToneData *tone) {
+void tone_reset_on_configure(ToneData *tone) {
 	//low voltage warnings reset on board start up
 	tone->midvolt_activated = false;
 	tone->lowvolt_activated = false;
+}
+
+void tone_reset(ToneData *tone) {
+	tone->duty_tone_count = 0;
+	tone->duty_beep_count = 0; 
+	tone->midvolt_count = 0;
+	tone->lowvolt_count = 0;
 }
 
 void tone_configure(ToneConfig *toneconfig, float freq1, float freq2, float freq3, float voltage, float duration, int times, float delay, int priority) {
@@ -105,7 +112,7 @@ void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config, ToneData *t
 	tone_configure(&toneconfig->fastdouble1, 698, 698, 0, beep_voltage, .1, 2, 10, 1);
 	tone_configure(&toneconfig->fastdouble2, 880, 880, 0, beep_voltage, .1, 2, 0, 1);
 	tone_configure(&toneconfig->slowdouble1, 698, 698, 0, beep_voltage, .3, 2, 30, 1);
-	tone_configure(&toneconfig->slowdouble2, 880, 880, 0, beep_voltage, .3, 2, 30, 1);
+	tone_configure(&toneconfig->slowdouble2, 880, 880, 0, beep_voltage, .3, 2, 60, 1);
 	tone_configure(&toneconfig->fasttriple1, 698, 698, 698, beep_voltage, .1, 3, 0, 1);
 	tone_configure(&toneconfig->slowtriple1, 698, 698, 698, beep_voltage, .3, 3, 10, 4);
 	tone_configure(&toneconfig->slowtriple2, 880, 880, 880, beep_voltage, .3, 3, 10, 3);
@@ -126,24 +133,28 @@ void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config, ToneData *t
 	beep_voltage = config->haptic_buzz_current ? config->tone_volt_high_current : 0;
 	tone_configure(&toneconfig->currenttone, config->tone_freq_high_current, 0, 0, beep_voltage, config->overcurrent_period, 1, 0, 6);
 
-	tone->beep_duty = 1.0 * config->tiltback_duty / 100.0 - .1; //10% below titltback duty for beep
+	tone->tone_duty = 1.0 * config->tiltback_duty / 100.0; 
 	tone->delay_100ms = config->hertz / 10;
+	tone->delay_250ms = config->hertz / 4;
+	tone->delay_500ms = config->hertz / 2;
 	tone->lowvolt_warning = config->lowvolt_warning;
 	tone->midvolt_warning = config->midvolt_warning;
+
+	tone_reset_on_configure(tone);
 }
 
 void idle_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt) {
-	if (rt->current_time - rt->disengage_timer > 2100 &&	// alert user after 35 minutes
+	float input_voltage = VESC_IF->mc_get_input_voltage_filtered();
+	if (input_voltage > tone->idle_voltage) {
+		// don't beep if the voltage keeps increasing (board is charging)
+		if (input_voltage - tone->idle_voltage < .01)
+			play_tone(tone, toneconfig, rt, BEEP_CHARGED);
+		tone->idle_voltage = input_voltage;
+	} else if (rt->current_time - rt->disengage_timer > 2100 &&	// alert user after 35 minutes
 	   rt->current_time - rt->disengage_timer < 3000) {		// give up after 50 minutes
 		if (rt->current_time - rt->nag_timer > 60) {		// beep every 60 seconds
 			rt->nag_timer = rt->current_time;
-			float input_voltage = VESC_IF->mc_get_input_voltage_filtered();
-			if (input_voltage > tone->idle_voltage) {
-				// don't beep if the voltage keeps increasing (board is charging)
-				tone->idle_voltage = input_voltage;
-			} else {
-				play_tone(tone, toneconfig, rt, 9);
-			}
+			play_tone(tone, toneconfig, rt, BEEP_IDLE);
 		}
 	} else {
 		rt->nag_timer = rt->current_time;
@@ -165,20 +176,23 @@ void temp_recovery_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt,
 }
 
 
-void check_tone(ToneData *tone, ToneConfigs *toneconfig, RuntimeData *rt, MotorData *motor, State *state) {
+void check_tone(ToneData *tone, ToneConfigs *toneconfig, RuntimeData *rt, MotorData *motor) {
 	//This function provides a delay before the activation of certain tones
 	float input_voltage = VESC_IF->mc_get_input_voltage_filtered();
 	
 	//Duty FOC Tone and Beep
-	if (motor->duty_cycle > tone->beep_duty) {
-		if (motor->duty_cycle > tone->beep_duty + .1) {
+	if (motor->duty_cycle > tone->tone_duty - .1) { //10% below titltback duty for beep
+		if (motor->duty_cycle > tone->tone_duty) { 
 			tone->duty_tone_count++; 	//A counter is used to track duty cycle to prevent nuisance trips
 			tone->duty_beep_count = 0;
 		} else {
 			tone->duty_tone_count = 0;	
 			tone->duty_beep_count++; 	//A counter is used to track duty cycle to prevent nuisance trips
 		}
-	} else { tone->duty_beep_count = 0; }
+	} else { 
+		tone->duty_tone_count = 0;
+		tone->duty_beep_count = 0; 
+	}
 	
 	if (tone->duty_tone_count > tone->delay_100ms) // After we are above duty for 500ms then play tone
 		play_tone(tone, &toneconfig->dutytone, rt, TONE_DUTY);
@@ -193,7 +207,7 @@ void check_tone(ToneData *tone, ToneConfigs *toneconfig, RuntimeData *rt, MotorD
 	else tone->midvolt_count = 0;
 
 	if (!tone->midvolt_activated && 
-	    tone->midvolt_count > tone->delay_100ms) {
+	    tone->midvolt_count > tone->delay_500ms) {
 		play_tone(tone, &toneconfig->slowtripledown, rt, BEEP_MW);
 		tone->midvolt_activated = true;
 	}
@@ -204,7 +218,7 @@ void check_tone(ToneData *tone, ToneConfigs *toneconfig, RuntimeData *rt, MotorD
 	else tone->lowvolt_count = 0;
 
 	if (!tone->lowvolt_activated && 
-	    tone->lowvolt_count > tone->delay_100ms) {
+	    tone->lowvolt_count > tone->delay_500ms) {
 		play_tone(tone, &toneconfig->slowtripledown, rt, BEEP_LW);
 		tone->lowvolt_activated = true;
 	}
