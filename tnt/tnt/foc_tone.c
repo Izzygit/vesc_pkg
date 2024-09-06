@@ -173,6 +173,7 @@ void check_tone(ToneData *tone, ToneConfigs *toneconfig, RuntimeData *rt, MotorD
 	if (motor->duty_cycle > tone->beep_duty) {
 		if (motor->duty_cycle > tone->beep_duty + .1) 
 			tone->duty_tone_count++; 	//A counter is used to track duty cycle to prevent nuisance trips
+			tone->duty_beep_count = 0;
 		else {
 			tone->duty_tone_count = 0;	
 			tone->duty_beep_count++; 	//A counter is used to track duty cycle to prevent nuisance trips
@@ -181,10 +182,9 @@ void check_tone(ToneData *tone, ToneConfigs *toneconfig, RuntimeData *rt, MotorD
 	
 	if (tone->duty_tone_count > tone->delay_500ms) // After we are above duty for 500ms then play tone
 		play_tone(tone, &toneconfig->dutytone, rt, TONE_DUTY);
-	//else if (tone->tone_in_progress && tone->duration == 600) 
-	//	end_tone(tone);	
-
-	if (tone->duty_beep_count > tone->delay_500ms) // After we are above duty for 500ms then play beep
+	else if (tone->tone_in_progress && tone->duration == 600) 
+		end_tone(tone);	
+	else if (tone->duty_beep_count > tone->delay_500ms) // After we are above duty for 500ms then play beep
 		play_tone(tone, &toneconfig->fasttripleupduty, rt, BEEP_DUTY);
 	
 	//Low Range Warning
