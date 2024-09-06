@@ -93,6 +93,7 @@ void tone_reset(ToneData *tone) {
 	tone->duty_beep_count = 0; 
 	tone->midvolt_count = 0;
 	tone->lowvolt_count = 0;
+	tone->charged_count = 0;
 }
 
 void tone_configure(ToneConfig *toneconfig, float freq1, float freq2, float freq3, float voltage, float duration, int times, float delay, int priority) {
@@ -112,7 +113,7 @@ void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config, ToneData *t
 	tone_configure(&toneconfig->fastdouble1, 698, 698, 0, beep_voltage, .1, 2, 10, 1);
 	tone_configure(&toneconfig->fastdouble2, 880, 880, 0, beep_voltage, .1, 2, 0, 1);
 	tone_configure(&toneconfig->slowdouble1, 698, 698, 0, beep_voltage, .3, 2, 30, 1);
-	tone_configure(&toneconfig->slowdouble2, 880, 880, 0, beep_voltage, .3, 2, 60, 1);
+	tone_configure(&toneconfig->slowdouble2, 880, 880, 0, beep_voltage, .3, 2, 55, 1);
 	tone_configure(&toneconfig->fasttriple1, 698, 698, 698, beep_voltage, .1, 3, 0, 1);
 	tone_configure(&toneconfig->slowtriple1, 698, 698, 698, beep_voltage, .3, 3, 10, 4);
 	tone_configure(&toneconfig->slowtriple2, 880, 880, 880, beep_voltage, .3, 3, 10, 3);
@@ -147,8 +148,9 @@ void idle_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt) {
 	float input_voltage = VESC_IF->mc_get_input_voltage_filtered();
 	if (input_voltage > tone->idle_voltage) {
 		// don't beep if the voltage keeps increasing (board is charging)
-		if (input_voltage - tone->idle_voltage < .01)
-			play_tone(tone, toneconfig, rt, BEEP_CHARGED);
+		if (input_voltage - tone->idle_voltage < .0001) 
+			tone->charged_count++;
+		else tone->charged_count = 0;
 		tone->idle_voltage = input_voltage;
 	} else if (rt->current_time - rt->disengage_timer > 2100 &&	// alert user after 35 minutes
 	   rt->current_time - rt->disengage_timer < 3000) {		// give up after 50 minutes
@@ -159,7 +161,12 @@ void idle_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt) {
 	} else {
 		rt->nag_timer = rt->current_time;
 		tone->idle_voltage = 0;
+		tone->charged_count = 0;
 	}
+
+	if (tone->charged_count > tone->delay_500ms)
+		play_tone(tone, toneconfig, rt, BEEP_CHARGED);
+
 }
 
 void temp_recovery_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt, MotorData *motor) {
