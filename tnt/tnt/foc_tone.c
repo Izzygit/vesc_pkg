@@ -127,7 +127,7 @@ void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config, ToneData *t
 	tone_configure(&toneconfig->currenttone, config->tone_freq_high_current, 0, 0, beep_voltage, config->overcurrent_period, 1, 0, 6);
 
 	tone->beep_duty = 1.0 * config->tiltback_duty / 100.0 - .1; //10% below titltback duty for beep
-	tone->delay_500ms = config->hertz / 2;
+	tone->delay_100ms = config->hertz / 10;
 	tone->lowvolt_warning = config->lowvolt_warning;
 	tone->midvolt_warning = config->midvolt_warning;
 }
@@ -180,11 +180,11 @@ void check_tone(ToneData *tone, ToneConfigs *toneconfig, RuntimeData *rt, MotorD
 		}
 	} else { tone->duty_beep_count = 0; }
 	
-	if (tone->duty_tone_count > tone->delay_500ms) // After we are above duty for 500ms then play tone
+	if (tone->duty_tone_count > tone->delay_100ms) // After we are above duty for 500ms then play tone
 		play_tone(tone, &toneconfig->dutytone, rt, TONE_DUTY);
 	else if (tone->tone_in_progress && tone->duration == 600) 
 		end_tone(tone);	
-	else if (tone->duty_beep_count > tone->delay_500ms) // After we are above duty for 500ms then play beep
+	else if (tone->duty_beep_count > tone->delay_100ms) // After we are above duty for 500ms then play beep
 		play_tone(tone, &toneconfig->fasttripleupduty, rt, BEEP_DUTY);
 
 	//Mid Range Warning
@@ -193,7 +193,7 @@ void check_tone(ToneData *tone, ToneConfigs *toneconfig, RuntimeData *rt, MotorD
 	else tone->midvolt_count = 0;
 
 	if (!tone->midvolt_activated && 
-	    tone->midvolt_count > tone->delay_500ms) {
+	    tone->midvolt_count > tone->delay_100ms) {
 		play_tone(tone, &toneconfig->slowtripledown, rt, BEEP_MW);
 		tone->midvolt_activated = true;
 	}
@@ -204,7 +204,7 @@ void check_tone(ToneData *tone, ToneConfigs *toneconfig, RuntimeData *rt, MotorD
 	else tone->lowvolt_count = 0;
 
 	if (!tone->lowvolt_activated && 
-	    tone->lowvolt_count > tone->delay_500ms) {
+	    tone->lowvolt_count > tone->delay_100ms) {
 		play_tone(tone, &toneconfig->slowtripledown, rt, BEEP_LW);
 		tone->lowvolt_activated = true;
 	}
