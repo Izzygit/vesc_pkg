@@ -169,24 +169,24 @@ void check_tone(ToneData *tone, ToneConfigs *toneconfig, RuntimeData *rt, MotorD
 	//This function provides a delay before the activation of certain tones
 	float input_voltage = VESC_IF->mc_get_input_voltage_filtered();
 	
-	//Duty FOC Tone
-	if (motor->duty_filtered > tone->beep_duty + .1) 
-		tone->duty_tone_count++; 	//A counter is used to track duty cycle to prevent nuisance trips
-	else tone->duty_tone_count = 0;	
-		
+	//Duty FOC Tone and Beep
+	if (motor->duty_cycle > tone->beep_duty) {
+		if (motor->duty_cycle > tone->beep_duty + .1) 
+			tone->duty_tone_count++; 	//A counter is used to track duty cycle to prevent nuisance trips
+		else {
+			tone->duty_tone_count = 0;	
+			tone->duty_beep_count++; 	//A counter is used to track duty cycle to prevent nuisance trips
+		}
+	} else { tone->duty_beep_count = 0; }
+	
 	if (tone->duty_tone_count > tone->delay_500ms) // After we are above duty for 500ms then play tone
 		play_tone(tone, &toneconfig->dutytone, rt, TONE_DUTY);
 	//else if (tone->tone_in_progress && tone->duration == 600) 
-	//	end_tone(tone);
+	//	end_tone(tone);	
 
-	//Duty FOC Beep
-	/*if (motor->duty_cycle > tone->beep_duty)
-		tone->duty_beep_count++; 	//A counter is used to track duty cycle to prevent nuisance trips
-	else tone->duty_beep_count = 0;
-	
 	if (tone->duty_beep_count > tone->delay_500ms) // After we are above duty for 500ms then play beep
 		play_tone(tone, &toneconfig->fasttripleupduty, rt, BEEP_DUTY);
-	*/
+	
 	//Low Range Warning
 	if (input_voltage < tone->lowvolt_warning)
 		tone->lowvolt_count++; 	//A counter is used to track duty cycle to prevent nuisance trips
