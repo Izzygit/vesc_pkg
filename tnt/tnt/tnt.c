@@ -587,7 +587,7 @@ static void tnt_thd(void *arg) {
 				if (VESC_IF->mc_get_input_voltage_filtered() <  d->tnt_conf.lowvolt_warning) {
 					play_tone(&d->tone, &d->tone_config.slowtripledown, &d->rt, BEEP_LW);
 				} else {
-					//play_tone(&d->tone, &d->tone_config.fastdouble1, &d->rt, BEEP_NONE); //Board ready
+					play_tone(&d->tone, &d->tone_config.fastdouble1, &d->rt, BEEP_NONE); //Board ready
 				}
             		}
            		break;
@@ -657,14 +657,14 @@ static void tnt_thd(void *arg) {
 				new_pid_value = sign(new_pid_value) * current_limit;
 			}
 			check_current(&d->motor, &d->surge, &d->state,  &d->tnt_conf, &d->tone, &d->tone_config.currenttone, &d->rt); // Check for high current conditions
-			check_tone(&d->tone, &d->tone_config, &d->rt, &d->motor, &d->state);
+			check_tone(&d->tone, &d->tone_config, &d->rt, &d->motor);
 			
 			// Modifiers to PID control
 			check_traction(&d->motor, &d->traction, &d->state, &d->rt, &d->tnt_conf, &d->braking, &d->pid, &d->traction_dbg);
 			if (d->tnt_conf.is_surge_enabled)
 				check_surge(&d->motor, &d->surge, &d->state, &d->rt, &d->pid, &d->tnt_conf, &d->surge_dbg);
 			if (d->tnt_conf.is_tc_braking_enabled)
-				check_traction_braking(&d->motor, &d->braking, &d->state, &d->rt, &d->tnt_conf, d->remote.inputtilt_interpolated, &d->braking_dbg,  &d->traction);
+				check_traction_braking(&d->motor, &d->braking, &d->state, &d->rt, &d->tnt_conf, d->remote.inputtilt_interpolated, &d->braking_dbg);
 
 			// PID value application
 			d->pid.pid_value = (d->state.wheelslip && d->tnt_conf.is_traction_enabled) ? 0 : new_pid_value;
@@ -751,7 +751,7 @@ static void write_cfg_to_eeprom(data *d) {
         	log_error("Failed to write config to EEPROM.");
    	}
 
-	// Emit 1 short beep to confirm writing all settings to eeprom
+	// Emit 3 short beeps to confirm writing all settings to eeprom
 	if (d->state.state != STATE_RUNNING)
 		play_tone(&d->tone, &d->tone_config.fasttriple1, &d->rt, BEEP_NONE);
 }
