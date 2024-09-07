@@ -243,6 +243,8 @@ Item {
                     beepString = "FET Temp Recovery"
 		}else if(beep_reason == 16){
                     beepString = "Motor Temp Recovery"
+		}else if(beep_reason == 17){
+                    beepString = "Charge Complete"
 		}
   
                 var switchString
