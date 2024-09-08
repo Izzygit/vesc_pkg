@@ -99,6 +99,8 @@ typedef struct {
 	ToneConfig fasttripledown;
 	ToneConfig slowtripleup;
 	ToneConfig slowtripledown;
+	ToneConfig midvoltwarning;
+	ToneConfig lowvoltwarning;
 	ToneConfig dutytone;
 	ToneConfig currenttone;
 } ToneConfigs;
