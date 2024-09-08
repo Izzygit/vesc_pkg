@@ -46,6 +46,7 @@ typedef struct { //Run time values used in various features
 	int odometer_dirty;
 	uint64_t odometer;
 	float brake_timeout;
+	float fault_angle_pitch_timer, fault_angle_roll_timer, fault_switch_timer, fault_switch_half_timer; // Seconds
 } RuntimeData;
 
 typedef struct {
