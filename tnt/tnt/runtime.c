@@ -91,6 +91,12 @@ void configure_runtime(RuntimeData *rt, tnt_config *config) {
 
 	// Loop time in seconds times 20 for a nice long grace period
 	rt->motor_timeout_s = 20.0f / config->hertz;
+	
+	//Pitch Biquad Configure
+	biquad_configure(&d->rt.pitch_biquad, BQ_LOWPASS, 1.0 * d->tnt_conf.pitch_filter / d->tnt_conf.hertz);
+
+	//Pitch Kalman Configure
+	configure_kalman(&d->tnt_conf, &d->rt.pitch_kalman);
 }
 
 void ride_timer(RideTimeData *ridetimer, RuntimeData *rt){
