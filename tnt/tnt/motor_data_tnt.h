@@ -66,4 +66,4 @@ typedef struct {
 void motor_data_reset(MotorData *m);
 void motor_data_configure(MotorData *m, tnt_config *config);
 void update_erpm_sign(MotorData *m);
-void motor_data_update(MotorData *m);
+void motor_data_update(MotorData *m, tnt_config *config);
