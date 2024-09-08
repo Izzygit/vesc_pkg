@@ -72,7 +72,7 @@ void motor_data_update(MotorData *m, tnt_config *config) {
     m->erpm_sign = sign(m->erpm);
     update_erpm_sign(m);
 	
-    m->erpm_filtered = config->erpm_filter_freq > 0 ? biquad_process(&m->erpm_biquad, m->erpm) : m->eprm;
+    m->erpm_filtered = config->wheelslip_filter_freq > 0 ? biquad_process(&m->erpm_biquad, m->erpm) : m->erpm;
     m->erpm_history[m->erpm_idx] = m->erpm_filtered;
     m->erpm_idx = (m->erpm_idx + 1) % ERPM_ARRAY_SIZE; 
     m->last_erpm_idx = m->erpm_idx - ACCEL_ARRAY_SIZE; 
