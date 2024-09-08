@@ -145,12 +145,6 @@ static void configure(data *d) {
 	
 	//Remote
 	configure_remote_features(&d->tnt_conf, &d->remote, &d->st_tilt);
-	
-	//Pitch Biquad Configure
-	biquad_configure(&d->rt.pitch_biquad, BQ_LOWPASS, 1.0 * d->tnt_conf.pitch_filter / d->tnt_conf.hertz);
-
-	//Pitch Kalman Configure
-	configure_kalman(&d->tnt_conf, &d->rt.pitch_kalman);
 
 	//Motor Data Configure
 	motor_data_configure(&d->motor, &d->tnt_conf);
