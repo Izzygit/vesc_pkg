@@ -46,6 +46,7 @@ typedef struct { //Run time values used in various features
 	float odo_timer;
 	int odometer_dirty;
 	uint64_t odometer;
+	float brake_timeout;
 } RuntimeData;
 
 typedef struct {
