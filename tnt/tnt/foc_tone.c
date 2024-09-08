@@ -218,7 +218,7 @@ void check_tone(ToneData *tone, ToneConfigs *toneconfig, RuntimeData *rt, MotorD
 
 	if (!tone->midvolt_activated && 
 	    tone->midvolt_count > tone->delay_500ms) {
-		play_tone(tone, &toneconfig->slowtripledown, rt, BEEP_MW);
+		play_tone(tone, &toneconfig->midvoltwarning, rt, BEEP_MW);
 		tone->midvolt_activated = true;
 	}
 	
@@ -229,7 +229,7 @@ void check_tone(ToneData *tone, ToneConfigs *toneconfig, RuntimeData *rt, MotorD
 
 	if (!tone->lowvolt_activated && 
 	    tone->lowvolt_count > tone->delay_500ms) {
-		play_tone(tone, &toneconfig->slowtripledown, rt, BEEP_LW);
+		play_tone(tone, &toneconfig->lowvoltwarning, rt, BEEP_LW);
 		tone->lowvolt_activated = true;
 	}
 }
