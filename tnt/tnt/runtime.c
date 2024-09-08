@@ -80,6 +80,8 @@ void reset_runtime(RuntimeData *rt, YawData *yaw, YawDebugData *yaw_dbg) {
 	yaw->last_change = 0;
 	yaw->abs_change = 0;
 	yaw_dbg->debug2 = 0;
+
+	rt->brake_timeout = 0;
 }
 
 void configure_runtime(RuntimeData *rt, tnt_config *config) {
