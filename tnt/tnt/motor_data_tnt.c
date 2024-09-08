@@ -66,13 +66,13 @@ void update_erpm_sign(MotorData *m) {
 	m->erpm_sign_check = m->erpm_sign == sign(m->erpm_sign_soft);
 }
 
-void motor_data_update(MotorData *m) {
+void motor_data_update(MotorData *m, tnt_config *config) {
     m->erpm = VESC_IF->mc_get_rpm();
     m->abs_erpm = fabsf(m->erpm);
     m->erpm_sign = sign(m->erpm);
     update_erpm_sign(m);
 	
-    m->erpm_filtered = biquad_process(&m->erpm_biquad, m->erpm);
+    m->erpm_filtered = config->erpm_filter_freq > 0 ? biquad_process(&m->erpm_biquad, m->erpm) : m->eprm;
     m->erpm_history[m->erpm_idx] = m->erpm_filtered;
     m->erpm_idx = (m->erpm_idx + 1) % ERPM_ARRAY_SIZE; 
     m->last_erpm_idx = m->erpm_idx - ACCEL_ARRAY_SIZE; 
@@ -92,5 +92,5 @@ void motor_data_update(MotorData *m) {
     m->braking = m->abs_erpm > 250 && sign(m->current) != m->erpm_sign;
 
     m->duty_cycle = fabsf(VESC_IF->mc_get_duty_cycle_now());
-    m->duty_filtered = biquad_process(&m->duty_biquad, m->duty_cycle);
+    m->duty_filtered = config->duty_filter_freq > 0 ? biquad_process(&m->duty_biquad, m->duty_cycle) : m->duty_cycle;
 }
