@@ -571,22 +571,9 @@ static void tnt_thd(void *arg) {
 		// Control Loop State Logic
 		switch(d->state.state) {
 		case (STATE_STARTUP):
-			// Disable output
-			//brake(d);
-			
-			//Rest Timer
-			rest_timer(&d->ridetimer, &d->rt);
-		
 			if (VESC_IF->imu_startup_done()) {
 				reset_vars(d);
-				// set state to READY so we need to meet start conditions to start
 				d->state.state = STATE_READY;
-
-				if (VESC_IF->mc_get_input_voltage_filtered() <  d->tnt_conf.lowvolt_warning) {
-					play_tone(&d->tone, &d->tone_config.slowtripledown, &d->rt, BEEP_LW);
-				} else {
-					play_tone(&d->tone, &d->tone_config.fastdouble1, &d->rt, BEEP_NONE); //Board ready
-				}
             		}
            		break;
 		case (STATE_RUNNING):	
@@ -679,16 +666,13 @@ static void tnt_thd(void *arg) {
 
 		case (STATE_READY):
 			idle_tone(&d->tone, &d->tone_config.slowdouble2, &d->rt);
+			check_odometer(&d->rt);
+			rest_timer(&d->ridetimer, &d->rt);
 
 			if ((d->rt.current_time - d->fault_angle_pitch_timer) > 1) {
 				// 1 second after disengaging - set startup tolerance back to normal (aka tighter)
 				d->startup_pitch_tolerance = d->tnt_conf.startup_pitch_tolerance;
 			}
-
-			check_odometer(&d->rt);
-
-			//Rest Timer
-			rest_timer(&d->ridetimer, &d->rt);
 			
 			// Check for valid startup position and switch state
 			if (fabsf(d->rt.pitch_angle) < d->startup_pitch_tolerance &&
