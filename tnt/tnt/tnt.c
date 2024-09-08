@@ -67,7 +67,6 @@ typedef struct {
 	float startup_step_size;
 	float tiltback_duty_step_size, tiltback_hv_step_size, tiltback_lv_step_size, tiltback_return_step_size, tiltback_ht_step_size;
 	float noseangling_step_size;
-	bool duty_beeping;
 	float tiltback_duty;
 
 	// Runtime values grouped for easy access in ancillary functions
@@ -80,7 +79,6 @@ typedef struct {
 
 	float setpoint_target, setpoint_target_interpolated;
 	float noseangling_interpolated;
-	float idle_voltage;
 	float fault_angle_pitch_timer, fault_angle_roll_timer, fault_switch_timer, fault_switch_half_timer; // Seconds
 	float brake_timeout; // Seconds
 	float tb_highvoltage_timer;
