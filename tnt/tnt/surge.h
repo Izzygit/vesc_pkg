@@ -28,7 +28,6 @@ typedef struct {
 	bool active;				//Identifies surge state which drives duty to max
 	float new_duty_cycle;			//Used to ramp duty cycle
 	bool deactivate;				//Used to identify when setpoint should return to nowmal
-	float tiltback_step_size;		//Speed that the board returns to setpoint
 	float setpoint;				//Setpoint allowed by surge
 	float start_current;			//Current that starts surge
 	float ramp_rate;			//Duty cycle ramp rate
