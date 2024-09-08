@@ -133,7 +133,7 @@ void configure_traction(TractionData *traction, BrakingData *braking, tnt_config
 }
 
 void check_traction_braking(MotorData *m, BrakingData *braking, State *state, RuntimeData *rt, tnt_config *config, float inputtilt_interpolated, BrakingDebug *braking_dbg){
-	bool check_last = braking->last_active ||  rt->current_time - braking->brake_delay > 0.02; //we were just traction braking or we are beyond the brake delay
+	bool check_last = braking->last_active ||  rt->current_time - braking->brake_delay > 0.1; //we were just traction braking or we are beyond the brake delay
 
 	//Check that conditions for traciton braking are satified and add to counter
 	if (-inputtilt_interpolated * m->erpm_sign_soft >= config->tc_braking_angle && //Minimum nose down angle from remote, can be 0
