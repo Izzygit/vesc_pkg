@@ -93,10 +93,10 @@ void configure_runtime(RuntimeData *rt, tnt_config *config) {
 	rt->motor_timeout_s = 20.0f / config->hertz;
 	
 	//Pitch Biquad Configure
-	biquad_configure(rt->pitch_biquad, BQ_LOWPASS, 1.0 * config->pitch_filter / d->tnt_conf.hertz);
+	biquad_configure(&rt->pitch_biquad, BQ_LOWPASS, 1.0 * config->pitch_filter / config->hertz);
 
 	//Pitch Kalman Configure
-	configure_kalman(config, rt->pitch_kalman);
+	configure_kalman(config, &rt->pitch_kalman);
 }
 
 void ride_timer(RideTimeData *ridetimer, RuntimeData *rt){
