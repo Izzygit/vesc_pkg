@@ -310,7 +310,6 @@ static void calculate_setpoint_target(data *d) {
 			d->state.sat = SAT_NONE;
 		}
 	} else if (VESC_IF->mc_temp_motor_filtered() > d->motor.mc_max_temp_mot) {
-		// Use the angle from Low-Voltage tiltback, but slower speed from High-Voltage tiltback
 		play_tone(&d->tone, &d->tone_config.slowtriple1, &d->rt, BEEP_TEMPMOT);
 		d->tone.motortemp_activated = true;
 		if (VESC_IF->mc_temp_motor_filtered() > (d->motor.mc_max_temp_mot + 1)) {
@@ -326,7 +325,7 @@ static void calculate_setpoint_target(data *d) {
 		}
 	} else if (d->motor.duty_cycle > 0.05 && input_voltage < d->tnt_conf.tiltback_lv) {
 		play_tone(&d->tone, &d->tone_config.slowtripledown, &d->rt, BEEP_LV);
-		float abs_motor_current = fabsf(d->motor.current);
+		float abs_motor_current = fabsf(d->motor.current_filtered);
 		float vdelta = 1.0 * d->tnt_conf.tiltback_lv - input_voltage;
 		float ratio = vdelta * 20 / abs_motor_current;
 		// When to do LV tiltback:
