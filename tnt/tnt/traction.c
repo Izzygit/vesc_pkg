@@ -138,11 +138,11 @@ void check_traction_braking(MotorData *m, BrakingData *braking, State *state, Ru
 	//Check that conditions for traciton braking are satified and add to counter
 	if (-inputtilt_interpolated * m->erpm_sign_soft >= config->tc_braking_angle && //Minimum nose down angle from remote, can be 0
 	    state->braking_pos_smooth &&						// braking position active
-	    m->duty_filtered > config->tc_braking_duty_limit / 100.0) {		// above the minimum duty
+	    m->duty_filtered > (config->tc_braking_duty_limit - 1) / 100.0) {		// above the minimum duty
 		braking->count +=1;
 	} else { braking->count = 0; }
 
-	if (braking->count > braking->count_limit && 	//If the counter exceeds the minimum
+	if (braking->count > 3 && 	//If the counter exceeds the minimum
 	    check_last) {				// and the braking delay are satified, allow traction braking
 		braking->active = true;
 		braking->brake_delay = rt->current_time; //reset delay counter for when we exit traciton braking
@@ -184,7 +184,7 @@ void check_traction_braking(MotorData *m, BrakingData *braking, State *state, Ru
 				braking_dbg->debug4 = braking_dbg->debug4 * 10 + 1;
 			} else if (!state->braking_pos_smooth) {
 				braking_dbg->debug4 = braking_dbg->debug4 * 10 + 2;
-			} else if (m->duty_filtered < config->tc_braking_duty_limit / 100.0) {
+			} else if (m->duty_filtered < (config->tc_braking_duty_limit -1) / 100.0) {
 				braking_dbg->debug4 = braking_dbg->debug4 * 10 + 3;
 			}
 		}
