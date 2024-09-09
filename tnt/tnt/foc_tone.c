@@ -212,7 +212,11 @@ void check_tone(ToneData *tone, ToneConfigs *toneconfig, RuntimeData *rt, MotorD
 		play_tone(tone, &toneconfig->fasttripleupduty, rt, BEEP_DUTY);
 
 	//Mid Range Warning
-	if (input_voltage < tone->midvolt_warning)
+	float abs_motor_current = fabsf(motor->current);
+	float vdelta = tone->midvolt_warning - input_voltage;
+	float ratio = vdelta * 20 / abs_motor_current;
+
+	if ((vdelta > 2) || (abs_motor_current < 5 && input_voltage < tone->midvolt_warning) || (ratio > 1)) 
 		tone->midvolt_count++; 	//A counter is used to track duty cycle to prevent nuisance trips
 	else tone->midvolt_count = 0;
 
@@ -223,7 +227,10 @@ void check_tone(ToneData *tone, ToneConfigs *toneconfig, RuntimeData *rt, MotorD
 	}
 	
 	//Low Range Warning
-	if (input_voltage < tone->lowvolt_warning)
+	vdelta = tone->lowvolt_warning - input_voltage;
+	ratio = vdelta * 20 / abs_motor_current;
+	
+	if ((vdelta > 2) || (abs_motor_current < 5 && input_voltage < tone->lowvolt_warning) || (ratio > 1)) 
 		tone->lowvolt_count++; 	//A counter is used to track duty cycle to prevent nuisance trips
 	else tone->lowvolt_count = 0;
 
