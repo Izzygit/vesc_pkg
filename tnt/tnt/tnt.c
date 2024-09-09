@@ -147,7 +147,7 @@ static void configure(data *d) {
 static void reset_vars(data *d) {
 	if (d->rt.current_time - d->rt.disengage_timer > 1) {//Delay reset in case there is a minor disengagement
 		motor_data_reset(&d->motor);				//Motor
-		setpoint_reset(&d->spd, &d->tntconf, &d->rt);		//Setpoint
+		setpoint_reset(&d->spd, &d->tnt_conf, &d->rt);		//Setpoint
 		reset_runtime(&d->rt, &d->yaw, &d->yaw_dbg);		// Runtime 
 		reset_pid(&d->pid);					//Control variables
 		reset_remote(&d->remote, &d->st_tilt);			//Remote
