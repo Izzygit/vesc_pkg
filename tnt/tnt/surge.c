@@ -20,7 +20,7 @@
 #include "utils_tnt.h"
 #include <math.h>
 
-void check_surge(MotorData *m, SurgeData *surge, State *state, RuntimeData *rt, PidData *p, tnt_config *config, SurgeDebug *surge_dbg){
+void check_surge(MotorData *m, SurgeData *surge, State *state, RuntimeData *rt, PidData *p, SetpointData *s, SurgeDebug *surge_dbg){
 	//Start Surge Code
 	//Initialize Surge Cycle
 	if ((m->current_filtered * m->erpm_sign > surge->start_current) && 	//High current condition 
@@ -29,7 +29,7 @@ void check_surge(MotorData *m, SurgeData *surge, State *state, RuntimeData *rt, 
 	     (rt->current_time - surge->timer > 0.7)) {					//Not during an active surge period			
 		surge->timer = rt->current_time; 					//Reset surge timer
 		surge->active = true; 							//Indicates we are in the surge cycle of the surge period
-		surge->setpoint = rt->setpoint;						//Records setpoint at the start of surge because surge changes the setpoint
+		surge->setpoint = s->setpoint;						//Records setpoint at the start of surge because surge changes the setpoint
 		surge->new_duty_cycle = m->erpm_sign * m->duty_cycle;
 		
 		//Debug Data Section
@@ -47,7 +47,7 @@ void check_surge(MotorData *m, SurgeData *surge, State *state, RuntimeData *rt, 
 	if (surge->active){	
 		surge->new_duty_cycle += m->erpm_sign * surge->ramp_rate; 	
 		if((rt->current_time - surge->timer > 0.5) ||								//Outside the surge cycle portion of the surge period
-		 (-1 * (surge->setpoint - rt->pitch_angle) * m->erpm_sign > config->surge_maxangle) ||	//Limit nose up angle based on the setpoint at start of surge because surge changes the setpoint
+		 (-1 * (surge->setpoint - rt->pitch_angle) * m->erpm_sign > surge->maxangle) ||	//Limit nose up angle based on the setpoint at start of surge because surge changes the setpoint
 		 (state->wheelslip)) {										//In traction control		
 			surge->active = false;
 			surge->deactivate = true;								//Identifies the end of surge to change the setpoint back to before surge 
@@ -59,7 +59,7 @@ void check_surge(MotorData *m, SurgeData *surge, State *state, RuntimeData *rt, 
 			surge_dbg->debug8 = surge_dbg->debug5/ (rt->current_time - surge->timer) * 100;			//Surge ramp rate
 			if (rt->current_time - surge->timer >= 0.5) {						//End condition
 				surge_dbg->debug6 = 111;
-			} else if (-1 * (surge->setpoint - rt->pitch_angle) * m->erpm_sign > config->surge_maxangle){
+			} else if (-1 * (surge->setpoint - rt->pitch_angle) * m->erpm_sign > surge->maxangle){
 				surge_dbg->debug6 = rt->pitch_angle;
 			} else if (state->wheelslip){
 				surge_dbg->debug6 = 222;
@@ -86,6 +86,7 @@ void check_current(MotorData *m, SurgeData *surge, State *state, tnt_config *con
 
 void configure_surge(SurgeData *surge, tnt_config *config){
 	surge->ramp_rate = 1.0 * config->surge_duty / 100.0 / config->hertz;
+	surge->maxangle = config->surge_maxangle;
 }
 
 void reset_surge(SurgeData *surge){
