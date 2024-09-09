@@ -17,6 +17,7 @@
 
 #include "foc_tone.h"
 #include "utils_tnt.h"
+#include <math.h>
 
 void tone_update(ToneData *tone, RuntimeData *rt, State *state) {
 	//This function is updated every code cycle to execute initiated tones
