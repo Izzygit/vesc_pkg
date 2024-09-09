@@ -17,6 +17,7 @@
 
 #include "setpoint.h"
 #include "utils_tnt.h"
+#include <math.h>
 
 void setpoint_configure(SetpointData *s, tnt_config *config) {
 	//Setpoint Adjustment
