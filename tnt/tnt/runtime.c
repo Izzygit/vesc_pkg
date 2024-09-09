@@ -65,8 +65,6 @@ void calc_yaw_change(YawData *yaw, float yaw_angle, YawDebugData *yaw_dbg){
 }
 
 void reset_runtime(RuntimeData *rt, YawData *yaw, YawDebugData *yaw_dbg) {
-	rt->setpoint = rt->pitch_angle;
-	
 	//Low pass pitch filter
 	rt->pitch_smooth = rt->pitch_angle;
 	biquad_reset(&rt->pitch_biquad);
