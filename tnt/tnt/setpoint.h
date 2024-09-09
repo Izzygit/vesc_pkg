@@ -35,8 +35,8 @@ typedef struct {
 	float tb_highvoltage_timer;
 } SetpointData;
 
-float setpoint_configure(SetpointData *s, tnt_config *config);
-float setpoint_reset(SetpointData *s, tnt_config *config, RuntimeData *rt);
+void setpoint_configure(SetpointData *s, tnt_config *config);
+void setpoint_reset(SetpointData *s, tnt_config *config, RuntimeData *rt);
 float get_setpoint_adjustment_step_size(SetpointData *s, State *state);
 void calculate_setpoint_interpolated(SetpointData *s, State *state);
 void apply_noseangling(SetpointData *s, MotorData *motor, tnt_config *config);
