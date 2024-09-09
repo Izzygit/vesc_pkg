@@ -18,7 +18,7 @@
 #include "setpoint.h"
 #include "utils_tnt.h"
 
-float setpoint_configure(SetpointData *s, tnt_config *config) {
+void setpoint_configure(SetpointData *s, tnt_config *config) {
 	//Setpoint Adjustment
 	s->startup_step_size = 1.0 * config->startup_speed / config->hertz;
 	s->tiltback_duty_step_size = 1.0 * config->tiltback_duty_speed / config->hertz;
@@ -34,7 +34,7 @@ float setpoint_configure(SetpointData *s, tnt_config *config) {
 	s->startup_pitch_trickmargin = config->startup_dirtylandings_enabled ? 10 : 0;
 }
 
-float setpoint_reset(SetpointData *s, tnt_config *config, RuntimeData *rt) {
+void setpoint_reset(SetpointData *s, tnt_config *config, RuntimeData *rt) {
 	// Set values for startup
 	s->setpoint_target_interpolated = rt->pitch_angle;
 	s->setpoint_target = 0;
