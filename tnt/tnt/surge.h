@@ -34,6 +34,7 @@ typedef struct {
 	bool high_current;			//A state below surge current by amount, overcurrent margin
 	float high_current_timer;		//Limits the duration of haptic buzz
 	bool high_current_buzz;			//A state that allows haptic buzz during high current
+	float maxangle;
 } SurgeData;
 
 typedef struct {
