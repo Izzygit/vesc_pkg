@@ -213,7 +213,7 @@ void check_tone(ToneData *tone, ToneConfigs *toneconfig, RuntimeData *rt, MotorD
 		play_tone(tone, &toneconfig->fasttripleupduty, rt, BEEP_DUTY);
 
 	//Mid Range Warning
-	float abs_motor_current = fabsf(motor->current);
+	float abs_motor_current = fabsf(motor->current_filtered);
 	float vdelta = tone->midvolt_warning - input_voltage;
 	float ratio = vdelta * 20 / abs_motor_current;
 
