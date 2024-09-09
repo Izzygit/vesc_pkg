@@ -113,7 +113,7 @@ static void configure(data *d) {
 	state_init(&d->state, d->tnt_conf.disable_pkg);				//Initialize
 	configure_runtime(&d->rt, &d->tnt_conf);				//runtime data (IMU, times, etc)
 	configure_pid(&d->pid, &d->tnt_conf);					//control variables 
-	configure_setpoint(&d->spd, &d->tnt_conf);				//setpoint adjustment
+	setpoint_configure(&d->spd, &d->tnt_conf);				//setpoint adjustment
 	configure_remote_features(&d->tnt_conf, &d->remote, &d->st_tilt);	//remote input
 	motor_data_configure(&d->motor, &d->tnt_conf);				//motor data
 	configure_surge(&d->surge, &d->tnt_conf);				//surge feature
