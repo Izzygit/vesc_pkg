@@ -69,8 +69,8 @@ void calculate_setpoint_interpolated(SetpointData *s, State *state) {
         rate_limitf(
             &s->setpoint_target_interpolated,
             s->setpoint_target,
-            get_setpoint_adjustment_step_size(s, state);
-        );
+            get_setpoint_adjustment_step_size(s, state) 
+	);
     }
 }
 
