@@ -39,6 +39,7 @@ void setpoint_reset(SetpointData *s, tnt_config *config, RuntimeData *rt) {
 	s->setpoint_target_interpolated = rt->pitch_angle;
 	s->setpoint_target = 0;
 	s->startup_pitch_tolerance = config->startup_pitch_tolerance;
+	s->setpoint = rt->pitch_angle;
 }
 
 float get_setpoint_adjustment_step_size(SetpointData *s, State *state) {
