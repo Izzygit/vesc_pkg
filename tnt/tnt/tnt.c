@@ -60,6 +60,7 @@ typedef struct {
   	MotorData motor;			//Motor data
 	State state;				//Runtime state values
 	PidData pid;				//control variables
+	PidDebug pid_dbg;			//additional control variable information
 	SetpointData spd;			//Board angle changes
 	RuntimeData rt; 			//runtime data (IMU, times, etc)
 	FootpadSensor footpad_sensor;		//Footpad states and detection
@@ -86,13 +87,7 @@ typedef struct {
 	BrakingData braking;			//Traction control for braking
 	BrakingDebug braking_dbg;		//Braking debug info
 	RideTimeData ridetimer;			//Trip debug for ride vs rest time
-
-	//Debug
-	float debug1, debug2, debug3, debug4, debug5, debug6;
 } data;
-
-static void brake(data *d);
-static void set_current(data *d, float current);
 
 static void configure(data *d) {
 	state_init(&d->state, d->tnt_conf.disable_pkg);				//Initialize
@@ -144,98 +139,22 @@ static void reset_vars(data *d) {
 	state_engage(&d->state);
 }
 
-float apply_pitch_kp(data *d) {
-	//Select and Apply Pitch kp  
-	float kp_mod, new_pid_value;
-	kp_mod = angle_kp_select(d->pid.abs_prop_smooth, 
-		d->pid.brake_pitch ? &d->brake_kp : &d->accel_kp);
-	d->debug1 = d->pid.brake_pitch ? -kp_mod : kp_mod;
-	kp_mod *= d->pid.stability_kp;
-	new_pid_value = d->pid.proportional * kp_mod;
+void apply_kp_modifiers(data *d) {
+	//Select and Apply Pitch kp rate			
+	d->pid.pid_mod = apply_kp_rate(&d->accel_kp, &d->brake_kp, &d->pid, &d->pid_dbg) * -d->rt.gyro[1];
 
-	return new_pid_value;
-}
+	//Select and apply roll kp
+	d->pid.pid_mod += apply_roll_kp(&d->roll_accel_kp, &d->roll_brake_kp, &d->pid, &d->motor, &d->rt, 
+	    roll_erpm_scale(&d->pid,  &d->state, &d->motor, &d->roll_accel_kp, &d->tnt_conf), 
+	    &d->pid_dbg);
 
-void apply_kp_modifiers(data *d, float new_pid_value) {
-	//Select and Apply Pitch kp  rate			
-	float kp_rate = d->pid.brake_pitch ? d->brake_kp.kp_rate : d->accel_kp.kp_rate;		
-	d->debug3 = kp_rate * (d->pid.stability_kprate - 1);			// Calc the contribution of stability to kp_rate
-	d->pid.pid_mod = kp_rate * -d->rt.gyro[1] * d->pid.stability_kprate;
-	
-	// Select Roll Kp
-	float rollkp = 0;
-	rollkp = angle_kp_select(d->rt.abs_roll_angle, 
-		d->pid.brake_roll ? &d->roll_brake_kp : &d->roll_accel_kp);
-	
-	//ERPM Scale
-	rollkp *= roll_erpm_scale(&d->pid,  &d->state, &d->motor, &d->roll_accel_kp, &d->tnt_conf);
-	d->debug2 = d->pid.brake_roll ? -rollkp : rollkp;	
-
-	//Apply Roll Boost
-	d->pid.roll_pid_mod = .99 * d->pid.roll_pid_mod + .01 * rollkp * fabsf(new_pid_value) * d->motor.erpm_sign; 	//always act in the direciton of travel
-	d->pid.pid_mod += d->pid.roll_pid_mod;
-		
 	// Calculate yaw change
 	calc_yaw_change(&d->yaw, d->rt.yaw_angle, &d->yaw_dbg);
-
-	//Select Yaw Kp
-	float yawkp = 0;
-	yawkp = angle_kp_select(d->yaw.abs_change, 
-		d->pid.brake_yaw ? &d->yaw_brake_kp : &d->yaw_accel_kp);
 	
-	//Apply ERPM Scale
-	float erpmscale = ((d->pid.brake_yaw && d->motor.abs_erpm < 750) || 
-		d->motor.abs_erpm < d->tnt_conf.yaw_minerpm || 
-		d->state.sat == SAT_CENTERING) ? 0 : 1;
-	yawkp *= erpmscale;
-	d->yaw_dbg.debug5 = erpmscale;
-	d->yaw_dbg.debug4 = d->pid.brake_yaw ? -yawkp : yawkp;
-	d->yaw_dbg.debug2 = fmaxf(d->yaw_dbg.debug2, yawkp);
-	
-	//Apply Yaw Boost
-	d->pid.yaw_pid_mod = .99 * d->pid.yaw_pid_mod + .01 * yawkp * fabsf(new_pid_value) * d->motor.erpm_sign; 	//always act in the direciton of travel
-	d->pid.pid_mod += d->pid.yaw_pid_mod;
-}
-
-static void brake(data *d) {
-    // Brake timeout logic
-    float brake_timeout_length = 1;  // Brake Timeout hard-coded to 1s
-    if (d->motor.abs_erpm > 10 || d->rt.brake_timeout == 0) {
-        d->rt.brake_timeout = d->rt.current_time + brake_timeout_length;
-    }
-
-    if (d->rt.current_time > d->rt.brake_timeout ||
-      d->tone.tone_in_progress || d->tone.times !=0) { //if foc beep is activated don't allow braking
-        return;
-    }
-
-    VESC_IF->timeout_reset();
-    VESC_IF->mc_set_brake_current(d->tnt_conf.brake_current);
-}
-
-static void set_current(data *d, float current) {
-    VESC_IF->timeout_reset();
-    VESC_IF->mc_set_current_off_delay(d->rt.motor_timeout_s);
-    VESC_IF->mc_set_current(current);
-}
-
-static void set_dutycycle(data *d, float dutycycle){
-	// Limit duty output to configured max output
-	if (dutycycle >  VESC_IF->get_cfg_float(CFG_PARAM_l_max_duty)) {
-		dutycycle = VESC_IF->get_cfg_float(CFG_PARAM_l_max_duty);
-	} else if(dutycycle < 0 && dutycycle < -VESC_IF->get_cfg_float(CFG_PARAM_l_max_duty)) {
-		dutycycle = -VESC_IF->get_cfg_float(CFG_PARAM_l_max_duty);
-	}
-	
-	VESC_IF->timeout_reset();
-	VESC_IF->mc_set_current_off_delay(d->rt.motor_timeout_s);
-	VESC_IF->mc_set_duty(dutycycle); 
-}
-
-static void set_brake(data *d, float current) {
-    VESC_IF->timeout_reset();
-    VESC_IF->mc_set_current_off_delay(d->rt.motor_timeout_s);
-    VESC_IF->mc_set_brake_current(current);
+	//Select and apply yaw kp
+	d->pid.pid_mod += apply_yaw_kp(&d->yaw_accel_kp, &d->yaw_brake_kp, &d->pid, &d->motor, &d->yaw, 
+	    yaw_erpm_scale(&d->pid,  &d->state, &d->motor, &d->tnt_conf), 
+	    &d->yaw_dbg);
 }
 
 static void imu_ref_callback(float *acc, float *gyro, float *mag, float dt) {
@@ -257,7 +176,7 @@ static void tnt_thd(void *arg) {
 		temp_recovery_tone(&d->tone, &d->tone_config.fasttripleup, &d->rt, &d->motor);		
 		tone_update(&d->tone, &d->rt, &d->state);
 	        footpad_sensor_update(&d->footpad_sensor, &d->tnt_conf);
-	      	float new_pid_value = 0;		
+	      	d->pid.new_pid_value = 0;		
 
 		// Control Loop State Logic
 		switch(d->state.state) {
@@ -316,36 +235,36 @@ static void tnt_thd(void *arg) {
 			check_brake_kp(&d->pid,  &d->state,  &d->tnt_conf,  &d->roll_brake_kp,  &d->yaw_brake_kp);
 
 			//Apply Pitch, Roll, Yaw Kp, and Soft Start
-			new_pid_value = apply_pitch_kp(d);
-			apply_kp_modifiers(d, new_pid_value);
-			apply_soft_start(&d->pid, &d->motor);
-			new_pid_value += d->pid.pid_mod; 
+			d->pid.new_pid_value = apply_pitch_kp(&d->accel_kp, &d->brake_kp, &d->pid, &d->pid_dbg);
+			apply_kp_modifiers(d);			//Roll Yaw
+			apply_soft_start(&d->pid, &d->motor);	//Soft start
+			d->pid.new_pid_value += d->pid.pid_mod; 
 			
 			// Current Limiting
 			float current_limit = d->motor.braking ? d->motor.mc_current_min : d->motor.mc_current_max;
-			if (fabsf(new_pid_value) > current_limit) {
-				new_pid_value = sign(new_pid_value) * current_limit;
+			if (fabsf(d->pid.new_pid_value) > current_limit) {
+				d->pid.new_pid_value = sign(d->pid.new_pid_value) * current_limit;
 			}
 			check_current(&d->motor, &d->surge, &d->state,  &d->tnt_conf, &d->tone, &d->tone_config.currenttone, &d->rt); // Check for high current conditions
-			check_tone(&d->tone, &d->tone_config, &d->rt, &d->motor);
 			
 			// Modifiers to PID control
 			check_traction(&d->motor, &d->traction, &d->state, &d->rt, &d->tnt_conf, &d->braking, &d->pid, &d->traction_dbg);
+			check_tone(&d->tone, &d->tone_config, &d->rt, &d->motor);
 			if (d->tnt_conf.is_surge_enabled)
 				check_surge(&d->motor, &d->surge, &d->state, &d->rt, &d->pid, &d->spd, &d->braking, &d->surge_dbg);
 			if (d->tnt_conf.is_tc_braking_enabled)
 				check_traction_braking(&d->braking, &d->motor, &d->state, &d->rt, &d->tnt_conf, d->remote.inputtilt_interpolated, &d->braking_dbg);
 
 			// PID value application
-			d->pid.pid_value = (d->state.wheelslip && d->tnt_conf.is_traction_enabled) ? 0 : new_pid_value;
+			d->pid.pid_value = (d->state.wheelslip && d->tnt_conf.is_traction_enabled) ? 0 : d->pid.new_pid_value;
 
 			// Output to motor
 			if (d->surge.active)
-				set_dutycycle(d, d->surge.new_duty_cycle); 		// Set the duty to surge
+				set_dutycycle(d->surge.new_duty_cycle, &d->rt); 	// Set the duty to surge
 			else if (d->braking.active) 
-				set_brake(d, d->pid.pid_value);				// Use braking function for traction control
+				set_brake(d->pid.pid_value, &d->rt);			// Use braking function for traction control
 			else
-				set_current(d, d->pid.pid_value); 			// Set current as normal.
+				set_current(d->pid.pid_value, &d->rt); 			// Set current as normal.
 
 			break;
 
@@ -377,7 +296,7 @@ static void tnt_thd(void *arg) {
 				}
 			}
 
-			brake(d);
+			brake(d->tnt_conf.brake_current, &d->rt, &d->tnt_conf);
 			break;
 		case (STATE_DISABLED):;
 			// no set_current, no brake_current
@@ -563,11 +482,11 @@ static void send_realtime_data(data *d){
 	} else if (d->tnt_conf.is_tunedebug_enabled) {
 		buffer[ind++] = 3;
 		buffer_append_float32_auto(buffer, d->rt.pitch_smooth_kalman, &ind); //smooth pitch	
-		buffer_append_float32_auto(buffer, d->debug1, &ind); // scaled angle P
-		buffer_append_float32_auto(buffer, d->debug1*d->pid.stabl*d->tnt_conf.stabl_pitch_max_scale/100.0, &ind); // added stiffnes pitch kp
-		buffer_append_float32_auto(buffer, d->debug3, &ind); // added stability rate P
+		buffer_append_float32_auto(buffer, d->pid_dbg.debug1, &ind); // scaled angle P
+		buffer_append_float32_auto(buffer, d->pid_dbg.debug1*d->pid.stabl*d->tnt_conf.stabl_pitch_max_scale/100.0, &ind); // added stiffnes pitch kp
+		buffer_append_float32_auto(buffer, d->pid_dbg.debug3, &ind); // added stability rate P
 		buffer_append_float32_auto(buffer, d->pid.stabl, &ind);
-		buffer_append_float32_auto(buffer, d->debug2, &ind); //rollkp d->debug2 
+		buffer_append_float32_auto(buffer, d->pid_dbg.debug2, &ind); //rollkp 
 	} else if (d->tnt_conf.is_yawdebug_enabled) {
 		buffer[ind++] = 4;
 		buffer_append_float32_auto(buffer, d->rt.yaw_angle, &ind); //yaw angle
