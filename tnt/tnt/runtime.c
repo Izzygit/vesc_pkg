@@ -136,3 +136,78 @@ void check_odometer(RuntimeData *rt) {
 		}
 	}
 }
+
+// Fault checking order does not really matter. From a UX perspective, switch should be before angle.
+bool check_faults(MotorData *motor, FootpadSensor *fs, RuntimeData *rt, State *state, inputtilt_interpolated, tnt_config *config) {
+        bool disable_switch_faults = config->fault_moving_fault_disabled &&
+            // Rolling forward (not backwards!)
+            motor->erpm > (config->fault_adc_half_erpm * 2) &&
+            // Not tipped over
+            fabsf(rt->roll_angle) < 40;
+
+        // Check switch
+        // Switch fully open
+        if (fs->state == FS_NONE) {
+            if (!disable_switch_faults) {
+                if ((1000.0 * (rt->current_time - rt->fault_switch_timer)) >
+                    config->fault_delay_switch_full) {
+                    state_stop(state, STOP_SWITCH_FULL);
+                    return true;
+                }
+                // low speed (below 6 x half-fault threshold speed):
+                else if (
+                    (motor->abs_erpm < config->fault_adc_half_erpm * 6) &&
+                    (1000.0 * (rt->current_time - rt->fault_switch_timer) >
+                     config->fault_delay_switch_half)) {
+                    state_stop(state, STOP_SWITCH_FULL);
+                    return true;
+                }
+            }
+    		if ((motor->abs_erpm <200) && (fabsf(rt->true_pitch_angle) > 14) && 
+                (fabsf(d->remote.inputtilt_interpolated) < 30) && 
+                (sign(rt->true_pitch_angle) ==  motor->erpm_sign)) {
+    			state_stop(state, STOP_QUICKSTOP);
+    			return true;
+    		}
+        } else {
+            rt->fault_switch_timer = rt->current_time;
+        }
+
+        // Switch partially open and stopped
+        if (!config->fault_is_dual_switch) {
+            if (!is_engaged(&d->footpad_sensor, &d->rt, &d->tnt_conf) && motor->abs_erpm < config->fault_adc_half_erpm) {
+                if ((1000.0 * (rt->current_time - rt->fault_switch_half_timer)) >
+                    config->fault_delay_switch_half) {
+                    state_stop(state, STOP_SWITCH_HALF);
+                    return true;
+                }
+            } else {
+                rt->fault_switch_half_timer = rt->current_time;
+            }
+        }
+
+        // Check roll angle
+        if (fabsf(rt->roll_angle) > config->fault_roll) {
+            if ((1000.0 * (rt->current_time - rt->fault_angle_roll_timer)) >
+                config->fault_delay_pitch) {
+                state_stop(state, STOP_ROLL);
+                return true;
+            }
+        } else {
+            rt->fault_angle_roll_timer = rt->current_time;
+        }
+        
+
+    // Check pitch angle
+    if (fabsf(rt->pitch_angle) > config->fault_pitch && fabsf(inputtilt_interpolated) < 30) {
+        if ((1000.0 * (rt->current_time - rt->fault_angle_pitch_timer)) >
+            config->fault_delay_pitch) {
+            state_stop(state, STOP_PITCH);
+            return true;
+        }
+    } else {
+        rt->fault_angle_pitch_timer = rt->current_time;
+    }
+
+    return false;
+}
