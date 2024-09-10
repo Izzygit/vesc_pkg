@@ -259,3 +259,111 @@ void configure_pid(PidData *p, tnt_config *config) {
 	// Feature: Soft Start
 	p->softstart_step_size = 100.0 / config->hertz;
 }
+
+
+float apply_pitch_kp(KpArray *accel_kp, KpArray *brake_kp, PidData *p, PidDebug *pid_dbg) {
+	//Select and Apply Pitch kp  
+	float kp_mod, new_pid_value;
+	kp_mod = angle_kp_select(p->abs_prop_smooth, 
+		p->brake_pitch ? brake_kp : accel_kp);
+	pid_debug->debug1 = p->brake_pitch ? -kp_mod : kp_mod;
+	kp_mod *= p->stability_kp;
+	new_pid_value = p->proportional * kp_mod;
+
+	return new_pid_value;
+}
+
+float apply_kp_rate(KpArray *accel_kp, KpArray *brake_kp, PidData *p, PidDebug *pid_dbg) {
+	float pid_mod = 0;
+	float kp_rate = p->brake_pitch ? brake_kp->kp_rate : accel_kp->kp_rate;		
+	pid_dbg->debug3 = kp_rate * (p->stability_kprate - 1);			// Calc the contribution of stability to kp_rate
+	pid_mod = kp_rate * p->stability_kprate;
+	return pid_mod;
+}
+
+float apply_roll_kp(KpArray *roll_accel_kp, KpArray *roll_brake_kp, PidData *p, MotorData *motor, Runtime *rt, float roll_erpm_scale, PidDebug *pid_dbg) {
+	// Select Roll Kp
+	float rollkp = 0;
+	float pid_mod = 0;
+	rollkp = angle_kp_select(rt->abs_roll_angle, 
+		p->brake_roll ? roll_brake_kp : roll_accel_kp);
+	
+	//ERPM Scale
+	rollkp *= roll_erpm_scale;
+	pid_dbg->debug2 = p->brake_roll ? -rollkp : rollkp;	
+
+	//Apply Roll Boost
+	p->roll_pid_mod = .99 * p->roll_pid_mod + .01 * rollkp * fabsf(p->new_pid_value) * motor->erpm_sign; 	//always act in the direciton of travel
+	pid_mod += p->roll_pid_mod;
+
+	return pid_mod;
+}
+
+float yaw_erpm_scale(PidData *p, State *state, MotorData *m, tnt_config *config) {
+	float yaw_erpm_scale = ((p->brake_yaw && motor->abs_erpm < 750) || 
+		motor->abs_erpm < config->yaw_minerpm || 
+		state->sat == SAT_CENTERING) ? 0 : 1;
+	return yaw_erpm_scale;
+}
+
+
+float apply_yaw_kp(KpArray *yaw_accel_kp, KpArray *yaw_brake_kp, PidData *p, MotorData *motor, YawData *yaw, float yaw_erpm_scale, YawDebug *yaw_dbg) {
+	//Select Yaw Kp
+	float yawkp = 0;
+	float pid_mod = 0;
+	yawkp = angle_kp_select(yaw->abs_change, 
+		p->brake_yaw ? yaw_brake_kp : yaw_accel_kp);
+	
+	//Apply ERPM Scale
+	yawkp *= yaw_erpm_scale;
+	yaw_dbg->debug5 = yaw_erpm_scale;
+	yaw_dbg->debug4 = p->brake_yaw ? -yawkp : yawkp;
+	yaw_dbg->debug2 = fmaxf(yaw_dbg->debug2, yawkp);
+	
+	//Apply Yaw Boost
+	p->yaw_pid_mod = .99 * p->yaw_pid_mod + .01 * yawkp * fabsf(p->new_pid_value) * motor->erpm_sign; 	//always act in the direciton of travel
+	pid_mod += p->yaw_pid_mod;
+
+	return pid_mod;
+}
+
+void brake(float current, RuntimeData *rt, MotorData *motor) {
+    // Brake timeout logic
+    float brake_timeout_length = 1;  // Brake Timeout hard-coded to 1s
+    if (motor->abs_erpm > 10 || rt->brake_timeout == 0) {
+        rt->brake_timeout = rt->current_time + brake_timeout_length;
+    }
+
+    //if (rt->current_time > rt->brake_timeout ||
+    //  d->tone.tone_in_progress || d->tone.times !=0) { //if foc beep is activated don't allow braking
+    //    return;
+    //}
+
+    VESC_IF->timeout_reset();
+    VESC_IF->mc_set_brake_current(current);
+}
+
+void set_current(float current, RuntimeData *rt ) {
+    VESC_IF->timeout_reset();
+    VESC_IF->mc_set_current_off_delay(rt->motor_timeout_s);
+    VESC_IF->mc_set_current(current);
+}
+
+void set_dutycycle(float dutycycle, RuntimeData *rt){
+	// Limit duty output to configured max output
+	if (dutycycle >  VESC_IF->get_cfg_float(CFG_PARAM_l_max_duty)) {
+		dutycycle = VESC_IF->get_cfg_float(CFG_PARAM_l_max_duty);
+	} else if(dutycycle < 0 && dutycycle < -VESC_IF->get_cfg_float(CFG_PARAM_l_max_duty)) {
+		dutycycle = -VESC_IF->get_cfg_float(CFG_PARAM_l_max_duty);
+	}
+	
+	VESC_IF->timeout_reset();
+	VESC_IF->mc_set_current_off_delay(rt->motor_timeout_s);
+	VESC_IF->mc_set_duty(dutycycle); 
+}
+
+void set_brake(float current,  RuntimeData *rt) {
+    VESC_IF->timeout_reset();
+    VESC_IF->mc_set_current_off_delay(rt->motor_timeout_s);
+    VESC_IF->mc_set_brake_current(current);
+}
