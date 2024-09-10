@@ -89,7 +89,7 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 				traction_dbg->debug5 = 0;
 				traction_dbg->debug2 = erpmfactor;		//only record the first traction loss for some debug variables
 				traction_dbg->debug6 = m->accel_avg / traction_dbg->freq_factor; 
-				traction_dbg->debug9 = m->erpm_filtered;
+				traction_dbg->debug9 = m->erpm;
 				traction_dbg->debug3 = m->erpm_history[m->last_erpm_idx];
 				traction_dbg->debug4 = 0;
 				traction_dbg->debug8 = 0;
