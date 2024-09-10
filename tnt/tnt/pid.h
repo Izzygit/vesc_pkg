@@ -47,6 +47,7 @@ typedef struct {
 	float softstart_pid_limit;
 	float softstart_step_size;
 	bool brake_pitch, brake_roll, brake_yaw;
+	float new_pid_value;
 } PidData;
 
 typedef struct {
@@ -68,3 +69,12 @@ float roll_erpm_scale(PidData *p, State *state, MotorData *m, KpArray *roll_acce
 void reset_pid(PidData *p);
 void apply_soft_start(PidData *p, MotorData *m);
 void configure_pid(PidData *p, tnt_config *config);
+float apply_pitch_kp(KpArray *accel_kp, KpArray *brake_kp, PidData *p, PidDebug *pid_dbg);
+float apply_kp_rate(KpArray *accel_kp, KpArray *brake_kp, PidData *p, PidDebug *pid_dbg);
+float apply_roll_kp(KpArray *roll_accel_kp, KpArray *roll_brake_kp, PidData *p, MotorData *motor, Runtime *rt, float roll_erpm_scale, PidDebug *pid_dbg);
+float yaw_erpm_scale(PidData *p, State *state, MotorData *m, tnt_config *config);
+float apply_yaw_kp(KpArray *yaw_accel_kp, KpArray *yaw_brake_kp, PidData *p, MotorData *motor, YawData *yaw, float yaw_erpm_scale, YawDebug *yaw_dbg);
+void brake(float current, RuntimeData *rt, MotorData *motor);
+void set_current(float current, RuntimeData *rt );
+void set_dutycycle(float dutycycle, RuntimeData *rt);
+void set_brake(float current,  RuntimeData *rt);
