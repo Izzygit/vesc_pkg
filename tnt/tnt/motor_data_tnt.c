@@ -43,14 +43,11 @@ void motor_data_reset(MotorData *m) {
     }
     biquad_reset(&m->current_biquad);
     biquad_reset(&m->erpm_biquad);
-    biquad_reset(&m->duty_biquad);
-
 }
 
 void motor_data_configure(MotorData *m, tnt_config *config) {
     biquad_configure(&m->current_biquad, BQ_LOWPASS, 3.0 / config->hertz);
     biquad_configure(&m->erpm_biquad, BQ_LOWPASS, 1.0 * config->wheelslip_filter_freq / config->hertz);
-    biquad_configure(&m->duty_biquad, BQ_LOWPASS, 1.0 * config->duty_filter_freq / config->hertz);
    
     m->erpm_sign_factor = 0.9984 / config->hertz; //originally configured for 832 hz to delay an erpm sign change for 1 second (0.0012 factor)
 
@@ -92,5 +89,4 @@ void motor_data_update(MotorData *m, tnt_config *config) {
     m->braking = m->abs_erpm > 250 && sign(m->current) != m->erpm_sign;
 
     m->duty_cycle = fabsf(VESC_IF->mc_get_duty_cycle_now());
-    m->duty_filtered = config->duty_filter_freq > 0 ? biquad_process(&m->duty_biquad, m->duty_cycle) : m->duty_cycle;
 }
