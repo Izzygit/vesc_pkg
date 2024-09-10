@@ -51,6 +51,6 @@ typedef struct {
 } SurgeDebug;
 
 void check_current(MotorData *m, SurgeData *surge, State *state, tnt_config *config, ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt);
-void check_surge(MotorData *m, SurgeData *surge, State *state, RuntimeData *rt, PidData *p, SetpointData *s, SurgeDebug *surge_dbg);
+void check_surge(MotorData *m, SurgeData *surge, State *state, RuntimeData *rt, PidData *p, SetpointData *s, BrakingData *braking, SurgeDebug *surge_dbg);
 void configure_surge(SurgeData *surge, tnt_config *config);
 void reset_surge(SurgeData *surge);
