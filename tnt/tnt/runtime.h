@@ -21,6 +21,9 @@
 #include "conf/datatypes.h"
 #include "vesc_c_if.h"
 #include <stdint.h>
+#include "state.h"
+#include "footpad_sensor.h"
+#include "motor_data_tnt.h"
 
 typedef struct { //Run time values used in various features
 	float pitch_angle;
@@ -81,3 +84,4 @@ void configure_runtime(RuntimeData *rt, tnt_config *config);
 void rest_timer(RideTimeData *ridetimer, RuntimeData *rt);
 void ride_timer(RideTimeData *ridetimer, RuntimeData *rt);
 void check_odometer(RuntimeData *rt);
+bool check_faults(MotorData *motor, FootpadSensor *fs, RuntimeData *rt, State *state, float inputtilt_interpolated, tnt_config *config);
