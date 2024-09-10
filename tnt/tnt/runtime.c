@@ -138,7 +138,7 @@ void check_odometer(RuntimeData *rt) {
 }
 
 // Fault checking order does not really matter. From a UX perspective, switch should be before angle.
-bool check_faults(MotorData *motor, FootpadSensor *fs, RuntimeData *rt, State *state, inputtilt_interpolated, tnt_config *config) {
+bool check_faults(MotorData *motor, FootpadSensor *fs, RuntimeData *rt, State *state, float inputtilt_interpolated, tnt_config *config) {
         bool disable_switch_faults = config->fault_moving_fault_disabled &&
             // Rolling forward (not backwards!)
             motor->erpm > (config->fault_adc_half_erpm * 2) &&
