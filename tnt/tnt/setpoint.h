@@ -21,6 +21,9 @@
 #include "state_tnt.h"
 #include "motor_data_tnt.h"
 #include "runtime.h"
+#include "tone.h"
+#include "surge.h"
+#include "pid.h"
 
 typedef struct {
         float setpoint;
@@ -40,3 +43,4 @@ void setpoint_reset(SetpointData *s, tnt_config *config, RuntimeData *rt);
 float get_setpoint_adjustment_step_size(SetpointData *s, State *state);
 void calculate_setpoint_interpolated(SetpointData *s, State *state);
 void apply_noseangling(SetpointData *s, MotorData *motor, tnt_config *config);
+void calculate_setpoint_target(SetpointData *spd, State *state, SurgeData *surge, PidData *pid, MotorData *motor, RuntimeData *rt, ToneData *tone, ToneConfigs *toneconfig, tnt_config *config);
