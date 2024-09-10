@@ -30,7 +30,6 @@ void motor_data_reset(MotorData *m) {
     m->erpm_filtered = 0;
     m->last_erpm_filtered = 0;
     m->accel_avg = 0;
-    m->duty_filtered = 0;
     m->current_filtered = 0;	
 	    
     m->erpm_idx = 0;
