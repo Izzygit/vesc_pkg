@@ -132,7 +132,7 @@ void configure_traction(TractionData *traction, BrakingData *braking, tnt_config
 	braking->feature_delay = config->tc_braking_start_delay / 1000.0;
 }
 
-void check_traction_braking(MotorData *m, BrakingData *braking, State *state, RuntimeData *rt, tnt_config *config, float inputtilt_interpolated, BrakingDebug *braking_dbg){
+void check_traction_braking(BrakingData *braking, State *state, RuntimeData *rt, tnt_config *config, float inputtilt_interpolated, BrakingDebug *braking_dbg){
 	bool check_last = braking->last_active ||  rt->current_time - braking->brake_delay > config->tc_braking_end_delay / 1000.0; //we were just traction braking or we are beyond the brake delay
 
 	//Check that conditions for traciton braking are satified and add to counter
@@ -178,8 +178,6 @@ void check_traction_braking(MotorData *m, BrakingData *braking, State *state, Ru
 				braking_dbg->debug4 = braking_dbg->debug4 * 10 + 1;
 			} else if (!state->braking_pos_smooth) {
 				braking_dbg->debug4 = braking_dbg->debug4 * 10 + 2;
-			//} else if (m->duty_filtered < (config->tc_braking_duty_limit -1) / 100.0) {
-			//	braking_dbg->debug4 = braking_dbg->debug4 * 10 + 3;
 			}
 		}
 	}
