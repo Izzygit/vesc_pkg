@@ -105,9 +105,7 @@ void reset_traction(TractionData *traction, State *state, BrakingData *braking) 
 	traction->reverse_wheelslip = false;
 	traction->end_accel_hold = false;
 	braking->active = false; 
-	braking->last_active = false; 
-	braking->brake_delay = 0;
-	braking->count = 0; 
+	braking->last_active = false;
 }
 
 void deactivate_traction(TractionData *traction, State *state, RuntimeData *rt, TractionDebug *traction_dbg, float exit) {
