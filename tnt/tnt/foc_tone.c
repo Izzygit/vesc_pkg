@@ -30,7 +30,7 @@ void tone_update(ToneData *tone, RuntimeData *rt, State *state) {
 	
 	if (!tone->pause) { 					//only play or stop tones outside of pause period
 		tone->pause_timer = rt->current_time; 		// keep updated until we are in pause state
-		if (!tone->tone_in_progress && tone->times != 0) { //times>0 and we are ready for the next tone
+		if (!tone->tone_in_progress && tone->times != 0) { //play if times>0 and we are ready for the next tone
 			index = min(2, tone->times - 1);	//Use index/times to play frequencies in reverser order: 3 2 1
 			if (state->state == STATE_RUNNING) { 	//Choose function based on state
 				tone->tone_in_progress = VESC_IF->foc_play_tone(0,  tone->freq[index], tone->voltage);
@@ -115,7 +115,7 @@ void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config, ToneData *t
 	tone_configure(&toneconfig->fastdouble2, 880, 880, 0, beep_voltage, .1, 2, 0, 1);
 	tone_configure(&toneconfig->slowdouble1, 698, 698, 0, beep_voltage, .3, 2, 30, 1);
 	tone_configure(&toneconfig->slowdouble2, 880, 880, 0, beep_voltage, .3, 2, 55, 1);
-	tone_configure(&toneconfig->fasttriple1, 698, 698, 698, beep_voltage, .1, 3, 0, 1);
+	tone_configure(&toneconfig->fasttriple1, 784, 830.6, config->tone_freq_high_duty, beep_voltage, .1, 3, 0, 1);
 	tone_configure(&toneconfig->slowtriple1, 698, 698, 698, beep_voltage, .3, 3, 10, 4);
 	tone_configure(&toneconfig->slowtriple2, 880, 880, 880, beep_voltage, .3, 3, 10, 3);
 	tone_configure(&toneconfig->fasttripleup, 880, 784, 698.5, beep_voltage, .1, 3, 10, 2);
