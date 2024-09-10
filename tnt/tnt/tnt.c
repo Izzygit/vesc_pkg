@@ -532,7 +532,7 @@ static void tnt_thd(void *arg) {
 			if (d->tnt_conf.is_surge_enabled)
 				check_surge(&d->motor, &d->surge, &d->state, &d->rt, &d->pid, &d->spd, &d->braking, &d->surge_dbg);
 			if (d->tnt_conf.is_tc_braking_enabled)
-				check_traction_braking(&d->motor, &d->braking, &d->state, &d->rt, &d->tnt_conf, d->remote.inputtilt_interpolated, &d->braking_dbg);
+				check_traction_braking(&d->braking, &d->state, &d->rt, &d->tnt_conf, d->remote.inputtilt_interpolated, &d->braking_dbg);
 
 			// PID value application
 			d->pid.pid_value = (d->state.wheelslip && d->tnt_conf.is_traction_enabled) ? 0 : new_pid_value;
