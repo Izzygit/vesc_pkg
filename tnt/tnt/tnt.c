@@ -56,37 +56,17 @@ typedef struct {
 	// Firmware version, passed in from Lisp
 	int fw_version_major, fw_version_minor, fw_version_beta;
 
-  	MotorData motor;
-	PidData pid;
-	SetpointData spd;
+	//Essentials for an operating board with Trick and Trail control algorithm
+  	MotorData motor;			//Motor data
+	State state;				//Runtime state values
+	PidData pid;				//control variables
+	SetpointData spd;			//Board angle changes
+	RuntimeData rt; 			//runtime data (IMU, times, etc)
+	FootpadSensor footpad_sensor;		//Footpad states and detection
+	YawData yaw;				//Yaw change data
+	YawDebugData yaw_dbg;			//Yaw debug
 
-	//FOC play tones
-	ToneData tone;
-	ToneConfigs tone_config;
-
-	// Runtime values 
-	RuntimeData rt; 		
-	
-	FootpadSensor footpad_sensor;
-
-	// Runtime state values
-	State state;
-
-	//Remote
-	RemoteData remote;
-	StickyTiltData st_tilt;
-
-	// Feature: Surge
-	SurgeData surge;
-	SurgeDebug surge_dbg;
-	
-	//Traction Control
-	TractionData traction;
-	TractionDebug traction_dbg;
-	BrakingData braking;
-	BrakingDebug braking_dbg;
-
-	// Throttle/Brake Scaling
+	// Throttle/Brake Curves for Pitch Roll and Yaw
 	KpArray accel_kp;
 	KpArray brake_kp;
 	KpArray roll_accel_kp;
@@ -94,16 +74,21 @@ typedef struct {
 	KpArray yaw_accel_kp;
 	KpArray yaw_brake_kp;
 
-	//Trip Debug
-	RideTimeData ridetimer;
-
-	//Yaw Boost
-	YawData yaw;
-	YawDebugData yaw_dbg;
+	//Non-essential Features
+	ToneData tone;				//FOC play tones feature
+	ToneConfigs tone_config;		//Configurations for different beep profiles
+	RemoteData remote;			//Read and apply input remote
+	StickyTiltData st_tilt;			//Use input remote to lock in board angle
+	SurgeData surge;			//Temporary duty control mode
+	SurgeDebug surge_dbg;			//Surge debug info
+	TractionData traction;			//Traction control for accelerating
+	TractionDebug traction_dbg;		//traction control debug info
+	BrakingData braking;			//Traction control for braking
+	BrakingDebug braking_dbg;		//Braking debug info
+	RideTimeData ridetimer;			//Trip debug for ride vs rest time
 
 	//Debug
 	float debug1, debug2, debug3, debug4, debug5, debug6;
-
 } data;
 
 static void brake(data *d);
@@ -117,7 +102,8 @@ static void configure(data *d) {
 	configure_remote_features(&d->tnt_conf, &d->remote, &d->st_tilt);	//remote input
 	motor_data_configure(&d->motor, &d->tnt_conf);				//motor data
 	configure_surge(&d->surge, &d->tnt_conf);				//surge feature
-	configure_traction(&d->traction, &d->braking, &d->tnt_conf, &d->traction_dbg, &d->braking_dbg); //traction control and traction braking
+	configure_traction(&d->traction, &d->braking, &d->tnt_conf, 
+		&d->traction_dbg, &d->braking_dbg); 				//traction control and traction braking
 	tone_configure_all(&d->tone_config, &d->tnt_conf, &d->tone);		//FOC play tones
 
 	//initialize pitch arrays for acceleration
@@ -148,11 +134,11 @@ static void reset_vars(data *d) {
 	if (d->rt.current_time - d->rt.disengage_timer > 1) {//Delay reset in case there is a minor disengagement
 		motor_data_reset(&d->motor);				//Motor
 		setpoint_reset(&d->spd, &d->tnt_conf, &d->rt);		//Setpoint
-		reset_runtime(&d->rt, &d->yaw, &d->yaw_dbg);		// Runtime 
+		reset_runtime(&d->rt, &d->yaw, &d->yaw_dbg);		//Runtime 
 		reset_pid(&d->pid);					//Control variables
 		reset_remote(&d->remote, &d->st_tilt);			//Remote
-		reset_surge(&d->surge);					// Surge
-		reset_traction(&d->traction, &d->state, &d->braking);	// Traction Control
+		reset_surge(&d->surge);					//Surge
+		reset_traction(&d->traction, &d->state, &d->braking);	//Traction Control
 		tone_reset(&d->tone);					//FOC tones
 	}
 	state_engage(&d->state);
@@ -544,7 +530,7 @@ static void tnt_thd(void *arg) {
 			// Modifiers to PID control
 			check_traction(&d->motor, &d->traction, &d->state, &d->rt, &d->tnt_conf, &d->braking, &d->pid, &d->traction_dbg);
 			if (d->tnt_conf.is_surge_enabled)
-				check_surge(&d->motor, &d->surge, &d->state, &d->rt, &d->pid, &d->spd, &d->surge_dbg);
+				check_surge(&d->motor, &d->surge, &d->state, &d->rt, &d->pid, &d->spd, &d->braking, &d->surge_dbg);
 			if (d->tnt_conf.is_tc_braking_enabled)
 				check_traction_braking(&d->motor, &d->braking, &d->state, &d->rt, &d->tnt_conf, d->remote.inputtilt_interpolated, &d->braking_dbg);
 
