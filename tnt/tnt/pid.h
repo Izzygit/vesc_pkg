@@ -49,6 +49,13 @@ typedef struct {
 	bool brake_pitch, brake_roll, brake_yaw;
 } PidData;
 
+typedef struct {
+	float debug1;
+	float debug2;
+	float debug3;
+	float debug4;
+} PidDebug;
+
 void pitch_kp_configure(const tnt_config *config, KpArray *k, int mode);
 void roll_kp_configure(const tnt_config *config, KpArray *k, int mode);
 void yaw_kp_configure(const tnt_config *config, KpArray *k, int mode);
