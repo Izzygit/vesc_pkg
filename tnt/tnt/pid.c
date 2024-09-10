@@ -18,6 +18,7 @@
 #include "pid.h"
 #include "utils_tnt.h"
 #include <math.h>
+#include "vesc_c_if.h"
 
 float angle_kp_select(float angle, const KpArray *k) {
 	float kp_mod = 0;
