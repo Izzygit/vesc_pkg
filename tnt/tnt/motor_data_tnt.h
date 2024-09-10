@@ -43,8 +43,6 @@ typedef struct {
     float current_filtered;
 
     float duty_cycle;
-    float duty_filtered;
-    Biquad duty_biquad;
 
     float accel_avg;
     float accel_history[ACCEL_ARRAY_SIZE];
