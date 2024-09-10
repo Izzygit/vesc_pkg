@@ -17,6 +17,8 @@
 
 #include "setpoint.h"
 #include "utils_tnt.h"
+#include "vesc_c_if.h"
+
 
 void setpoint_configure(SetpointData *s, tnt_config *config) {
 	//Setpoint Adjustment
@@ -84,4 +86,103 @@ void apply_noseangling(SetpointData *s, MotorData *motor, tnt_config *config) {
 	rate_limitf(&s->noseangling_interpolated, noseangling_target, s->noseangling_step_size);
 
 	s->setpoint += s->noseangling_interpolated;
+}
+
+void calculate_setpoint_target(SetpointData *spd, State *state, SurgeData *surge, PidData *pid, MotorData *motor, RuntimeData *rt, ToneData *tone, ToneConfigs *toneconfig, tnt_config *config) {
+	float input_voltage = VESC_IF->mc_get_input_voltage_filtered();
+	
+	if (input_voltage < config->tiltback_hv) {
+		spd->tb_highvoltage_timer = rt->current_time;
+	}
+
+	if (state->wheelslip) {
+		state->sat = SAT_NONE;
+	} else if (surge->deactivate) { 
+		spd->setpoint_target = 0;
+		state->sat = SAT_UNSURGE;
+		if (spd->setpoint_target_interpolated < 0.1 && spd->setpoint_target_interpolated > -0.1) { // End surge_off once we are back at 0 
+			surge->deactivate = false;
+		}
+	} else if (surge->active) {
+		if (pid->proportional*motor->erpm_sign < config->surge_pitchmargin) {
+			spd->setpoint_target = rt->pitch_angle + config->surge_pitchmargin * motor->erpm_sign;
+			state->sat = SAT_SURGE;
+		}
+	} else if (motor->duty_cycle > spd->tiltback_duty) {
+		if (motor->erpm > 0) {
+			spd->setpoint_target = config->tiltback_duty_angle;
+		} else {
+			spd->setpoint_target = -config->tiltback_duty_angle;
+		}
+		state->sat = SAT_PB_DUTY;
+	} else if (motor->duty_cycle > 0.05 && input_voltage > config->tiltback_hv) {
+		play_tone(tone, &toneconfig->slowtripleup, rt, BEEP_HV);
+		if (((rt->current_time - spd->tb_highvoltage_timer) > .5) ||
+		   (input_voltage > config->tiltback_hv + 1)) {
+		// 500ms have passed or voltage is another volt higher, time for some tiltback
+			if (motor->erpm > 0) {
+				spd->setpoint_target = config->tiltback_hv_angle;
+			} else {
+				spd->setpoint_target = -config->tiltback_hv_angle;
+			}
+	
+			state->sat = SAT_PB_HIGH_VOLTAGE;
+		} else {
+			// The rider has 500ms to react to the triple-beep, or maybe it was just a short spike
+			state->sat = SAT_NONE;
+		}
+	} else if (VESC_IF->mc_temp_fet_filtered() > motor->mc_max_temp_fet) {
+		// Use the angle from Low-Voltage tiltback, but slower speed from High-Voltage tiltback
+		play_tone(tone, &toneconfig->slowtriple2, rt, BEEP_TEMPFET);
+		d->tone.fettemp_activated = true;
+		if (VESC_IF->mc_temp_fet_filtered() > (motor->mc_max_temp_fet + 1)) {
+			if (motor->erpm > 0) {
+				spd->setpoint_target = config->tiltback_ht_angle;
+			} else {
+				spd->setpoint_target = -config->tiltback_ht_angle;
+			}
+			state->sat = SAT_PB_TEMPERATURE;
+		} else {
+			// The rider has 1 degree Celsius left before we start tilting back
+			state->sat = SAT_NONE;
+		}
+	} else if (VESC_IF->mc_temp_motor_filtered() > motor->mc_max_temp_mot) {
+		play_tone(tone, &toneconfig->slowtriple1, rt, BEEP_TEMPMOT);
+		d->tone.motortemp_activated = true;
+		if (VESC_IF->mc_temp_motor_filtered() > (motor->mc_max_temp_mot + 1)) {
+			if (motor->erpm > 0) {
+				spd->setpoint_target = config->tiltback_ht_angle;
+			} else {
+				spd->setpoint_target = -config->tiltback_ht_angle;
+			}
+			state->sat = SAT_PB_TEMPERATURE;
+		} else {
+			// The rider has 1 degree Celsius left before we start tilting back
+			state->sat = SAT_NONE;
+		}
+	} else if (motor->duty_cycle > 0.05 && input_voltage < config->tiltback_lv) {
+		play_tone(tone, &toneconfig->slowtripledown, rt, BEEP_LV);
+		float abs_motor_current = fabsf(motor->current_filtered);
+		float vdelta = 1.0 * config->tiltback_lv - input_voltage;
+		float ratio = vdelta * 20 / abs_motor_current;
+		// When to do LV tiltback:
+		// a) we're 2V below lv threshold
+		// b) motor current is small (we cannot assume vsag)
+		// c) we have more than 20A per Volt of difference (we tolerate some amount of vsag)
+		if ((vdelta > 2) || (abs_motor_current < 5) || (ratio > 1)) {
+			if (motor->erpm > 0) {
+				spd->setpoint_target = config->tiltback_lv_angle;
+			} else {
+				spd->setpoint_target = -config->tiltback_lv_angle;
+			}
+			state->sat = SAT_PB_LOW_VOLTAGE;
+		} else {
+			state->sat = SAT_NONE;
+			spd->setpoint_target = 0;
+		}
+	} else if (state->sat != SAT_CENTERING || spd->setpoint_target_interpolated == spd->setpoint_target) {
+        	// Normal running
+         	state->sat = SAT_NONE;
+	        spd->setpoint_target = 0;
+	}
 }
