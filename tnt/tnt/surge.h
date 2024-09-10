@@ -23,6 +23,7 @@
 #include "pid.h"
 #include "foc_tone.h"
 #include "setpoint.h"
+#include "traction.h"
 
 typedef struct {
 	float timer;				//Timer to monitor surge cycle and period
