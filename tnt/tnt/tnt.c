@@ -144,198 +144,6 @@ static void reset_vars(data *d) {
 	state_engage(&d->state);
 }
 
-bool is_engaged(const data *d) {
-    if (d->footpad_sensor.state == FS_BOTH) {
-        return true;
-    }
-
-    if (d->footpad_sensor.state == FS_LEFT || d->footpad_sensor.state == FS_RIGHT) {
-        // 5 seconds after stopping we allow starting with a single sensor (e.g. for jump starts)
-        bool is_simple_start =
-            d->tnt_conf.startup_simplestart_enabled && (d->rt.current_time - d->rt.disengage_timer > 5);
-
-        if (d->tnt_conf.fault_is_dual_switch || is_simple_start) {
-            return true;
-        }
-    }
-    return false;
-}
-
-
-// Fault checking order does not really matter. From a UX perspective, switch should be before angle.
-static bool check_faults(data *d) {
-        bool disable_switch_faults = d->tnt_conf.fault_moving_fault_disabled &&
-            // Rolling forward (not backwards!)
-            d->motor.erpm > (d->tnt_conf.fault_adc_half_erpm * 2) &&
-            // Not tipped over
-            fabsf(d->rt.roll_angle) < 40;
-
-        // Check switch
-        // Switch fully open
-        if (d->footpad_sensor.state == FS_NONE) {
-            if (!disable_switch_faults) {
-                if ((1000.0 * (d->rt.current_time - d->rt.fault_switch_timer)) >
-                    d->tnt_conf.fault_delay_switch_full) {
-                    state_stop(&d->state, STOP_SWITCH_FULL);
-                    return true;
-                }
-                // low speed (below 6 x half-fault threshold speed):
-                else if (
-                    (d->motor.abs_erpm < d->tnt_conf.fault_adc_half_erpm * 6) &&
-                    (1000.0 * (d->rt.current_time - d->rt.fault_switch_timer) >
-                     d->tnt_conf.fault_delay_switch_half)) {
-                    state_stop(&d->state, STOP_SWITCH_FULL);
-                    return true;
-                }
-            }
-    		if ((d->motor.abs_erpm <200) && (fabsf(d->rt.true_pitch_angle) > 14) && 
-                (fabsf(d->remote.inputtilt_interpolated) < 30) && 
-                (sign(d->rt.true_pitch_angle) ==  d->motor.erpm_sign)) {
-    			state_stop(&d->state, STOP_QUICKSTOP);
-    			return true;
-    		}
-        } else {
-            d->rt.fault_switch_timer = d->rt.current_time;
-        }
-
-        // Switch partially open and stopped
-        if (!d->tnt_conf.fault_is_dual_switch) {
-            if (!is_engaged(d) && d->motor.abs_erpm < d->tnt_conf.fault_adc_half_erpm) {
-                if ((1000.0 * (d->rt.current_time - d->rt.fault_switch_half_timer)) >
-                    d->tnt_conf.fault_delay_switch_half) {
-                    state_stop(&d->state, STOP_SWITCH_HALF);
-                    return true;
-                }
-            } else {
-                d->rt.fault_switch_half_timer = d->rt.current_time;
-            }
-        }
-
-        // Check roll angle
-        if (fabsf(d->rt.roll_angle) > d->tnt_conf.fault_roll) {
-            if ((1000.0 * (d->rt.current_time - d->rt.fault_angle_roll_timer)) >
-                d->tnt_conf.fault_delay_pitch) {
-                state_stop(&d->state, STOP_ROLL);
-                return true;
-            }
-        } else {
-            d->rt.fault_angle_roll_timer = d->rt.current_time;
-        }
-        
-
-    // Check pitch angle
-    if (fabsf(d->rt.pitch_angle) > d->tnt_conf.fault_pitch && fabsf(d->remote.inputtilt_interpolated) < 30) {
-        if ((1000.0 * (d->rt.current_time - d->rt.fault_angle_pitch_timer)) >
-            d->tnt_conf.fault_delay_pitch) {
-            state_stop(&d->state, STOP_PITCH);
-            return true;
-        }
-    } else {
-        d->rt.fault_angle_pitch_timer = d->rt.current_time;
-    }
-
-    return false;
-}
-
-static void calculate_setpoint_target(data *d) {
-	float input_voltage = VESC_IF->mc_get_input_voltage_filtered();
-	
-	if (input_voltage < d->tnt_conf.tiltback_hv) {
-		d->spd.tb_highvoltage_timer = d->rt.current_time;
-	}
-
-	if (d->state.wheelslip) {
-		d->state.sat = SAT_NONE;
-	} else if (d->surge.deactivate) { 
-		d->spd.setpoint_target = 0;
-		d->state.sat = SAT_UNSURGE;
-		if (d->spd.setpoint_target_interpolated < 0.1 && d->spd.setpoint_target_interpolated > -0.1) { // End surge_off once we are back at 0 
-			d->surge.deactivate = false;
-		}
-	} else if (d->surge.active) {
-		if (d->pid.proportional*d->motor.erpm_sign < d->tnt_conf.surge_pitchmargin) {
-			d->spd.setpoint_target = d->rt.pitch_angle + d->tnt_conf.surge_pitchmargin * d->motor.erpm_sign;
-			d->state.sat = SAT_SURGE;
-		}
-	} else if (d->motor.duty_cycle > d->spd.tiltback_duty) {
-		if (d->motor.erpm > 0) {
-			d->spd.setpoint_target = d->tnt_conf.tiltback_duty_angle;
-		} else {
-			d->spd.setpoint_target = -d->tnt_conf.tiltback_duty_angle;
-		}
-		d->state.sat = SAT_PB_DUTY;
-	} else if (d->motor.duty_cycle > 0.05 && input_voltage > d->tnt_conf.tiltback_hv) {
-		play_tone(&d->tone, &d->tone_config.slowtripleup, &d->rt, BEEP_HV);
-		if (((d->rt.current_time - d->spd.tb_highvoltage_timer) > .5) ||
-		   (input_voltage > d->tnt_conf.tiltback_hv + 1)) {
-		// 500ms have passed or voltage is another volt higher, time for some tiltback
-			if (d->motor.erpm > 0) {
-				d->spd.setpoint_target = d->tnt_conf.tiltback_hv_angle;
-			} else {
-				d->spd.setpoint_target = -d->tnt_conf.tiltback_hv_angle;
-			}
-	
-			d->state.sat = SAT_PB_HIGH_VOLTAGE;
-		} else {
-			// The rider has 500ms to react to the triple-beep, or maybe it was just a short spike
-			d->state.sat = SAT_NONE;
-		}
-	} else if (VESC_IF->mc_temp_fet_filtered() > d->motor.mc_max_temp_fet) {
-		// Use the angle from Low-Voltage tiltback, but slower speed from High-Voltage tiltback
-		play_tone(&d->tone, &d->tone_config.slowtriple2, &d->rt, BEEP_TEMPFET);
-		d->tone.fettemp_activated = true;
-		if (VESC_IF->mc_temp_fet_filtered() > (d->motor.mc_max_temp_fet + 1)) {
-			if (d->motor.erpm > 0) {
-				d->spd.setpoint_target = d->tnt_conf.tiltback_ht_angle;
-			} else {
-				d->spd.setpoint_target = -d->tnt_conf.tiltback_ht_angle;
-			}
-			d->state.sat = SAT_PB_TEMPERATURE;
-		} else {
-			// The rider has 1 degree Celsius left before we start tilting back
-			d->state.sat = SAT_NONE;
-		}
-	} else if (VESC_IF->mc_temp_motor_filtered() > d->motor.mc_max_temp_mot) {
-		play_tone(&d->tone, &d->tone_config.slowtriple1, &d->rt, BEEP_TEMPMOT);
-		d->tone.motortemp_activated = true;
-		if (VESC_IF->mc_temp_motor_filtered() > (d->motor.mc_max_temp_mot + 1)) {
-			if (d->motor.erpm > 0) {
-				d->spd.setpoint_target = d->tnt_conf.tiltback_ht_angle;
-			} else {
-				d->spd.setpoint_target = -d->tnt_conf.tiltback_ht_angle;
-			}
-			d->state.sat = SAT_PB_TEMPERATURE;
-		} else {
-			// The rider has 1 degree Celsius left before we start tilting back
-			d->state.sat = SAT_NONE;
-		}
-	} else if (d->motor.duty_cycle > 0.05 && input_voltage < d->tnt_conf.tiltback_lv) {
-		play_tone(&d->tone, &d->tone_config.slowtripledown, &d->rt, BEEP_LV);
-		float abs_motor_current = fabsf(d->motor.current_filtered);
-		float vdelta = 1.0 * d->tnt_conf.tiltback_lv - input_voltage;
-		float ratio = vdelta * 20 / abs_motor_current;
-		// When to do LV tiltback:
-		// a) we're 2V below lv threshold
-		// b) motor current is small (we cannot assume vsag)
-		// c) we have more than 20A per Volt of difference (we tolerate some amount of vsag)
-		if ((vdelta > 2) || (abs_motor_current < 5) || (ratio > 1)) {
-			if (d->motor.erpm > 0) {
-				d->spd.setpoint_target = d->tnt_conf.tiltback_lv_angle;
-			} else {
-				d->spd.setpoint_target = -d->tnt_conf.tiltback_lv_angle;
-			}
-			d->state.sat = SAT_PB_LOW_VOLTAGE;
-		} else {
-			d->state.sat = SAT_NONE;
-			d->spd.setpoint_target = 0;
-		}
-	} else if (d->state.sat != SAT_CENTERING || d->spd.setpoint_target_interpolated == d->spd.setpoint_target) {
-        	// Normal running
-         	d->state.sat = SAT_NONE;
-	        d->spd.setpoint_target = 0;
-	}
-}
-
 float apply_pitch_kp(data *d) {
 	//Select and Apply Pitch kp  
 	float kp_mod, new_pid_value;
@@ -461,7 +269,7 @@ static void tnt_thd(void *arg) {
            		break;
 		case (STATE_RUNNING):	
 			// Check for faults
-			if (check_faults(d)) {
+			if (check_faults(&d->motor, &d->footpad_sensor, &d->rt, &d->state, d->remote.inputtilt_interpolated, &d->tnt_conf)) {
 				if (d->state.stop_condition == STOP_SWITCH_FULL) {
 					// dirty landings: add extra margin when rightside up
 					d->spd.startup_pitch_tolerance = d->tnt_conf.startup_pitch_tolerance + d->spd.startup_pitch_trickmargin;
@@ -470,13 +278,7 @@ static void tnt_thd(void *arg) {
 				break;
 			}
 
-			//Check footpad
-			if (d->footpad_sensor.state == FS_NONE &&
-		            d->motor.abs_erpm > 2000) {
-			    play_tone(&d->tone, &d->tone_config.continuousfootpad, &d->rt, BEEP_SENSORS);
-		        } else if (d->tone.tone_in_progress && d->tone.beep_reason == BEEP_SENSORS) { 
-		            end_tone(&d->tone);
-		        }
+			play_footpad_beep(&d->tone, &d->footpad_sensor, &d->motor, &d->rt, &d->tone_config.continuousfootpad);
 			
 			d->rt.odometer_dirty = 1;
 			
@@ -484,7 +286,7 @@ static void tnt_thd(void *arg) {
 			ride_timer(&d->ridetimer, &d->rt);
 			
 			// Calculate setpoint and interpolation
-			calculate_setpoint_target(d);
+			calculate_setpoint_target(&d->spd, &d->state, &d->surge, &d->pid, &d->motor, &d->rt, &d->tone, &d->tone_config,  &d->tnt_conf);
 			calculate_setpoint_interpolated(&d->spd, &d->state);
 			d->spd.setpoint = d->spd.setpoint_target_interpolated;
 
@@ -492,7 +294,7 @@ static void tnt_thd(void *arg) {
 			float input_tiltback_target = d->remote.throttle_val * d->tnt_conf.inputtilt_angle_limit;
 			if (d->tnt_conf.is_stickytilt_enabled)
 				apply_stickytilt(&d->remote, &d->st_tilt, d->motor.current_filtered, &input_tiltback_target);
-			apply_inputtilt(&d->remote, input_tiltback_target); //produces output d->remote.inputtilt_interpolated
+			apply_inputtilt(&d->remote, input_tiltback_target); 	//produces output d->remote.inputtilt_interpolated
 			d->spd.setpoint += d->tnt_conf.enable_throttle_stability ? 0 : d->remote.inputtilt_interpolated; //Don't apply if we are using the throttle for stability
 
 			//Adjust Setpoint as required
@@ -560,13 +362,13 @@ static void tnt_thd(void *arg) {
 			// Check for valid startup position and switch state
 			if (fabsf(d->rt.pitch_angle) < d->spd.startup_pitch_tolerance &&
 				fabsf(d->rt.roll_angle) < 45 && 	//d->tnt_conf.startup_roll_tolerance && 
-				is_engaged(d)) {
+				is_engaged(&d->footpad_sensor, &d->rt, &d->tnt_conf)) {
 				reset_vars(d);
 				break;
 			}
 			
 			// Push-start aka dirty landing Part II
-			if(d->tnt_conf.startup_pushstart_enabled && (d->motor.abs_erpm > 1000) && is_engaged(d)) {
+			if(d->tnt_conf.startup_pushstart_enabled && (d->motor.abs_erpm > 1000) && is_engaged(&d->footpad_sensor, &d->rt, &d->tnt_conf)) {
 				if ((fabsf(d->rt.pitch_angle) < 45) && (fabsf(d->rt.roll_angle) < 45)) {
 					// 45 to prevent board engaging when upright or laying sideways
 					// 45 degree tolerance is more than plenty for tricks / extreme mounts
