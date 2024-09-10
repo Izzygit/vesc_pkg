@@ -22,6 +22,7 @@
 #include "state_tnt.h"
 #include "vesc_c_if.h"
 #include "motor_data_tnt.h"
+#include "footpad_sensor.h"
 
 typedef enum {
 	BEEP_NONE = 0,
@@ -115,3 +116,4 @@ void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config, ToneData *t
 void idle_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt);
 void temp_recovery_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt, MotorData *motor);
 void check_tone(ToneData *tone, ToneConfigs *toneconfig, RuntimeData *rt, MotorData *motor);
+void play_footpad_beep(ToneData *tone, MotorData *motor, FootpadSensor *fs, RuntimeData *rt, ToneConfig *toneconfig);
