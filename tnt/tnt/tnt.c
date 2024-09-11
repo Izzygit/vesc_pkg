@@ -206,8 +206,8 @@ static void tnt_thd(void *arg) {
 			ride_timer(&d->ridetimer, &d->rt);
 			
 			// Calculate setpoint and interpolation
-			calculate_setpoint_target(&d->spd, &d->state, &d->surge, &d->pid, 
-			    &d->motor, &d->rt, &d->tone, &d->tone_config,  &d->tnt_conf);
+			calculate_setpoint_target(&d->spd, &d->state, &d->motor, &d->rt, 
+			    &d->tone, &d->tone_config,  &d->tnt_conf);
 			calculate_setpoint_interpolated(&d->spd, &d->state);
 			d->spd.setpoint = d->spd.setpoint_target_interpolated;
 
@@ -227,9 +227,7 @@ static void tnt_thd(void *arg) {
 				apply_stability(&d->pid, &d->motor, &d->remote, &d->tnt_conf);
 			
 			// Calculate proportional difference for raw and filtered pitch
-			d->pid.proportional = d->spd.setpoint - d->rt.pitch_angle;
-			d->pid.prop_smooth = d->spd.setpoint - d->rt.pitch_smooth_kalman;
-			d->pid.abs_prop_smooth = fabsf(d->pid.prop_smooth);
+			calculate_proportional(&d->rt, &d->pid, &d->spd);
 
 			//Check for braking conditions and braking curves, and kp values for pitch roll and yaw
 			d->state.braking_pos = sign(d->pid.proportional) != d->motor.erpm_sign;
@@ -259,7 +257,7 @@ static void tnt_thd(void *arg) {
 				    d->spd.setpoint, &d->braking, &d->surge_dbg);
 			if (d->tnt_conf.is_tc_braking_enabled)
 				check_traction_braking(&d->braking, &d->motor, &d->state, &d->rt, 
-				    &d->tnt_conf, d->remote.inputtilt_interpolated, &d->braking_dbg);
+				    &d->tnt_conf, d->remote.inputtilt_interpolated, &d->pid, &d->braking_dbg);
 
 			// PID value application
 			d->pid.pid_value = (d->state.wheelslip && d->tnt_conf.is_traction_enabled) ? 0 : d->pid.new_pid_value;
