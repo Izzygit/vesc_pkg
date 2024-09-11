@@ -18,7 +18,7 @@
 #include "setpoint.h"
 #include "utils_tnt.h"
 #include "vesc_c_if.h"
-
+#include <math.h>
 
 void setpoint_configure(SetpointData *s, tnt_config *config) {
 	//Setpoint Adjustment
@@ -134,7 +134,7 @@ void calculate_setpoint_target(SetpointData *spd, State *state, SurgeData *surge
 	} else if (VESC_IF->mc_temp_fet_filtered() > motor->mc_max_temp_fet) {
 		// Use the angle from Low-Voltage tiltback, but slower speed from High-Voltage tiltback
 		play_tone(tone, &toneconfig->slowtriple2, rt, BEEP_TEMPFET);
-		d->tone.fettemp_activated = true;
+		tone->fettemp_activated = true;
 		if (VESC_IF->mc_temp_fet_filtered() > (motor->mc_max_temp_fet + 1)) {
 			if (motor->erpm > 0) {
 				spd->setpoint_target = config->tiltback_ht_angle;
@@ -148,7 +148,7 @@ void calculate_setpoint_target(SetpointData *spd, State *state, SurgeData *surge
 		}
 	} else if (VESC_IF->mc_temp_motor_filtered() > motor->mc_max_temp_mot) {
 		play_tone(tone, &toneconfig->slowtriple1, rt, BEEP_TEMPMOT);
-		d->tone.motortemp_activated = true;
+		tone->motortemp_activated = true;
 		if (VESC_IF->mc_temp_motor_filtered() > (motor->mc_max_temp_mot + 1)) {
 			if (motor->erpm > 0) {
 				spd->setpoint_target = config->tiltback_ht_angle;
