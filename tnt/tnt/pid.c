@@ -282,7 +282,7 @@ float apply_kp_rate(KpArray *accel_kp, KpArray *brake_kp, PidData *p, PidDebug *
 	return pid_mod;
 }
 
-float apply_roll_kp(KpArray *roll_accel_kp, KpArray *roll_brake_kp, PidData *p, MotorData *motor, Runtime *rt, float roll_erpm_scale, PidDebug *pid_dbg) {
+float apply_roll_kp(KpArray *roll_accel_kp, KpArray *roll_brake_kp, PidData *p, MotorData *motor, RuntimeData *rt, float roll_erpm_scale, PidDebug *pid_dbg) {
 	// Select Roll Kp
 	float rollkp = 0;
 	float pid_mod = 0;
@@ -308,7 +308,7 @@ float yaw_erpm_scale(PidData *p, State *state, MotorData *motor, tnt_config *con
 }
 
 
-float apply_yaw_kp(KpArray *yaw_accel_kp, KpArray *yaw_brake_kp, PidData *p, MotorData *motor, YawData *yaw, float yaw_erpm_scale, YawDebug *yaw_dbg) {
+float apply_yaw_kp(KpArray *yaw_accel_kp, KpArray *yaw_brake_kp, PidData *p, MotorData *motor, YawData *yaw, float yaw_erpm_scale, YawDebugData *yaw_dbg) {
 	//Select Yaw Kp
 	float yawkp = 0;
 	float pid_mod = 0;
@@ -396,7 +396,7 @@ bool check_faults(MotorData *motor, FootpadSensor *fs, RuntimeData *rt, State *s
                 }
             }
     		if ((motor->abs_erpm <200) && (fabsf(rt->true_pitch_angle) > 14) && 
-                (fabsf(d->remote.inputtilt_interpolated) < 30) && 
+                (fabsf(inputtilt_interpolated) < 30) && 
                 (sign(rt->true_pitch_angle) ==  motor->erpm_sign)) {
     			state_stop(state, STOP_QUICKSTOP);
     			return true;
