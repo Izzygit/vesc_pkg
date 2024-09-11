@@ -445,7 +445,7 @@ bool check_faults(MotorData *motor, FootpadSensor *fs, RuntimeData *rt, State *s
 }
 
 void calculate_proportional(RuntimeData *rt, PidData *pid, SetpointData *spd) {
-	d->pid.proportional = d->spd.setpoint - d->rt.pitch_angle;
-	d->pid.prop_smooth = d->spd.setpoint - d->rt.pitch_smooth_kalman;
-	d->pid.abs_prop_smooth = fabsf(d->pid.prop_smooth);
+	pid->proportional = spd->setpoint - rt->pitch_angle;
+	pid->prop_smooth = spd->setpoint - rt->pitch_smooth_kalman;
+	pid->abs_prop_smooth = fabsf(pid->prop_smooth);
 }
