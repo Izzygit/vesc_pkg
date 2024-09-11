@@ -22,13 +22,10 @@
 #include "runtime.h"
 #include "pid.h"
 #include "foc_tone.h"
-#include "traction.h"
 
 typedef struct {
 	float timer;				//Timer to monitor surge cycle and period
-	bool active;				//Identifies surge state which drives duty to max
 	float new_duty_cycle;			//Used to ramp duty cycle
-	bool deactivate;				//Used to identify when setpoint should return to nowmal
 	float setpoint;				//Setpoint allowed by surge
 	float start_current;			//Current that starts surge
 	float ramp_rate;			//Duty cycle ramp rate
