@@ -20,18 +20,18 @@
 
 #include "vesc_c_if.h"
 
+#include "runtime.h"
 #include "footpad_sensor.h"
 #include "motor_data_tnt.h"
 #include "state_tnt.h"
-#include "runtime.h"
 #include "pid.h"
+#include "setpoint.h"
 #include "kalman.h"
 #include "traction.h"
 #include "surge.h"
 #include "utils_tnt.h"
 #include "remote_input.h"
 #include "foc_tone.h"
-#include "setpoint.h"
 
 #include "conf/datatypes.h"
 #include "conf/confparser.h"
