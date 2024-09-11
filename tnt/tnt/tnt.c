@@ -188,7 +188,8 @@ static void tnt_thd(void *arg) {
            		break;
 		case (STATE_RUNNING):	
 			// Check for faults
-			if (check_faults(&d->motor, &d->footpad_sensor, &d->rt, &d->state, d->remote.inputtilt_interpolated, &d->tnt_conf)) {
+			if (check_faults(&d->motor, &d->footpad_sensor, &d->rt, &d->state, 
+			    d->remote.inputtilt_interpolated, &d->tnt_conf)) {
 				if (d->state.stop_condition == STOP_SWITCH_FULL) {
 					// dirty landings: add extra margin when rightside up
 					d->spd.startup_pitch_tolerance = d->tnt_conf.startup_pitch_tolerance + d->spd.startup_pitch_trickmargin;
@@ -205,7 +206,8 @@ static void tnt_thd(void *arg) {
 			ride_timer(&d->ridetimer, &d->rt);
 			
 			// Calculate setpoint and interpolation
-			calculate_setpoint_target(&d->spd, &d->state, &d->surge, &d->pid, &d->motor, &d->rt, &d->tone, &d->tone_config,  &d->tnt_conf);
+			calculate_setpoint_target(&d->spd, &d->state, &d->surge, &d->pid, 
+			    &d->motor, &d->rt, &d->tone, &d->tone_config,  &d->tnt_conf);
 			calculate_setpoint_interpolated(&d->spd, &d->state);
 			d->spd.setpoint = d->spd.setpoint_target_interpolated;
 
@@ -245,15 +247,19 @@ static void tnt_thd(void *arg) {
 			if (fabsf(d->pid.new_pid_value) > current_limit) {
 				d->pid.new_pid_value = sign(d->pid.new_pid_value) * current_limit;
 			}
-			check_current(&d->motor, &d->surge, &d->state,  &d->tnt_conf, &d->tone, &d->tone_config.currenttone, &d->rt); // Check for high current conditions
+			check_current(&d->motor, &d->surge, &d->state,  &d->tnt_conf, 
+			    &d->tone, &d->tone_config.currenttone, &d->rt); // Check for high current conditions
 			
 			// Modifiers to PID control
-			check_traction(&d->motor, &d->traction, &d->state, &d->rt, &d->tnt_conf, &d->braking, &d->pid, &d->traction_dbg);
+			check_traction(&d->motor, &d->traction, &d->state, &d->rt, 
+			    &d->tnt_conf, &d->braking, &d->pid, &d->traction_dbg);
 			check_tone(&d->tone, &d->tone_config, &d->rt, &d->motor);
 			if (d->tnt_conf.is_surge_enabled)
-				check_surge(&d->motor, &d->surge, &d->state, &d->rt, &d->pid, d->spd.setpoint, &d->braking, &d->surge_dbg);
+				check_surge(&d->motor, &d->surge, &d->state, &d->rt, &d->pid, 
+				    d->spd.setpoint, &d->braking, &d->surge_dbg);
 			if (d->tnt_conf.is_tc_braking_enabled)
-				check_traction_braking(&d->braking, &d->motor, &d->state, &d->rt, &d->tnt_conf, d->remote.inputtilt_interpolated, &d->braking_dbg);
+				check_traction_braking(&d->braking, &d->motor, &d->state, &d->rt, 
+				    &d->tnt_conf, d->remote.inputtilt_interpolated, &d->braking_dbg);
 
 			// PID value application
 			d->pid.pid_value = (d->state.wheelslip && d->tnt_conf.is_traction_enabled) ? 0 : d->pid.new_pid_value;
@@ -287,7 +293,8 @@ static void tnt_thd(void *arg) {
 			}
 			
 			// Push-start aka dirty landing Part II
-			if(d->tnt_conf.startup_pushstart_enabled && (d->motor.abs_erpm > 1000) && is_engaged(&d->footpad_sensor, &d->rt, &d->tnt_conf)) {
+			if(d->tnt_conf.startup_pushstart_enabled && (d->motor.abs_erpm > 1000) && 
+			    is_engaged(&d->footpad_sensor, &d->rt, &d->tnt_conf)) {
 				if ((fabsf(d->rt.pitch_angle) < 45) && (fabsf(d->rt.roll_angle) < 45)) {
 					// 45 to prevent board engaging when upright or laying sideways
 					// 45 degree tolerance is more than plenty for tricks / extreme mounts
