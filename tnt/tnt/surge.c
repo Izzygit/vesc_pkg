@@ -20,7 +20,7 @@
 #include "utils_tnt.h"
 #include <math.h>
 
-void check_surge(MotorData *m, SurgeData *surge, State *state, RuntimeData *rt, PidData *p, SetpointData *s, BrakingData *braking, SurgeDebug *surge_dbg){
+void check_surge(MotorData *m, SurgeData *surge, State *state, RuntimeData *rt, PidData *p, float setpoint, BrakingData *braking, SurgeDebug *surge_dbg){
 	//Start Surge Code
 	//Initialize Surge Cycle
 	if ((m->current_filtered * m->erpm_sign > surge->start_current) && 		//High current condition 
@@ -30,7 +30,7 @@ void check_surge(MotorData *m, SurgeData *surge, State *state, RuntimeData *rt, 
 	    (rt->current_time - braking->delay_timer > braking->feature_delay)) {	// Delay after traction braking
 		surge->timer = rt->current_time; 					//Reset surge timer
 		surge->active = true; 							//Indicates we are in the surge cycle of the surge period
-		surge->setpoint = s->setpoint;						//Records setpoint at the start of surge because surge changes the setpoint
+		surge->setpoint = setpoint;						//Records setpoint at the start of surge because surge changes the setpoint
 		surge->new_duty_cycle = m->erpm_sign * m->duty_cycle;
 		
 		//Debug Data Section
