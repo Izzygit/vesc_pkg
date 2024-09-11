@@ -18,6 +18,7 @@
 #pragma once
 
 #include "conf/datatypes.h"
+#include "runtime.h"
 
 typedef enum {
     FS_NONE = 0,
