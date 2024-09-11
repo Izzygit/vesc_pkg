@@ -263,9 +263,9 @@ static void tnt_thd(void *arg) {
 			d->pid.pid_value = (d->state.wheelslip && d->tnt_conf.is_traction_enabled) ? 0 : d->pid.new_pid_value;
 
 			// Output to motor
-			if (d->surge.active)
+			if (d->state.surge_active)
 				set_dutycycle(d->surge.new_duty_cycle, &d->rt); 	// Set the duty to surge
-			else if (d->braking.active) 
+			else if (d->state.braking_active) 
 				set_brake(d->pid.pid_value, &d->rt);			// Use braking function for traction control
 			else
 				set_current(d->pid.pid_value, &d->rt); 			// Set current as normal.
