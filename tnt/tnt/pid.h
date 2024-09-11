@@ -23,6 +23,7 @@
 #include "motor_data_tnt.h"
 #include "state_tnt.h"
 #include "vesc_c_if.h"
+#include "footpad_sensor.h"
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -78,3 +79,4 @@ void brake(float current, RuntimeData *rt, MotorData *motor);
 void set_current(float current, RuntimeData *rt );
 void set_dutycycle(float dutycycle, RuntimeData *rt);
 void set_brake(float current,  RuntimeData *rt);
+bool check_faults(MotorData *motor, FootpadSensor *fs, RuntimeData *rt, State *state, float inputtilt_interpolated, tnt_config *config);
