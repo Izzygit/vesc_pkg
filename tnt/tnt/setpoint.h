@@ -21,7 +21,7 @@
 #include "state_tnt.h"
 #include "motor_data_tnt.h"
 #include "runtime.h"
-#include "tone.h"
+#include "foc_tone.h"
 #include "surge.h"
 #include "pid.h"
 
