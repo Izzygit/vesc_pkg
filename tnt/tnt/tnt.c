@@ -296,7 +296,7 @@ static void tnt_thd(void *arg) {
 				}
 			}
 
-			brake(d->tnt_conf.brake_current, &d->rt, &d->tnt_conf);
+			brake(d->tnt_conf.brake_current, &d->rt, &d->motor);
 			break;
 		case (STATE_DISABLED):;
 			// no set_current, no brake_current
