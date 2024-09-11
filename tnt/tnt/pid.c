@@ -407,7 +407,7 @@ bool check_faults(MotorData *motor, FootpadSensor *fs, RuntimeData *rt, State *s
 
         // Switch partially open and stopped
         if (!config->fault_is_dual_switch) {
-            if (!is_engaged(footpad_sensor, rt, tnt_conf) && motor->abs_erpm < config->fault_adc_half_erpm) {
+            if (!is_engaged(fs, rt, config) && motor->abs_erpm < config->fault_adc_half_erpm) {
                 if ((1000.0 * (rt->current_time - rt->fault_switch_half_timer)) >
                     config->fault_delay_switch_half) {
                     state_stop(state, STOP_SWITCH_HALF);
