@@ -88,7 +88,7 @@ void apply_noseangling(SetpointData *s, MotorData *motor, tnt_config *config) {
 	s->setpoint += s->noseangling_interpolated;
 }
 
-void calculate_setpoint_target(SetpointData *spd, State *state, SurgeData *surge, PidData *pid, MotorData *motor, RuntimeData *rt, ToneData *tone, ToneConfigs *toneconfig, tnt_config *config) {
+void calculate_setpoint_target(SetpointData *spd, State *state, MotorData *motor, RuntimeData *rt, ToneData *tone, ToneConfigs *toneconfig, tnt_config *config) {
 	float input_voltage = VESC_IF->mc_get_input_voltage_filtered();
 	
 	if (input_voltage < config->tiltback_hv) {
@@ -97,17 +97,17 @@ void calculate_setpoint_target(SetpointData *spd, State *state, SurgeData *surge
 
 	if (state->wheelslip) {
 		state->sat = SAT_NONE;
-	} else if (surge->deactivate) { 
+	} else if (state->surge_deactivate) { 
 		spd->setpoint_target = 0;
 		state->sat = SAT_UNSURGE;
 		if (spd->setpoint_target_interpolated < 0.1 && spd->setpoint_target_interpolated > -0.1) { // End surge_off once we are back at 0 
-			surge->deactivate = false;
+			state->surge_deactivate = false;
 		}
-	} else if (surge->active) {
-		if (pid->proportional*motor->erpm_sign < config->surge_pitchmargin) {
+	} else if (state->surge_active) {
+		//if (pid->proportional*motor->erpm_sign < config->surge_pitchmargin) {
 			spd->setpoint_target = rt->pitch_angle + config->surge_pitchmargin * motor->erpm_sign;
 			state->sat = SAT_SURGE;
-		}
+		//}
 	} else if (motor->duty_cycle > spd->tiltback_duty) {
 		if (motor->erpm > 0) {
 			spd->setpoint_target = config->tiltback_duty_angle;
