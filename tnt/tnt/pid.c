@@ -300,7 +300,7 @@ float apply_roll_kp(KpArray *roll_accel_kp, KpArray *roll_brake_kp, PidData *p, 
 	return pid_mod;
 }
 
-float yaw_erpm_scale(PidData *p, State *state, MotorData *m, tnt_config *config) {
+float yaw_erpm_scale(PidData *p, State *state, MotorData *motor, tnt_config *config) {
 	float yaw_erpm_scale = ((p->brake_yaw && motor->abs_erpm < 750) || 
 		motor->abs_erpm < config->yaw_minerpm || 
 		state->sat == SAT_CENTERING) ? 0 : 1;
