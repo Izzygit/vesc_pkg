@@ -130,14 +130,15 @@ void configure_traction(TractionData *traction, BrakingData *braking, tnt_config
 	braking->feature_delay = config->tc_braking_start_delay / 1000.0;
 }
 
-void check_traction_braking(BrakingData *braking, MotorData *m, State *state, RuntimeData *rt, tnt_config *config, float inputtilt_interpolated, BrakingDebug *braking_dbg){
+void check_traction_braking(BrakingData *braking, MotorData *m, State *state, RuntimeData *rt, tnt_config *config, float inputtilt_interpolated, PidData *pid, BrakingDebug *braking_dbg){
 	bool check_last = braking->last_active ||  rt->current_time - braking->delay_timer > config->tc_braking_end_delay / 1000.0; //we were just traction braking or we are beyond the brake delay
 
 	//Check that conditions for traciton braking are satified and add to counter
 	if (-inputtilt_interpolated * m->erpm_sign_soft >= config->tc_braking_angle && 	//Minimum nose down angle from remote, can be 0
 	    state->braking_pos_smooth &&						// braking position active
+	    (pid->proportional > 0.05 || pid->proportional < -0.05) &&			// deadzone to prevent zero current demand
 	    check_last) {								// the braking delay is satified, allow traction braking
-		braking->active = true;
+		state->braking_active = true;
 		braking->delay_timer = rt->current_time; //reset delay counter for when we exit traciton braking
 		
 		//Debug Section
@@ -159,7 +160,7 @@ void check_traction_braking(BrakingData *braking, MotorData *m, State *state, Ru
 		braking_dbg->debug3 = min(braking_dbg->debug3, m->abs_erpm);	
 		braking_dbg->debug8 = rt->current_time - braking->timeron + braking_dbg->debug1; //running on time tracker
 	} else { 
-		braking->active = false; 
+		state->braking_active; 
 
 		if (braking->last_active) {
 			//Debug Section
@@ -179,5 +180,5 @@ void check_traction_braking(BrakingData *braking, MotorData *m, State *state, Ru
 			}
 		}
 	}
-	braking->last_active = braking->active;
+	braking->last_active = state->braking_active
 }
