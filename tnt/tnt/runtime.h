@@ -21,7 +21,7 @@
 #include "conf/datatypes.h"
 #include "vesc_c_if.h"
 #include <stdint.h>
-#include "state.h"
+#include "state_tnt.h"
 #include "footpad_sensor.h"
 #include "motor_data_tnt.h"
 
