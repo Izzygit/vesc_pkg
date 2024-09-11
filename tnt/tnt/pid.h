@@ -80,3 +80,4 @@ void set_current(float current, RuntimeData *rt );
 void set_dutycycle(float dutycycle, RuntimeData *rt);
 void set_brake(float current,  RuntimeData *rt);
 bool check_faults(MotorData *motor, FootpadSensor *fs, RuntimeData *rt, State *state, float inputtilt_interpolated, tnt_config *config);
+void calculate_proportional(RuntimeData *rt, PidData *pid, SetpointData *spd);
