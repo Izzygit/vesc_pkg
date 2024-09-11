@@ -71,7 +71,7 @@ typedef struct {
     bool braking_pos_smooth;
     bool surge_active;
     bool surge_deactivate;
-    bool Braking_active;
+    bool braking_active;
 } State;
 
 void state_init(State *state, bool disable);
