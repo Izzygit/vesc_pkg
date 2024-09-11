@@ -197,7 +197,7 @@ static void tnt_thd(void *arg) {
 				break;
 			}
 
-			play_footpad_beep(&d->tone, &d->footpad_sensor, &d->motor, &d->rt, &d->tone_config.continuousfootpad);
+			play_footpad_beep(&d->tone, &d->motor, &d->footpad_sensor, &d->rt, &d->tone_config.continuousfootpad);
 			
 			d->rt.odometer_dirty = 1;
 			
