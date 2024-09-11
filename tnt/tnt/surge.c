@@ -29,7 +29,7 @@ void check_surge(MotorData *m, SurgeData *surge, State *state, RuntimeData *rt, 
 	    (rt->current_time - surge->timer > 0.7) &&					//Not during an active surge period
 	    (rt->current_time - braking->delay_timer > braking->feature_delay)) {	// Delay after traction braking
 		surge->timer = rt->current_time; 					//Reset surge timer
-		surge->active = true; 							//Indicates we are in the surge cycle of the surge period
+		state->surge_active = true; 							//Indicates we are in the surge cycle of the surge period
 		surge->setpoint = setpoint;						//Records setpoint at the start of surge because surge changes the setpoint
 		surge->new_duty_cycle = m->erpm_sign * m->duty_cycle;
 		
@@ -45,14 +45,14 @@ void check_surge(MotorData *m, SurgeData *surge, State *state, RuntimeData *rt, 
 	}
 	
 	//Conditions to stop surge and increment the duty cycle
-	if (surge->active){	
+	if (state->surge_active){	
 		surge->new_duty_cycle += m->erpm_sign * surge->ramp_rate; 	
 		if((rt->current_time - surge->timer > 0.5) ||						//Outside the surge cycle portion of the surge period
 		    (-1 * (surge->setpoint - rt->pitch_angle) * m->erpm_sign > surge->maxangle) ||	//Limit nose up angle based on the setpoint at start of surge because surge changes the setpoint
-		    (braking->active) ||								//In traction braking
+		    (state->braking_active) ||								//In traction braking
 		    (state->wheelslip)) {								//In traction control		
-			surge->active = false;
-			surge->deactivate = true;							//Identifies the end of surge to change the setpoint back to before surge 
+			state->surge_active = false;
+			state->surge_deactivate = true;							//Identifies the end of surge to change the setpoint back to before surge 
 			p->pid_value = VESC_IF->mc_get_tot_current_directional_filtered();		//This allows a smooth transition to PID current control
 			
 			//Debug Data Section
@@ -92,8 +92,6 @@ void configure_surge(SurgeData *surge, tnt_config *config){
 }
 
 void reset_surge(SurgeData *surge){
-	surge->active = false;
-	surge->deactivate = false;
 	surge->high_current = false;
 	surge->high_current_buzz = false;
 	surge->high_current_timer = 0;
