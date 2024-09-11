@@ -251,7 +251,7 @@ static void tnt_thd(void *arg) {
 			check_traction(&d->motor, &d->traction, &d->state, &d->rt, &d->tnt_conf, &d->braking, &d->pid, &d->traction_dbg);
 			check_tone(&d->tone, &d->tone_config, &d->rt, &d->motor);
 			if (d->tnt_conf.is_surge_enabled)
-				check_surge(&d->motor, &d->surge, &d->state, &d->rt, &d->pid, &d->spd, &d->braking, &d->surge_dbg);
+				check_surge(&d->motor, &d->surge, &d->state, &d->rt, &d->pid, d->spd.sepoint, &d->braking, &d->surge_dbg);
 			if (d->tnt_conf.is_tc_braking_enabled)
 				check_traction_braking(&d->braking, &d->motor, &d->state, &d->rt, &d->tnt_conf, d->remote.inputtilt_interpolated, &d->braking_dbg);
 
