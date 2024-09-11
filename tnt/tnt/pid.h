@@ -24,6 +24,7 @@
 #include "state_tnt.h"
 #include "vesc_c_if.h"
 #include "footpad_sensor.h"
+#include "setpoint.h"
 #include <stdbool.h>
 #include <stdint.h>
 
