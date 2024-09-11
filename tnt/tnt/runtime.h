@@ -21,9 +21,6 @@
 #include "conf/datatypes.h"
 #include "vesc_c_if.h"
 #include <stdint.h>
-#include "state_tnt.h"
-#include "footpad_sensor.h"
-#include "motor_data_tnt.h"
 
 typedef struct { //Run time values used in various features
 	float pitch_angle;
