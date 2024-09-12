@@ -138,6 +138,7 @@ void check_traction_braking(BrakingData *braking, MotorData *m, State *state, Ru
 	if (-inputtilt_interpolated * m->erpm_sign_soft >= config->tc_braking_angle && 	//Minimum nose down angle from remote, can be 0
 	    state->braking_pos_smooth &&						// braking position active
 	    (pid->proportional > 0.05 || pid->proportional < -0.05) &&			// deadzone to prevent zero current demand
+	    m->duty_cycle > 0 &&
 	    check_last) {								// the braking delay is satified, allow traction braking
 		state->braking_active = true;
 		braking->delay_timer = rt->current_time; //reset delay counter for when we exit traciton braking
