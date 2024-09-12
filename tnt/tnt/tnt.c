@@ -207,7 +207,7 @@ static void tnt_thd(void *arg) {
 			
 			// Calculate setpoint and interpolation
 			calculate_setpoint_target(&d->spd, &d->state, &d->motor, &d->rt, 
-			    &d->tone, &d->tone_config,  &d->tnt_conf);
+			    &d->tone, &d->tone_config,  &d->tnt_conf, d->pid.proportional);
 			calculate_setpoint_interpolated(&d->spd, &d->state);
 			d->spd.setpoint = d->spd.setpoint_target_interpolated;
 
