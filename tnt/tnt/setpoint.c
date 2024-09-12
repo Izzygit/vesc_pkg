@@ -101,12 +101,12 @@ void calculate_setpoint_target(SetpointData *spd, State *state, MotorData *motor
 	} else if (state->surge_deactivate) { 
 		spd->setpoint_target = 0;
 		state->sat = SAT_UNSURGE;
-		if (spd->setpoint_target_interpolated < 0.1 && spd->setpoint_target_interpolated > -0.1) { // End surge_off once we are back at 0 
+		if (spd->setpoint_target_interpolated < 0.1 && spd->setpoint_target_interpolated > -0.1) { 	// End surge_off once we are close to 0 
 			state->surge_deactivate = false;
 		}
 	} else if (state->surge_active) {
-		if (proportional * motor->erpm_sign < config->surge_pitchmargin) {
-			spd->setpoint_target = rt->pitch_angle + config->surge_pitchmargin * motor->erpm_sign;
+		if (proportional * motor->erpm_sign < config->surge_pitchmargin) {				//As the nose of the board rises
+			spd->setpoint_target = rt->pitch_angle + config->surge_pitchmargin * motor->erpm_sign;	//move setpoint to maintain pitchmargin
 			state->sat = SAT_SURGE;
 		}
 	} else if (motor->duty_cycle > spd->tiltback_duty) {
