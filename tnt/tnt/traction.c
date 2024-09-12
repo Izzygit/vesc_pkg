@@ -181,6 +181,8 @@ void check_traction_braking(BrakingData *braking, MotorData *m, State *state, Ru
 				braking_dbg->debug4 = braking_dbg->debug4 * 10 + 2;
 			} else if (m->duty_cycle == 0) {
 				braking_dbg->debug4 = braking_dbg->debug4 * 10 + 3;
+			} else if (fabsf(pid->new_pid_value) <= 0.1) {
+				braking_dbg->debug4 = braking_dbg->debug4 * 10 + 4;
 			}
 		}
 	}
