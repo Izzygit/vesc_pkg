@@ -179,6 +179,8 @@ void check_traction_braking(BrakingData *braking, MotorData *m, State *state, Ru
 				braking_dbg->debug4 = braking_dbg->debug4 * 10 + 1;
 			} else if (!state->braking_pos_smooth) {
 				braking_dbg->debug4 = braking_dbg->debug4 * 10 + 2;
+			} else if (m->duty_cycle == 0) {
+				braking_dbg->debug4 = braking_dbg->debug4 * 10 + 3;
 			}
 		}
 	}
