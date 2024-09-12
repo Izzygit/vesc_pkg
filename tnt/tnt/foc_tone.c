@@ -126,7 +126,7 @@ void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config, ToneData *t
 	tone_configure(&toneconfig->lowvoltwarning, 659.3, 659.3, 784, beep_voltage, .3, 3, 0, 4); 	//low range
 	
 	beep_voltage = config->is_dutybeep_enabled ? config->beep_voltage : 0;
-	tone_configure(&toneconfig->fasttripleupduty, 784, 698.5, 659.3, beep_voltage, .1, 3, 10, 5);	//duty beep
+	tone_configure(&toneconfig->fasttripleupduty, 784, 698.5, 659.3, beep_voltage, .1, 3, 10, 8);	//duty beep
 	
 	beep_voltage = config->is_footbeep_enabled ? config->beep_voltage : 0;
 	tone_configure(&toneconfig->continuousfootpad, 659.3, 0, 0, beep_voltage, 601, 1, 0, 2);	//footpad beep
