@@ -224,7 +224,7 @@ static void tnt_thd(void *arg) {
 			//Apply Stability
 			if (d->tnt_conf.enable_speed_stability || 
 			    d->tnt_conf.enable_throttle_stability) 
-				apply_stability(&d->pid, &d->motor, &d->remote, &d->tnt_conf);
+				apply_stability(&d->pid, d->motor.abs_erpm, d->remote.inputtilt_interpolated, &d->tnt_conf);
 			
 			// Calculate proportional difference for raw and filtered pitch
 			calculate_proportional(&d->rt, &d->pid, &d->spd);
