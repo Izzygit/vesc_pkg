@@ -137,7 +137,7 @@ void check_traction_braking(BrakingData *braking, MotorData *m, State *state, Ru
 	//Check that conditions for traciton braking are satified and add to counter
 	if (-inputtilt_interpolated * m->erpm_sign_soft >= config->tc_braking_angle && 	//Minimum nose down angle from remote, can be 0
 	    state->braking_pos_smooth &&						// braking position active
-	    fabsf(pid->new_pid_value) > 0.5 &&						// deadzone to prevent zero current demand
+	    -m->erpm_sign_soft * pid->new_pid_value > 0.5 &&				// deadzone to prevent zero current demand
 	    m->duty_cycle > 0 &&
 	    check_last) {								// the braking delay is satified, allow traction braking
 		state->braking_active = true;
