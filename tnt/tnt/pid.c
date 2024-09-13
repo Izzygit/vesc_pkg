@@ -219,17 +219,17 @@ void check_brake_kp(PidData *p, State *state, tnt_config *config, KpArray *roll_
 	p->brake_yaw = yaw_brake_kp->count!=0 && state->braking_pos;
 }
 
-float roll_erpm_scale(PidData *p, State *state, MotorData *m, KpArray *roll_accel_kp, tnt_config *config) {
+float roll_erpm_scale(PidData *p, State *state, float abs_erpm, KpArray *roll_accel_kp, tnt_config *config) {
 	//Apply ERPM Scale
 	float erpmscale = 1;
-	if ((p->brake_roll && m->abs_erpm < 750) ||
+	if ((p->brake_roll && abs_erpm < 750) ||
 		state->sat == SAT_CENTERING) { 				
 		// If we want to actually stop at low speed reduce kp to 0
 		erpmscale = 0;
-	} else if (roll_accel_kp->count!=0 && m->abs_erpm < config->rollkp_higherpm) { 
-		erpmscale = 1 + erpm_scale(config->rollkp_lowerpm, config->rollkp_higherpm, config->rollkp_maxscale / 100.0, 0, m->abs_erpm);
-	} else if (roll_accel_kp->count!=0 && m->abs_erpm > config->roll_hs_lowerpm) { 
-		erpmscale = 1 + erpm_scale(config->roll_hs_lowerpm, config->roll_hs_higherpm, 0, config->roll_hs_maxscale / 100.0, m->abs_erpm);
+	} else if (roll_accel_kp->count!=0 && abs_erpm < config->rollkp_higherpm) { 
+		erpmscale = 1 + erpm_scale(config->rollkp_lowerpm, config->rollkp_higherpm, config->rollkp_maxscale / 100.0, 0, abs_erpm);
+	} else if (roll_accel_kp->count!=0 && abs_erpm > config->roll_hs_lowerpm) { 
+		erpmscale = 1 + erpm_scale(config->roll_hs_lowerpm, config->roll_hs_higherpm, 0, config->roll_hs_maxscale / 100.0, abs_erpm);
 	}
 	return erpmscale;
 }
@@ -245,8 +245,8 @@ void reset_pid(PidData *p) {
 	p->softstart_pid_limit = 0;
 }
 
-void apply_soft_start(PidData *p, MotorData *m) {
-	if (p->softstart_pid_limit < m->mc_current_max) {
+void apply_soft_start(PidData *p, float mc_current_max) {
+	if (p->softstart_pid_limit < mc_current_max) {
 		p->pid_mod = fminf(fabsf(p->pid_mod), p->softstart_pid_limit) * sign(p->pid_mod);
 		p->softstart_pid_limit += p->softstart_step_size;
 	}
@@ -282,11 +282,11 @@ float apply_kp_rate(KpArray *accel_kp, KpArray *brake_kp, PidData *p, PidDebug *
 	return pid_mod;
 }
 
-float apply_roll_kp(KpArray *roll_accel_kp, KpArray *roll_brake_kp, PidData *p, MotorData *motor, RuntimeData *rt, float roll_erpm_scale, PidDebug *pid_dbg) {
+float apply_roll_kp(KpArray *roll_accel_kp, KpArray *roll_brake_kp, PidData *p, int erpm_sign, float abs_roll_angle, float roll_erpm_scale, PidDebug *pid_dbg) {
 	// Select Roll Kp
 	float rollkp = 0;
 	float pid_mod = 0;
-	rollkp = angle_kp_select(rt->abs_roll_angle, 
+	rollkp = angle_kp_select(abs_roll_angle, 
 		p->brake_roll ? roll_brake_kp : roll_accel_kp);
 	
 	//ERPM Scale
@@ -294,25 +294,25 @@ float apply_roll_kp(KpArray *roll_accel_kp, KpArray *roll_brake_kp, PidData *p, 
 	pid_dbg->debug2 = p->brake_roll ? -rollkp : rollkp;	
 
 	//Apply Roll Boost
-	p->roll_pid_mod = .99 * p->roll_pid_mod + .01 * rollkp * fabsf(p->new_pid_value) * motor->erpm_sign; 	//always act in the direciton of travel
+	p->roll_pid_mod = .99 * p->roll_pid_mod + .01 * rollkp * fabsf(p->new_pid_value) * erpm_sign; 	//always act in the direciton of travel
 	pid_mod += p->roll_pid_mod;
 
 	return pid_mod;
 }
 
-float yaw_erpm_scale(PidData *p, State *state, MotorData *motor, tnt_config *config) {
-	float yaw_erpm_scale = ((p->brake_yaw && motor->abs_erpm < 750) || 
-		motor->abs_erpm < config->yaw_minerpm || 
+float yaw_erpm_scale(PidData *p, State *state, float abs_erpm, tnt_config *config) {
+	float yaw_erpm_scale = ((p->brake_yaw && abs_erpm < 750) || 
+		abs_erpm < config->yaw_minerpm || 
 		state->sat == SAT_CENTERING) ? 0 : 1;
 	return yaw_erpm_scale;
 }
 
 
-float apply_yaw_kp(KpArray *yaw_accel_kp, KpArray *yaw_brake_kp, PidData *p, MotorData *motor, YawData *yaw, float yaw_erpm_scale, YawDebugData *yaw_dbg) {
+float apply_yaw_kp(KpArray *yaw_accel_kp, KpArray *yaw_brake_kp, PidData *p, float erpm_sign, float abs_change, float yaw_erpm_scale, YawDebugData *yaw_dbg) {
 	//Select Yaw Kp
 	float yawkp = 0;
 	float pid_mod = 0;
-	yawkp = angle_kp_select(yaw->abs_change, 
+	yawkp = angle_kp_select(abs_change, 
 		p->brake_yaw ? yaw_brake_kp : yaw_accel_kp);
 	
 	//Apply ERPM Scale
@@ -322,7 +322,7 @@ float apply_yaw_kp(KpArray *yaw_accel_kp, KpArray *yaw_brake_kp, PidData *p, Mot
 	yaw_dbg->debug2 = fmaxf(yaw_dbg->debug2, yawkp);
 	
 	//Apply Yaw Boost
-	p->yaw_pid_mod = .99 * p->yaw_pid_mod + .01 * yawkp * fabsf(p->new_pid_value) * motor->erpm_sign; 	//always act in the direciton of travel
+	p->yaw_pid_mod = .99 * p->yaw_pid_mod + .01 * yawkp * fabsf(p->new_pid_value) * erpm_sign; 	//always act in the direciton of travel
 	pid_mod += p->yaw_pid_mod;
 
 	return pid_mod;
@@ -444,8 +444,8 @@ bool check_faults(MotorData *motor, FootpadSensor *fs, RuntimeData *rt, State *s
     return false;
 }
 
-void calculate_proportional(RuntimeData *rt, PidData *pid, SetpointData *spd) {
-	pid->proportional = spd->setpoint - rt->pitch_angle;
-	pid->prop_smooth = spd->setpoint - rt->pitch_smooth_kalman;
+void calculate_proportional(RuntimeData *rt, PidData *pid, float setpoint) {
+	pid->proportional = setpoint - rt->pitch_angle;
+	pid->prop_smooth = setpoint - rt->pitch_smooth_kalman;
 	pid->abs_prop_smooth = fabsf(pid->prop_smooth);
 }
