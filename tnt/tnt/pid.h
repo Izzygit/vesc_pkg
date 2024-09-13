@@ -24,7 +24,6 @@
 #include "state_tnt.h"
 #include "vesc_c_if.h"
 #include "footpad_sensor.h"
-#include "setpoint.h"
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -67,18 +66,18 @@ void angle_kp_reset(KpArray *k);
 float erpm_scale(float lowvalue, float highvalue, float lowscale, float highscale, float abs_erpm); 
 void apply_stability(PidData *p, float abs_erpm, float inputtilt_interpolated, tnt_config *config);
 void check_brake_kp(PidData *p, State *state, tnt_config *config, KpArray *roll_brake_kp, KpArray *yaw_brake_kp);
-float roll_erpm_scale(PidData *p, State *state, MotorData *m, KpArray *roll_accel_kp, tnt_config *config);
+float roll_erpm_scale(PidData *p, State *state, float abs_erpm, KpArray *roll_accel_kp, tnt_config *config);
 void reset_pid(PidData *p);
-void apply_soft_start(PidData *p, MotorData *m);
+void apply_soft_start(PidData *p, float mc_current_max);
 void configure_pid(PidData *p, tnt_config *config);
 float apply_pitch_kp(KpArray *accel_kp, KpArray *brake_kp, PidData *p, PidDebug *pid_dbg);
 float apply_kp_rate(KpArray *accel_kp, KpArray *brake_kp, PidData *p, PidDebug *pid_dbg);
-float apply_roll_kp(KpArray *roll_accel_kp, KpArray *roll_brake_kp, PidData *p, MotorData *motor, RuntimeData *rt, float roll_erpm_scale, PidDebug *pid_dbg);
-float yaw_erpm_scale(PidData *p, State *state, MotorData *m, tnt_config *config);
-float apply_yaw_kp(KpArray *yaw_accel_kp, KpArray *yaw_brake_kp, PidData *p, MotorData *motor, YawData *yaw, float yaw_erpm_scale, YawDebugData *yaw_dbg);
+float apply_roll_kp(KpArray *roll_accel_kp, KpArray *roll_brake_kp, PidData *p, int erpm_sign, float abs_roll_angle, float roll_erpm_scale, PidDebug *pid_dbg);
+float yaw_erpm_scale(PidData *p, State *state, float abs_erpm, tnt_config *config);
+float apply_yaw_kp(KpArray *yaw_accel_kp, KpArray *yaw_brake_kp, PidData *p, float erpm_sign, float abs_change, float yaw_erpm_scale, YawDebugData *yaw_dbg);
 void brake(float current, RuntimeData *rt, MotorData *motor);
 void set_current(float current, RuntimeData *rt );
 void set_dutycycle(float dutycycle, RuntimeData *rt);
 void set_brake(float current,  RuntimeData *rt);
 bool check_faults(MotorData *motor, FootpadSensor *fs, RuntimeData *rt, State *state, float inputtilt_interpolated, tnt_config *config);
-void calculate_proportional(RuntimeData *rt, PidData *pid, SetpointData *spd);
+void calculate_proportional(RuntimeData *rt, PidData *pid, float setpoint);
