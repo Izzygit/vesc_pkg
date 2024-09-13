@@ -65,7 +65,7 @@ void yaw_kp_configure(const tnt_config *config, KpArray *k, int mode);
 float angle_kp_select(float angle, const KpArray *k);
 void angle_kp_reset(KpArray *k);
 float erpm_scale(float lowvalue, float highvalue, float lowscale, float highscale, float abs_erpm); 
-void apply_stability(PidData *p, MotorData *m, RemoteData *remote, tnt_config *config);
+void apply_stability(PidData *p, float abs_erpm, float inputtilt_interpolated, tnt_config *config);
 void check_brake_kp(PidData *p, State *state, tnt_config *config, KpArray *roll_brake_kp, KpArray *yaw_brake_kp);
 float roll_erpm_scale(PidData *p, State *state, MotorData *m, KpArray *roll_accel_kp, tnt_config *config);
 void reset_pid(PidData *p);
