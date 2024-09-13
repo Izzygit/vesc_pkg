@@ -80,7 +80,6 @@ void end_tone(ToneData *tone) {
 	tone->voltage = 0;
 	tone->duration = 0;
 	tone->times = 0;
-	tone->priority = 0;
 }
 
 void tone_reset_on_configure(ToneData *tone) {
