@@ -195,16 +195,16 @@ float erpm_scale(float lowvalue, float highvalue, float lowscale, float highscal
 	return scaler;
 }
 
-void apply_stability(PidData *p, MotorData *m, RemoteData *remote, tnt_config *config) {
+void apply_stability(PidData *p, float abs_erpm, float inputtilt_interpolated, tnt_config *config) {
 	float speed_stabl_mod = 0;
 	float throttle_stabl_mod = 0;	
 	float stabl_mod = 0;
 	if (config->enable_throttle_stability) {
-		throttle_stabl_mod = fabsf(remote->inputtilt_interpolated) / config->inputtilt_angle_limit; 	//using inputtilt_interpolated allows the use of sticky tilt and inputtilt smoothing
+		throttle_stabl_mod = fabsf(inputtilt_interpolated) / config->inputtilt_angle_limit; 	//using inputtilt_interpolated allows the use of sticky tilt and inputtilt smoothing
 	}
-	if (config->enable_speed_stability && m->abs_erpm > 1.0 * config->stabl_min_erpm) {		
+	if (config->enable_speed_stability && abs_erpm > 1.0 * config->stabl_min_erpm) {		
 		speed_stabl_mod = fminf(1 ,										// Do not exceed the max value.				
-				lerp(config->stabl_min_erpm, config->stabl_max_erpm, 0, 1, m->abs_erpm));
+				lerp(config->stabl_min_erpm, config->stabl_max_erpm, 0, 1, abs_erpm));
 	}
 	stabl_mod = fmaxf(speed_stabl_mod,throttle_stabl_mod);
 	float step_size = stabl_mod > p->stabl ? p->stabl_step_size_up : p->stabl_step_size_down;
