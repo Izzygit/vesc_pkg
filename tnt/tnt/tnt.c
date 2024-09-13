@@ -144,16 +144,16 @@ void apply_kp_modifiers(data *d) {
 	d->pid.pid_mod = apply_kp_rate(&d->accel_kp, &d->brake_kp, &d->pid, &d->pid_dbg) * -d->rt.gyro[1];
 
 	//Select and apply roll kp
-	d->pid.pid_mod += apply_roll_kp(&d->roll_accel_kp, &d->roll_brake_kp, &d->pid, &d->motor, &d->rt, 
-	    roll_erpm_scale(&d->pid,  &d->state, &d->motor, &d->roll_accel_kp, &d->tnt_conf), 
+	d->pid.pid_mod += apply_roll_kp(&d->roll_accel_kp, &d->roll_brake_kp, &d->pid, d->motor.erpm_sign, d->rt.abs_roll_angle, 
+	    roll_erpm_scale(&d->pid,  &d->state, d->motor.abs_erpm, &d->roll_accel_kp, &d->tnt_conf), 
 	    &d->pid_dbg);
 
 	// Calculate yaw change
 	calc_yaw_change(&d->yaw, d->rt.yaw_angle, &d->yaw_dbg);
 	
 	//Select and apply yaw kp
-	d->pid.pid_mod += apply_yaw_kp(&d->yaw_accel_kp, &d->yaw_brake_kp, &d->pid, &d->motor, &d->yaw, 
-	    yaw_erpm_scale(&d->pid,  &d->state, &d->motor, &d->tnt_conf), 
+	d->pid.pid_mod += apply_yaw_kp(&d->yaw_accel_kp, &d->yaw_brake_kp, &d->pid, d->motor.erpm_sign, d->yaw.abs_change, 
+	    yaw_erpm_scale(&d->pid,  &d->state, d->motor.abs_erpm, &d->tnt_conf), 
 	    &d->yaw_dbg);
 }
 
@@ -227,7 +227,7 @@ static void tnt_thd(void *arg) {
 				apply_stability(&d->pid, d->motor.abs_erpm, d->remote.inputtilt_interpolated, &d->tnt_conf);
 			
 			// Calculate proportional difference for raw and filtered pitch
-			calculate_proportional(&d->rt, &d->pid, &d->spd);
+			calculate_proportional(&d->rt, &d->pid, d->spd.setpoint);
 
 			//Check for braking conditions and braking curves, and kp values for pitch roll and yaw
 			d->state.braking_pos = sign(d->pid.proportional) != d->motor.erpm_sign;
@@ -237,7 +237,7 @@ static void tnt_thd(void *arg) {
 			//Apply Pitch, Roll, Yaw Kp, and Soft Start
 			d->pid.new_pid_value = apply_pitch_kp(&d->accel_kp, &d->brake_kp, &d->pid, &d->pid_dbg);
 			apply_kp_modifiers(d);			//Roll Yaw
-			apply_soft_start(&d->pid, &d->motor);	//Soft start
+			apply_soft_start(&d->pid, d->motor.mc_current_max);	//Soft start
 			d->pid.new_pid_value += d->pid.pid_mod; 
 			
 			// Current Limiting
