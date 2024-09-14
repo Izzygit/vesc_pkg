@@ -42,10 +42,12 @@ Default settings are based on 20s battery, Hypercore (Future Motion motor), and 
   * Set your high current section first.
 * Traction Control
   * Should work well for most boards. Light riders on powerful boards may need to increase Start Condition to prevent nuisance trips.
-  * Decrease End Condition for smoother landings but beware going too low.
+  * Decrease Transition Condition and increase End Condition for looser landings and less free spin.
+  * Increase ERPM filter frequnecy for a faster response.
 * FOC Play Tones
-  * Activated for high duty and high current
+  * Tones configured for high duty and high current
   * Riders with cannoncore or superflux motors should disable high current haptic buzz until you correct the high current conditions.
+  * Beeps enabled for board alerts.
 
 For more instructions on setting up your board please refer to the [Set Up Guide.](https://github.com/Izzygit/TrickandTrailReleases/wiki/Set-Up-Guide) https://github.com/Izzygit/TrickandTrailReleases/wiki/Set-Up-Guide
 
@@ -53,19 +55,17 @@ For more instructions on setting up your board please refer to the [Set Up Guide
 ### 1.4
 * **This version requires 6.05 firmware to fuction properly**
 * **Version 1.4 parameters are not compatible with v1.3 and will be set to default. Screenshot your tunes to save.**
-* Continued code refactoring
 * _Features_
   * New Feature - Traction Control Braking (beta)
-    * Utilizes VESC set brake fuctionality to apply current with no wheel spin
-    * Several parameters used to filter and monitor duty to apply traction braking at appropriate times
+    * Utilizes VESC 'set brake' fuction to apply brake current with no wheel spin
     * Parameter that allows traction braking only when a minimum nose down angle is requested via remote
   * Traction Control Improvements
     * Added low pass filter to ERPM which is used to calculate motor acceleration.
     * New parameter to adjust low pass filter frequency.
-    * Now end conditions consist of transition, end and hold conditions
-    * Absolute value of motor acceleration must be less than transition condition to allow end condition
-    * Absolute value of motor acceleration must be greater than end condition to end traction control
-    * Absolute value of motor acceleration must be less than hold condition to allow another traction control engagement.
+    * Now End Conditions consist of Transition, End and Hold conditions
+    * Absolute value of motor acceleration must be less than Transition Condition to allow end condition
+    * Absolute value of motor acceleration must be greater than End Condition to end traction control
+    * Absolute value of motor acceleration must be less than Hold Condition to allow another traction control engagement.
     * New parameter allows for the termination of traction control when a pitch angle threshold is met.
     * Removed intermediate time outs and changed traction control to 1 second time out.
   * FOC Play Tones
@@ -73,21 +73,23 @@ For more instructions on setting up your board please refer to the [Set Up Guide
     * New parameters allow for frequency and voltage (volume) adjustment for high current and high duty tones
     * Beeper is now replaced with FOC play tones with the following alerts implemented
       * Duty cycle within 10% of tiltback duty cycle- fast triple beep, ascending pitch
-      * High Voltage - slow triple beep, ascending pitch
+      * High voltage - slow triple beep, ascending pitch
       * Low voltage - slow triple beep, descending pitch
       * High motor temp - slow triple beep, single pitch
       * High fet temp - slow triple beep, single pitch
-      * New features fet/motor temp recovery activates when 10 degrees below tiltback temperature after activating high temp- fast triple beep, ascending pitch
-      * New features Mid Voltage Warnings provides additional voltage thresholds (i.e. 50% and 25%) for alerts - slow triple beep, descending pitch
+      * New feature fet/motor temp recovery, when 10 degrees below tiltback temperature- fast triple beep, ascending pitch
+      * New features Mid/Low Range Warnings - slow triple beep, descending pitch
       * Footpad disengaged above 2000 ERPM - continuous single pitch
-      * On write configuration - fast triple beep, single pitch
-      * After 35 minutes idle the beeper will engage every minute for the next 15 minutes - slow double beep, single pitch
+      * On write configuration - fast triple beep, single pitch (only when idle)
+      * Idle beeper after 35 minutes for next 15 minutes - slow double beep, single pitch
+      * New feature charged alert - slow double beep, single pitch
     * New parameter to adjust beeper volume.
     * Added more Last Beep Reasons to AppUI to identify the new beep features.
-* _Fixes/Improvements_
-   * Added a list of end conditions to AppUI for Surge and Traction Control debugs.
-   * Added a timer to AppUI to show the last time Traction Control Braking was used.
-   * Increased ERPM required to engage idle brake to 10.
+  * _Fixes/Improvements_
+    * Continued code refactoring
+    * Added a list of end conditions to AppUI for Surge and Traction Control debugs.
+    * Added a timer to AppUI to show the last time Traction Control Braking was used.
+    * Increased ERPM required to engage idle brake to 10.
 
 ### 1.3
 * **Version 1.3 parameters are not compatible with v1.2 and will be set to default. Screenshot your tunes to save.**
