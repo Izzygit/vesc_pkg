@@ -19,7 +19,6 @@
 #include "conf/datatypes.h"
 #include "motor_data_tnt.h"
 #include "state_tnt.h"
-#include "runtime.h"
 #include "pid.h"
 
 typedef struct {
@@ -73,8 +72,8 @@ typedef struct {
 	float freq_factor;
 } BrakingDebug;
 
-void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeData *rt, tnt_config *config, BrakingData *braking, PidData *p, TractionDebug *traction_dbg);
+void check_traction(MotorData *m, TractionData *traction, State *state, tnt_config *config, BrakingData *braking, PidData *p, TractionDebug *traction_dbg);
 void reset_traction(TractionData *traction, State *state, BrakingData *braking);
-void deactivate_traction(TractionData *traction, State *state, RuntimeData *rt, TractionDebug *traction_dbg, float exit);
+void deactivate_traction(TractionData *traction, State *state, TractionDebug *traction_dbg, float exit);
 void configure_traction(TractionData *traction, BrakingData *braking, tnt_config *config, TractionDebug *traction_dbg, BrakingDebug *braking_dbg);
-void check_traction_braking(BrakingData *braking, MotorData *m, State *state, RuntimeData *rt, tnt_config *config, float inputtilt_interpolated, PidData *pid, BrakingDebug *braking_dbg);
+void check_traction_braking(BrakingData *braking, MotorData *m, State *state, tnt_config *config, float inputtilt_interpolated, PidData *pid, BrakingDebug *braking_dbg);
