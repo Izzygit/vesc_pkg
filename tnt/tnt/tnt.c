@@ -173,7 +173,7 @@ static void tnt_thd(void *arg) {
 		apply_pitch_filters(&d->rt, &d->tnt_conf);
 		motor_data_update(&d->motor, &d->tnt_conf);
 		update_remote(&d->tnt_conf, &d->remote);
-		temp_recovery_tone(&d->tone, &d->tone_config.fasttripleup, &d->rt, &d->motor);		
+		temp_recovery_tone(&d->tone, &d->tone_config.fasttripleup, &d->motor);		
 		tone_update(&d->tone, &d->rt, &d->state);
 	        footpad_sensor_update(&d->footpad_sensor, &d->tnt_conf);
 	      	d->pid.new_pid_value = 0;		
@@ -198,7 +198,7 @@ static void tnt_thd(void *arg) {
 				break;
 			}
 
-			play_footpad_beep(&d->tone, &d->motor, &d->footpad_sensor, &d->rt, &d->tone_config.continuousfootpad);
+			play_footpad_beep(&d->tone, &d->motor, &d->footpad_sensor, &d->tone_config.continuousfootpad);
 			
 			d->rt.odometer_dirty = 1;
 			
@@ -251,7 +251,7 @@ static void tnt_thd(void *arg) {
 			// Modifiers to PID control
 			check_traction(&d->motor, &d->traction, &d->state, &d->tnt_conf,
 			    &d->braking, &d->pid, &d->traction_dbg);
-			check_tone(&d->tone, &d->tone_config, &d->rt, &d->motor);
+			check_tone(&d->tone, &d->tone_config, &d->motor);
 			if (d->tnt_conf.is_surge_enabled)
 				check_surge(&d->motor, &d->surge, &d->state, &d->rt, &d->pid, 
 				    d->spd.setpoint, &d->braking, &d->surge_dbg);
