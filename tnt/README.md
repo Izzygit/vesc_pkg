@@ -85,11 +85,11 @@ For more instructions on setting up your board please refer to the [Set Up Guide
       * New feature charged alert - slow double beep, single pitch
     * New parameter to adjust beeper volume.
     * Added more Last Beep Reasons to AppUI to identify the new beep features.
-  * _Fixes/Improvements_
-    * Continued code refactoring
-    * Added a list of end conditions to AppUI for Surge and Traction Control debugs.
-    * Added a timer to AppUI to show the last time Traction Control Braking was used.
-    * Increased ERPM required to engage idle brake to 10.
+* _Fixes/Improvements_
+  * Continued code refactoring
+  * Added a list of end conditions to AppUI for Surge and Traction Control debugs.
+  * Added a timer to AppUI to show the last time Traction Control Braking was used.
+  * Increased ERPM required to engage idle brake to 10.
 
 ### 1.3
 * **Version 1.3 parameters are not compatible with v1.2 and will be set to default. Screenshot your tunes to save.**
