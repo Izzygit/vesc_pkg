@@ -107,7 +107,7 @@ typedef struct {
 } ToneConfigs;
 
 void tone_update(ToneData *tone, RuntimeData *rt, State *state);
-void play_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt, int beep_reason);
+void play_tone(ToneData *tone, ToneConfig *toneconfig, int beep_reason);
 void end_tone(ToneData *tone);
 void tone_reset_on_configure(ToneData *tone);
 void tone_reset(ToneData *tone);
