@@ -434,7 +434,8 @@ static void send_realtime_data(data *d){
 	buffer[ind++] = 111;//Magic Number
 	buffer[ind++] = COMMAND_GET_RTDATA;
 	float corr_factor;
-
+	d->debug1 =max(d->debug1, fabsf(d->motor.erpm));
+	d->debug2 = max(d->debug2, fabsf(d->motor.erpm_filtered));
 	// Board State
 	buffer[ind++] = d->state.wheelslip ? 4 : d->state.state; 
 	buffer[ind++] = d->state.sat; 
@@ -445,8 +446,8 @@ static void send_realtime_data(data *d){
 	buffer_append_float32_auto(buffer, d->footpad_sensor.adc2, &ind);
 	buffer_append_float32_auto(buffer, VESC_IF->mc_get_input_voltage_filtered(), &ind);
 	buffer_append_float32_auto(buffer, d->motor.current_filtered, &ind); // current atr_filtered_current
-	buffer_append_float32_auto(buffer, max(d->debug1, fabsf(d->motor.erpm)), &ind); //d->rt.pitch_angle
-	buffer_append_float32_auto(buffer, max(d->debug2, fabsf(d->motor.erpm_filtered)), &ind); //d->rt.roll_angle
+	buffer_append_float32_auto(buffer, d->debug1, &ind); //d->rt.pitch_angle
+	buffer_append_float32_auto(buffer, d->debug2, &ind); //d->rt.roll_angle
 
 	//Tune Modifiers
 	buffer_append_float32_auto(buffer, d->spd.setpoint, &ind);
