@@ -48,9 +48,10 @@ void tone_update(ToneData *tone, RuntimeData *rt, State *state) {
 	}
 }
 
-void play_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt, int beep_reason) {
+void play_tone(ToneData *tone, ToneConfig *toneconfig, int beep_reason) {
 	//This function is used to initiate tones, and only called in specific instances
-	if (rt->current_time - tone->timer < toneconfig->delay && 	//This section applies delay to prevent constant repetition
+	float current_time = VESC_IF->system_time();
+	if (current_time - tone->timer < toneconfig->delay && 	//This section applies delay to prevent constant repetition
 	    tone->priority == toneconfig->priority)  				//if the beep reason remains the same.
 		return;			
 	
@@ -160,7 +161,7 @@ void idle_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt) {
 	   rt->current_time - rt->disengage_timer < 3000) {		// give up after 50 minutes
 		if (rt->current_time - rt->nag_timer > 60) {		// beep every 60 seconds
 			rt->nag_timer = rt->current_time;
-			play_tone(tone, toneconfig, rt, BEEP_IDLE);
+			play_tone(tone, toneconfig, BEEP_IDLE);
 		}
 	} else {
 		rt->nag_timer = rt->current_time;
@@ -169,7 +170,7 @@ void idle_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt) {
 	}
 
 	if (tone->charged_count > tone->delay_500ms) {	// We are charged so beep
-		play_tone(tone, toneconfig, rt, BEEP_CHARGED);
+		play_tone(tone, toneconfig, BEEP_CHARGED);
 		tone->charged_count = 0;
 	}
 }
@@ -178,11 +179,11 @@ void temp_recovery_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt,
 	//This function alerts the user once the motor or fets have cooled 10 degrees below the tiltback limit
 	if (VESC_IF->mc_temp_motor_filtered() < motor->mc_max_temp_mot - 7 &&
 	    tone->motortemp_activated) {
-		play_tone(tone, toneconfig, rt, 16);
+		play_tone(tone, toneconfig, BEEP_MOTREC);
 		tone->motortemp_activated = false;
 	} else if (VESC_IF->mc_temp_fet_filtered() < motor->mc_max_temp_fet - 7 &&
 	    tone->fettemp_activated) {
-		play_tone(tone, toneconfig, rt, 15);
+		play_tone(tone, toneconfig, BEEP_FETREC);
 		tone->fettemp_activated = false;
 	}
 }
@@ -207,11 +208,11 @@ void check_tone(ToneData *tone, ToneConfigs *toneconfig, RuntimeData *rt, MotorD
 	}
 	
 	if (tone->duty_tone_count > tone->delay_100ms) // After we are above duty for 500ms then play tone
-		play_tone(tone, &toneconfig->dutytone, rt, TONE_DUTY);
+		play_tone(tone, &toneconfig->dutytone, TONE_DUTY);
 	else if (tone->tone_in_progress && tone->duration == 600) 
 		end_tone(tone);	
 	else if (tone->duty_beep_count > tone->delay_100ms) // After we are above duty for 500ms then play beep
-		play_tone(tone, &toneconfig->fasttripleupduty, rt, BEEP_DUTY);
+		play_tone(tone, &toneconfig->fasttripleupduty, BEEP_DUTY);
 
 	//Mid Range Warning
 	float abs_motor_current = fabsf(motor->current_filtered);
@@ -224,7 +225,7 @@ void check_tone(ToneData *tone, ToneConfigs *toneconfig, RuntimeData *rt, MotorD
 
 	if (!tone->midvolt_activated && 
 	    tone->midvolt_count > tone->delay_500ms) {
-		play_tone(tone, &toneconfig->midvoltwarning, rt, BEEP_MW);
+		play_tone(tone, &toneconfig->midvoltwarning, BEEP_MW);
 		tone->midvolt_activated = true;
 	}
 	
@@ -238,7 +239,7 @@ void check_tone(ToneData *tone, ToneConfigs *toneconfig, RuntimeData *rt, MotorD
 
 	if (!tone->lowvolt_activated && 
 	    tone->lowvolt_count > tone->delay_500ms) {
-		play_tone(tone, &toneconfig->lowvoltwarning, rt, BEEP_LW);
+		play_tone(tone, &toneconfig->lowvoltwarning, BEEP_LW);
 		tone->lowvolt_activated = true;
 	}
 }
@@ -247,7 +248,7 @@ void play_footpad_beep(ToneData *tone, MotorData *motor, FootpadSensor *fs, Runt
 	//Check footpad beep
 	if (fs->state == FS_NONE &&
 	    motor->abs_erpm > 2000) {
-	    play_tone(tone, toneconfig, rt, BEEP_SENSORS);
+	    play_tone(tone, toneconfig, BEEP_SENSORS);
 	} else if (tone->tone_in_progress && tone->beep_reason == BEEP_SENSORS) { 
 	    end_tone(tone);
 	}
