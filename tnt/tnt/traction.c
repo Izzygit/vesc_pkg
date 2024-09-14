@@ -19,14 +19,15 @@
 #include <math.h>
 #include "utils_tnt.h"
 
-void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeData *rt, tnt_config *config, BrakingData *braking, PidData *p, TractionDebug *traction_dbg){
+void check_traction(MotorData *m, TractionData *traction, State *state, tnt_config *config, BrakingData *braking, PidData *p, TractionDebug *traction_dbg){
 	float erpmfactor = fmaxf(1, lerp(0, config->wheelslip_scaleerpm, config->wheelslip_scaleaccel, 1, m->abs_erpm));
 	bool start_condition1 = false;
 	bool start_condition2 = false;
-
+	float current_time = VESC_IF->system_time();
+	
 	// Conditions to end traction control
 	if (state->wheelslip) {
-		if (rt->current_time - traction->timeron > 1) {		// Time out at 1s
+		if (current_time - traction->timeron > 1) {		// Time out at 1s
 			deactivate_traction(traction, state, rt, traction_dbg, 5);
 		} else if (fabsf(p->proportional) > config->wheelslip_max_angle) {
 			deactivate_traction(traction, state, rt, traction_dbg, 4);
@@ -64,28 +65,28 @@ void check_traction(MotorData *m, TractionData *traction, State *state, RuntimeD
 			if (m->erpm_sign == sign(m->erpm_history[m->last_erpm_idx])) { 							//Check sign of the motor at the start of acceleration
 				if (fabsf(m->erpm_filtered) > fabsf(m->erpm_history[m->last_erpm_idx])) { 						//If signs the same check for magnitude increase
 					start_condition1 = sign(m->current) * m->accel_avg > traction->start_accel * erpmfactor &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
-			  		    !state->braking_pos_smooth && (rt->current_time - braking->delay_timer > braking->feature_delay);// Do not apply for braking 								
+			  		    !state->braking_pos_smooth && (current_time - braking->delay_timer > braking->feature_delay);// Do not apply for braking 								
 				} // else if (...TODO Put working braking condition here
 			} else if (sign(m->erpm_sign_soft) != sign(m->accel_avg)) {				// If the motor is back spinning engage but don't allow wheelslip on landing
 				start_condition2 = sign(m->current) * m->accel_avg > traction->start_accel * erpmfactor &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
-			   	    !state->braking_pos_smooth && (rt->current_time - braking->delay_timer > braking->feature_delay);	// Do not apply for braking 
+			   	    !state->braking_pos_smooth && (current_time - braking->delay_timer > braking->feature_delay);	// Do not apply for braking 
 			}
 		}
 		
 		// Initiate traction control
 		if ((start_condition1 || start_condition2) && 			// Conditions false by default
-		   (rt->current_time - traction->timeroff > 0.02)) {		// Did not recently wheel slip.
+		   (current_time - traction->timeroff > 0.02)) {		// Did not recently wheel slip.
 			state->wheelslip = true;
 			traction->accelstartval = m->accel_avg;
 			traction->highaccelon1 = true;
 			traction->highaccelon2 = true;
-			traction->timeron = rt->current_time;
+			traction->timeron = current_time;
 			if (start_condition2)
 				traction->reverse_wheelslip = true;
 
 			//Debug Section
-			if (rt->current_time - traction_dbg->aggregate_timer > 5) { // Aggregate the number of drop activations in 5 seconds
-				traction_dbg->aggregate_timer = rt->current_time;
+			if (current_time - traction_dbg->aggregate_timer > 5) { // Aggregate the number of drop activations in 5 seconds
+				traction_dbg->aggregate_timer = current_time;
 				traction_dbg->debug5 = 0;
 				traction_dbg->debug2 = erpmfactor;		//only record the first traction loss for some debug variables
 				traction_dbg->debug6 = m->accel_avg / traction_dbg->freq_factor; 
@@ -108,9 +109,9 @@ void reset_traction(TractionData *traction, State *state, BrakingData *braking) 
 	braking->last_active = false;
 }
 
-void deactivate_traction(TractionData *traction, State *state, RuntimeData *rt, TractionDebug *traction_dbg, float exit) {
+void deactivate_traction(TractionData *traction, State *state, TractionDebug *traction_dbg, float exit) {
 	state->wheelslip = false;
-	traction->timeroff = rt->current_time;
+	traction->timeroff = VESC_IF->system_time();
 	traction->reverse_wheelslip = false;
 	traction->end_accel_hold = true; //activate high accel hold to prevent traction control
 	if (traction_dbg->debug5 == 1) //only save the first activation duration
@@ -130,10 +131,11 @@ void configure_traction(TractionData *traction, BrakingData *braking, tnt_config
 	braking->feature_delay = config->tc_braking_start_delay / 1000.0;
 }
 
-void check_traction_braking(BrakingData *braking, MotorData *m, State *state, RuntimeData *rt, tnt_config *config,
+void check_traction_braking(BrakingData *braking, MotorData *m, State *state, tnt_config *config,
     float inputtilt_interpolated, PidData *pid, BrakingDebug *braking_dbg){
-	bool check_last = braking->last_active ||  rt->current_time - braking->delay_timer > config->tc_braking_end_delay / 1000.0; //we were just traction braking or we are beyond the brake delay
-
+	bool check_last = braking->last_active ||  current_time - braking->delay_timer > config->tc_braking_end_delay / 1000.0; //we were just traction braking or we are beyond the brake delay
+	float current_time = VESC_IF->system_time();;
+	
 	//Check that conditions for traciton braking are satified and add to counter
 	if (-inputtilt_interpolated * m->erpm_sign_soft >= config->tc_braking_angle && 	//Minimum nose down angle from remote, can be 0
 	    state->braking_pos_smooth &&						// braking position active
@@ -141,10 +143,10 @@ void check_traction_braking(BrakingData *braking, MotorData *m, State *state, Ru
 	    m->duty_cycle > 0 &&
 	    check_last) {								// the braking delay is satified, allow traction braking
 		state->braking_active = true;
-		braking->delay_timer = rt->current_time; //reset delay counter for when we exit traciton braking
+		braking->delay_timer = current_time; //reset delay counter for when we exit traciton braking
 		
 		//Debug Section
-		if (rt->current_time - braking_dbg->aggregate_timer > 5) { // Reset these values after we have not braked for a few seconds
+		if (current_time - braking_dbg->aggregate_timer > 5) { // Reset these values after we have not braked for a few seconds
 			braking_dbg->debug5 = 0;
 			braking_dbg->debug8 = 0;
 			braking_dbg->debug6 = 0;
@@ -153,21 +155,21 @@ void check_traction_braking(BrakingData *braking, MotorData *m, State *state, Ru
 			braking_dbg->debug3 = m->abs_erpm;
 			braking_dbg->debug9 = 0;
 		}
-		braking_dbg->aggregate_timer = rt->current_time;
+		braking_dbg->aggregate_timer = current_time;
 		if (!braking->last_active) // Just entered traction braking, reset
-			braking->timeron = rt->current_time;
+			braking->timeron = current_time;
 		braking_dbg->debug2 = 1;
 		braking_dbg->debug6 = max(braking_dbg->debug6, fabsf(m->accel_avg / braking_dbg->freq_factor));
 		braking_dbg->debug9 = max(braking_dbg->debug9, m->abs_erpm);
 		braking_dbg->debug3 = min(braking_dbg->debug3, m->abs_erpm);	
-		braking_dbg->debug8 = rt->current_time - braking->timeron + braking_dbg->debug1; //running on time tracker
+		braking_dbg->debug8 = current_time - braking->timeron + braking_dbg->debug1; //running on time tracker
 	} else { 
 		state->braking_active = false; 
 
 		if (braking->last_active) {
 			//Debug Section
 			braking_dbg->debug2 = 0;
-			braking->timeroff = rt->current_time;
+			braking->timeroff = current_time;
 			braking_dbg->debug1 += braking->timeroff - braking->timeron; //sum all activation times
 			braking_dbg->debug8 = braking_dbg->debug1; //deactivated on time tracker
 			braking_dbg->debug5 += 1; //count deactivations
