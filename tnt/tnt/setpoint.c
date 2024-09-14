@@ -117,7 +117,7 @@ void calculate_setpoint_target(SetpointData *spd, State *state, MotorData *motor
 		}
 		state->sat = SAT_PB_DUTY;
 	} else if (motor->duty_cycle > 0.05 && input_voltage > config->tiltback_hv) {
-		play_tone(tone, &toneconfig->slowtripleup, rt, BEEP_HV);
+		play_tone(tone, &toneconfig->slowtripleup, BEEP_HV);
 		if (((rt->current_time - spd->tb_highvoltage_timer) > .5) ||
 		   (input_voltage > config->tiltback_hv + 1)) {
 		// 500ms have passed or voltage is another volt higher, time for some tiltback
@@ -134,7 +134,7 @@ void calculate_setpoint_target(SetpointData *spd, State *state, MotorData *motor
 		}
 	} else if (VESC_IF->mc_temp_fet_filtered() > motor->mc_max_temp_fet) {
 		// Use the angle from Low-Voltage tiltback, but slower speed from High-Voltage tiltback
-		play_tone(tone, &toneconfig->slowtriple2, rt, BEEP_TEMPFET);
+		play_tone(tone, &toneconfig->slowtriple2, BEEP_TEMPFET);
 		tone->fettemp_activated = true;
 		if (VESC_IF->mc_temp_fet_filtered() > (motor->mc_max_temp_fet + 1)) {
 			if (motor->erpm > 0) {
@@ -148,7 +148,7 @@ void calculate_setpoint_target(SetpointData *spd, State *state, MotorData *motor
 			state->sat = SAT_NONE;
 		}
 	} else if (VESC_IF->mc_temp_motor_filtered() > motor->mc_max_temp_mot) {
-		play_tone(tone, &toneconfig->slowtriple1, rt, BEEP_TEMPMOT);
+		play_tone(tone, &toneconfig->slowtriple1, BEEP_TEMPMOT);
 		tone->motortemp_activated = true;
 		if (VESC_IF->mc_temp_motor_filtered() > (motor->mc_max_temp_mot + 1)) {
 			if (motor->erpm > 0) {
@@ -162,7 +162,7 @@ void calculate_setpoint_target(SetpointData *spd, State *state, MotorData *motor
 			state->sat = SAT_NONE;
 		}
 	} else if (motor->duty_cycle > 0.05 && input_voltage < config->tiltback_lv) {
-		play_tone(tone, &toneconfig->slowtripledown, rt, BEEP_LV);
+		play_tone(tone, &toneconfig->slowtripledown, BEEP_LV);
 		float abs_motor_current = fabsf(motor->current_filtered);
 		float vdelta = 1.0 * config->tiltback_lv - input_voltage;
 		float ratio = vdelta * 20 / abs_motor_current;
