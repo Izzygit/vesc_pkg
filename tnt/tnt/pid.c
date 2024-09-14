@@ -331,15 +331,12 @@ float apply_yaw_kp(KpArray *yaw_accel_kp, KpArray *yaw_brake_kp, PidData *p, flo
 void brake(float current, RuntimeData *rt, MotorData *motor) {
 	// Brake timeout logic
 	float brake_timeout_length = 1;  // Brake Timeout hard-coded to 1s
-	if (fabsf(motor->erpm_filtered) > 10 || rt->brake_timeout == 0) {
-	rt->brake_timeout = rt->current_time + brake_timeout_length;
-	}
-	
-	//if (rt->current_time > rt->brake_timeout ||
-	//  d->tone.tone_in_progress || d->tone.times !=0) { //if foc beep is activated don't allow braking
-	//    return;
-	//}
-	
+	if (fabsf(motor->abs_erpm) > 10 || rt->brake_timeout == 0)
+		rt->brake_timeout = rt->current_time + brake_timeout_length;
+
+	if (rt->current_time > rt->brake_timeout)
+	    return;
+
 	VESC_IF->timeout_reset();
 	VESC_IF->mc_set_brake_current(current);
 }
