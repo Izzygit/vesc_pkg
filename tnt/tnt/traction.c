@@ -159,7 +159,7 @@ void check_traction_braking(BrakingData *braking, MotorData *m, State *state, tn
 		braking_dbg->aggregate_timer = current_time;
 		if (!braking->last_active) // Just entered traction braking, reset
 			braking->timeron = current_time;
-		braking_dbg->debug2 = braking_dbg->debug2 * .99 + .01 * m->duty_cycle;
+		braking_dbg->debug2 = braking_dbg->debug2 * .999 + .001 * m->duty_cycle;
 		braking_dbg->debug6 = max(braking_dbg->debug6, fabsf(m->accel_avg / braking_dbg->freq_factor));
 		braking_dbg->debug9 = max(braking_dbg->debug9, m->abs_erpm);
 		braking_dbg->debug3 = min(braking_dbg->debug3, m->abs_erpm);	
