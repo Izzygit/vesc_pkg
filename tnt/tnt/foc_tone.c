@@ -175,7 +175,7 @@ void idle_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt) {
 	}
 }
 
-void temp_recovery_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt, MotorData *motor) {
+void temp_recovery_tone(ToneData *tone, ToneConfig *toneconfig, MotorData *motor) {
 	//This function alerts the user once the motor or fets have cooled 10 degrees below the tiltback limit
 	if (VESC_IF->mc_temp_motor_filtered() < motor->mc_max_temp_mot - 7 &&
 	    tone->motortemp_activated) {
@@ -189,7 +189,7 @@ void temp_recovery_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt,
 }
 
 
-void check_tone(ToneData *tone, ToneConfigs *toneconfig, RuntimeData *rt, MotorData *motor) {
+void check_tone(ToneData *tone, ToneConfigs *toneconfig, MotorData *motor) {
 	//This function provides a delay before the activation of certain tones
 	float input_voltage = VESC_IF->mc_get_input_voltage_filtered();
 	
@@ -244,7 +244,7 @@ void check_tone(ToneData *tone, ToneConfigs *toneconfig, RuntimeData *rt, MotorD
 	}
 }
 
-void play_footpad_beep(ToneData *tone, MotorData *motor, FootpadSensor *fs, RuntimeData *rt, ToneConfig *toneconfig) {
+void play_footpad_beep(ToneData *tone, MotorData *motor, FootpadSensor *fs, ToneConfig *toneconfig) {
 	//Check footpad beep
 	if (fs->state == FS_NONE &&
 	    motor->abs_erpm > 2000) {
