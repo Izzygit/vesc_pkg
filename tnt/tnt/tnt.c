@@ -88,7 +88,7 @@ typedef struct {
 	BrakingDebug braking_dbg;		//Braking debug info
 	RideTimeData ridetimer;			//Trip debug for ride vs rest time
 
-	float debug1, debug 2;
+	float debug1, debug2;
 } data;
 
 static void configure(data *d) {
