@@ -344,7 +344,7 @@ static void write_cfg_to_eeprom(data *d) {
 
 	// Emit 3 short beeps to confirm writing all settings to eeprom
 	if (d->state.state != STATE_RUNNING)
-		play_tone(&d->tone, &d->tone_config.fasttriple1, &d->rt, BEEP_NONE);
+		play_tone(&d->tone, &d->tone_config.fasttriple1, BEEP_NONE);
 }
 
 static void read_cfg_from_eeprom(tnt_config *config) {
