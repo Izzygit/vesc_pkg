@@ -81,7 +81,7 @@ void check_current(MotorData *m, SurgeData *surge, State *state, tnt_config *con
 	     (state->sat != SAT_CENTERING)) { 									//Not during startup
 		// High current, just haptic buzz don't actually limit currents
 		if (!surge->high_current)
-			play_tone(tone, toneconfig, rt, 11);
+			play_tone(tone, toneconfig, TONE_CURRENT);
 		surge->high_current = true;
 	} else { surge->high_current = false; } 
 }
