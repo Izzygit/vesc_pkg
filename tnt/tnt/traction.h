@@ -55,7 +55,11 @@ typedef struct {
 	bool active;
 	bool last_active;
 	float delay_timer;
-	float feature_delay;
+	int count;
+	int start_delay;
+	float feature_delay1;
+	float feature_delay2;
+	float feature_delay3;
 } BrakingData;
 
 typedef struct {
