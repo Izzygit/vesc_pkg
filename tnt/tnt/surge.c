@@ -27,7 +27,7 @@ void check_surge(MotorData *m, SurgeData *surge, State *state, RuntimeData *rt, 
 	    (surge->high_current) && 							//If overcurrent is triggered this satifies traction control, min erpm, braking, centering and direction
 	    (m->duty_cycle < 0.8) &&							//Prevent surge when pushing top speed
 	    (rt->current_time - surge->timer > 0.7) &&					//Not during an active surge period
-	    (rt->current_time - braking->delay_timer > braking->feature_delay)) {	// Delay after traction braking
+	    (rt->current_time - braking->delay_timer > braking->feature_delay3)) {	// Delay after traction braking
 		surge->timer = rt->current_time; 					//Reset surge timer
 		state->surge_active = true; 							//Indicates we are in the surge cycle of the surge period
 		surge->setpoint = setpoint;						//Records setpoint at the start of surge because surge changes the setpoint
