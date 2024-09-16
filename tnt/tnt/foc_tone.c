@@ -116,28 +116,26 @@ void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config, ToneData *t
 	tone_configure(&toneconfig->slowdouble1, 659.3, 659.3, 0, beep_voltage, .3, 2, 30, 1);
 	tone_configure(&toneconfig->slowdouble2, 784, 784, 0, beep_voltage, .3, 2, 55, 1);		//Charged or idle
 	tone_configure(&toneconfig->fasttriple1, 659.3, 659.3, 659.3, beep_voltage, .1, 3, 0, 1);	//On write
-	tone_configure(&toneconfig->slowtriple1, 659.3, 659.3, 659.3, beep_voltage, .3, 3, 10, 3); 	//Temp motor
-	tone_configure(&toneconfig->slowtriple2, 784, 784, 784, beep_voltage, .3, 3, 10, 3);		//Temp fets
-	tone_configure(&toneconfig->fasttripleup, 784, 698.5, 659.3, beep_voltage, .1, 3, 10, 2);	//temp recovery
+	tone_configure(&toneconfig->slowtriple1, 659.3, 659.3, 659.3, beep_voltage, .3, 3, 10, 5); 	//Temp motor
+	tone_configure(&toneconfig->slowtriple2, 784, 784, 784, beep_voltage, .3, 3, 10, 5);		//Temp fets
+	tone_configure(&toneconfig->fasttripleup, 784, 698.5, 659.3, beep_voltage, .1, 3, 10, 5);	//temp recovery
 	tone_configure(&toneconfig->fasttripledown, 659.3, 698.5, 784, beep_voltage, .1, 3, 30, 1);
-	tone_configure(&toneconfig->slowtripleup, 784, 698.5, 659.3, beep_voltage, .3, 3, 5, 4);	//high voltage
-	tone_configure(&toneconfig->slowtripledown, 659.3, 698.5, 784, beep_voltage, .3, 3, 5, 4);	//low voltage
-	tone_configure(&toneconfig->midvoltwarning, 659.3, 784, 784, beep_voltage, .3, 3, 0, 4);	//mid range
-	tone_configure(&toneconfig->lowvoltwarning, 659.3, 659.3, 784, beep_voltage, .3, 3, 0, 4); 	//low range
+	tone_configure(&toneconfig->slowtripleup, 784, 698.5, 659.3, beep_voltage, .3, 3, 5, 7);	//high voltage
+	tone_configure(&toneconfig->slowtripledown, 659.3, 698.5, 784, beep_voltage, .3, 3, 5, 8);	//low voltage
+	tone_configure(&toneconfig->midvoltwarning, 659.3, 784, 784, beep_voltage, .3, 3, 0, 7);	//mid range
+	tone_configure(&toneconfig->lowvoltwarning, 659.3, 659.3, 784, beep_voltage, .3, 3, 0, 7); 	//low range
 	
 	beep_voltage = config->is_dutybeep_enabled ? config->beep_voltage : 0;
-	tone_configure(&toneconfig->fasttripleupduty, 784, 698.5, 659.3, beep_voltage, .1, 3, 10, 8);	//duty beep
+	tone_configure(&toneconfig->fasttripleupduty, 784, 698.5, 659.3, beep_voltage, .1, 3, 10, 15);	//duty beep
 	
 	beep_voltage = config->is_footbeep_enabled ? config->beep_voltage : 0;
-	tone_configure(&toneconfig->continuousfootpad, 659.3, 0, 0, beep_voltage, 601, 1, 0, 2);	//footpad beep
+	tone_configure(&toneconfig->continuousfootpad, 659.3, 0, 0, beep_voltage, 601, 1, -1, 4);	//footpad beep
 
-	//High Duty Tone
-	beep_voltage = config->haptic_buzz_duty ? config->tone_volt_high_duty : 0;
-	tone_configure(&toneconfig->dutytone, config->tone_freq_high_duty, 0, 0, beep_voltage, 600, 1, 0, 8);
+	beep_voltage = config->haptic_buzz_duty ? config->tone_volt_high_duty : 0;			//High Duty Tone
+	tone_configure(&toneconfig->dutytone, config->tone_freq_high_duty, 0, 0, beep_voltage, 600, 1, -1, 15);
 
-	//High Current Tone
-	beep_voltage = config->haptic_buzz_current ? config->tone_volt_high_current : 0;
-	tone_configure(&toneconfig->currenttone, config->tone_freq_high_current, 0, 0, beep_voltage, config->overcurrent_period, 1, 0, 6);
+	beep_voltage = config->haptic_buzz_current ? config->tone_volt_high_current : 0; 		//High Current Tone
+	tone_configure(&toneconfig->currenttone, config->tone_freq_high_current, 0, 0, beep_voltage, config->overcurrent_period, 1, 0, 12);
 
 	tone->tone_duty = 1.0 * config->tiltback_duty / 100.0; 
 	tone->delay_100ms = config->hertz / 10;
