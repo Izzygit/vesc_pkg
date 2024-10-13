@@ -56,8 +56,8 @@ typedef struct {
 	bool pause;
 	float pause_timer;
 	int beep_reason;
-	bool midvolt_activated;
-	bool lowvolt_activated;
+	bool midrange_activated;
+	bool lowrange_activated;
 	bool motortemp_activated;
 	bool fettemp_activated;
 	float idle_voltage;
