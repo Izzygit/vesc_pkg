@@ -31,6 +31,8 @@ void check_traction(MotorData *m, TractionData *traction, State *state, tnt_conf
 			deactivate_traction(traction, state, traction_dbg, 5);
 		} else if (fabsf(p->proportional) > config->wheelslip_max_angle) {
 			deactivate_traction(traction, state, traction_dbg, 4);
+		} else if (state->braking_active) {
+			deactivate_traction(traction, state, traction_dbg, 6);
 		} else {
 			//This section determines if the wheel is acted on by outside forces by detecting acceleration direction change
 			if (traction->highaccelon1) { 
