@@ -173,7 +173,6 @@ static void tnt_thd(void *arg) {
 		apply_pitch_filters(&d->rt, &d->tnt_conf);
 		motor_data_update(&d->motor, &d->tnt_conf);
 		update_remote(&d->tnt_conf, &d->remote);
-		temp_recovery_tone(&d->tone, &d->tone_config.fasttripleup, &d->motor);		
 		tone_update(&d->tone, &d->rt, &d->state);
 	        footpad_sensor_update(&d->footpad_sensor, &d->tnt_conf);
 	      	d->pid.new_pid_value = 0;		
@@ -206,8 +205,7 @@ static void tnt_thd(void *arg) {
 			ride_timer(&d->ridetimer, &d->rt);
 			
 			// Calculate setpoint and interpolation
-			calculate_setpoint_target(&d->spd, &d->state, &d->motor, &d->rt, 
-			    &d->tone, &d->tone_config,  &d->tnt_conf, d->pid.proportional);
+			calculate_setpoint_target(&d->spd, &d->state, &d->motor, &d->rt, &d->tnt_conf, d->pid.proportional);
 			calculate_setpoint_interpolated(&d->spd, &d->state);
 			d->spd.setpoint = d->spd.setpoint_target_interpolated;
 
