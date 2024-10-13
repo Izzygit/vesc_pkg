@@ -123,7 +123,7 @@ void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config, ToneData *t
 	tone_configure(&toneconfig->fasttripleup, 784, 698.5, 659.3, beep_voltage, .1, 3, 10, 5);	//temp recovery
 	tone_configure(&toneconfig->fasttripledown, 659.3, 698.5, 784, beep_voltage, .1, 3, 30, 1);
 	tone_configure(&toneconfig->slowtripleup, 784, 698.5, 659.3, beep_voltage, .3, 3, 5, 7);	//high voltage
-	tone_configure(&toneconfig->slowtripledown, 659.3, 698.5, 784, beep_voltage, .3, 3, 5, 8);	//low voltage
+	tone_configure(&toneconfig->slowtripledown, 659.3, 698.5, 784, beep_voltage, .3, 3, 30, 8);	//low voltage
 	tone_configure(&toneconfig->midvoltwarning, 659.3, 784, 784, beep_voltage, .3, 3, 0, 7);	//mid range
 	tone_configure(&toneconfig->lowvoltwarning, 659.3, 659.3, 784, beep_voltage, .3, 3, 0, 7); 	//low range
 	
