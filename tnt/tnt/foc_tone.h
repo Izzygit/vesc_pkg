@@ -71,6 +71,8 @@ typedef struct {
 	int lowrange_count;
 	float midrange_warning;
 	float lowrange_warning;
+	float highvolt_warning;
+	float lowvolt_warning;
 	int charged_count;
 	float charged_volt_diff;
 	int highvolt_count;
