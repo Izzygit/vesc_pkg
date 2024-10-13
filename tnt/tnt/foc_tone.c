@@ -85,16 +85,18 @@ void end_tone(ToneData *tone) {
 
 void tone_reset_on_configure(ToneData *tone) {
 	//low voltage warnings reset on board start up
-	tone->midvolt_activated = false;
-	tone->lowvolt_activated = false;
+	tone->midrange_activated = false;
+	tone->lowrange_activated = false;
 }
 
 void tone_reset(ToneData *tone) {
 	tone->duty_tone_count = 0;
 	tone->duty_beep_count = 0; 
-	tone->midvolt_count = 0;
-	tone->lowvolt_count = 0;
+	tone->midrange_count = 0;
+	tone->lowrange_count = 0;
 	tone->charged_count = 0;
+	tone->highvolt_count = 0;
+	tone->lowvolt_count = 0;
 }
 
 void tone_configure(ToneConfig *toneconfig, float freq1, float freq2, float freq3, float voltage, float duration, int times, float delay, int priority) {
@@ -114,7 +116,7 @@ void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config, ToneData *t
 	tone_configure(&toneconfig->fastdouble1, 659.3, 659.3, 0, beep_voltage, .1, 2, 10, 1);
 	tone_configure(&toneconfig->fastdouble2, 784, 784, 0, beep_voltage, .1, 2, 0, 1);
 	tone_configure(&toneconfig->slowdouble1, 659.3, 659.3, 0, beep_voltage, .3, 2, 30, 1);
-	tone_configure(&toneconfig->slowdouble2, 784, 784, 0, beep_voltage, .3, 2, 55, 1);		//Charged or idle
+	tone_configure(&toneconfig->slowdouble2, 784, 784, 0, beep_voltage, .3, 2, 290, 1);		//Charged or idle
 	tone_configure(&toneconfig->fasttriple1, 659.3, 659.3, 659.3, beep_voltage, .1, 3, 0, 1);	//On write
 	tone_configure(&toneconfig->slowtriple1, 659.3, 659.3, 659.3, beep_voltage, .3, 3, 10, 5); 	//Temp motor
 	tone_configure(&toneconfig->slowtriple2, 784, 784, 784, beep_voltage, .3, 3, 10, 5);		//Temp fets
@@ -143,7 +145,7 @@ void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config, ToneData *t
 	tone->delay_500ms = config->hertz / 2;
 	tone->lowvolt_warning = config->lowvolt_warning;
 	tone->midvolt_warning = config->midvolt_warning;
-	tone->charged_volt_diff = 0.00005 / config->hertz; // volts per sec converted to volts per cycle
+	tone->charged_volt_diff = 0.01 / 60 / config->hertz; // volts per sec converted to volts per cycle
 	tone_reset_on_configure(tone);
 }
 
@@ -155,9 +157,9 @@ void idle_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt) {
 			tone->charged_count++;
 		else tone->charged_count = 0;
 		tone->idle_voltage = input_voltage;
-	} else if (rt->current_time - rt->disengage_timer > 2100 &&	// alert user after 35 minutes
+	} else if (rt->current_time - rt->disengage_timer > 1740 &&	// alert user after 29 minutes
 	   rt->current_time - rt->disengage_timer < 3000) {		// give up after 50 minutes
-		if (rt->current_time - rt->nag_timer > 60) {		// beep every 60 seconds
+		if (rt->current_time - rt->nag_timer > 300) {		// beep every 5 minutes
 			rt->nag_timer = rt->current_time;
 			play_tone(tone, toneconfig, BEEP_IDLE);
 		}
@@ -218,13 +220,13 @@ void check_tone(ToneData *tone, ToneConfigs *toneconfig, MotorData *motor) {
 	float ratio = vdelta * 20 / abs_motor_current;
 
 	if ((vdelta > 2) || (abs_motor_current < 5 && input_voltage < tone->midvolt_warning) || (ratio > 1)) 
-		tone->midvolt_count++; 	//A counter is used to track duty cycle to prevent nuisance trips
-	else tone->midvolt_count = 0;
+		tone->midrange_count++; 	//A counter is used to track duty cycle to prevent nuisance trips
+	else tone->midrange_count = 0;
 
-	if (!tone->midvolt_activated && 
-	    tone->midvolt_count > tone->delay_500ms) {
+	if (!tone->midrange_activated && 
+	    tone->midrange_count > tone->delay_500ms) {
 		play_tone(tone, &toneconfig->midvoltwarning, BEEP_MW);
-		tone->midvolt_activated = true;
+		tone->midrange_activated = true;
 	}
 	
 	//Low Range Warning
@@ -232,14 +234,40 @@ void check_tone(ToneData *tone, ToneConfigs *toneconfig, MotorData *motor) {
 	ratio = vdelta * 20 / abs_motor_current;
 	
 	if ((vdelta > 2) || (abs_motor_current < 5 && input_voltage < tone->lowvolt_warning) || (ratio > 1)) 
-		tone->lowvolt_count++; 	//A counter is used to track duty cycle to prevent nuisance trips
+		tone->lowrange_count++; 	//A counter is used to track duty cycle to prevent nuisance trips
+	else tone->lowrange_count = 0;
+
+	if (!tone->lowrange_activated && 
+	    tone->lowrange_count > tone->delay_500ms) {
+		play_tone(tone, &toneconfig->lowvoltwarning, BEEP_LW);
+		tone->lowrange_activated = true;
+	}
+
+	//High motor and fet temperatures
+	if (VESC_IF->mc_temp_fet_filtered() > motor->mc_max_temp_fet) {
+		play_tone(tone, &toneconfig->slowtriple2, BEEP_TEMPFET);
+		tone->fettemp_activated = true;
+	} else if (VESC_IF->mc_temp_motor_filtered() > motor->mc_max_temp_mot) {
+		play_tone(tone, &toneconfig->slowtriple1, BEEP_TEMPMOT);
+		tone->motortemp_activated = true;
+	}
+
+	//Temperature recovery tone
+	temp_recovery_tone(tone, &tone_config->fasttripleup, motor);
+
+	//Low and high voltages	
+	if (input_voltage > config->tiltback_hv) 
+		tone->highvolt_count++; 
+	else tone->highvolt_count = 0;
+	
+	if (input_voltage < config->tiltback_lv) 
+		tone->lowvolt_count++;
 	else tone->lowvolt_count = 0;
 
-	if (!tone->lowvolt_activated && 
-	    tone->lowvolt_count > tone->delay_500ms) {
-		play_tone(tone, &toneconfig->lowvoltwarning, BEEP_LW);
-		tone->lowvolt_activated = true;
-	}
+	if (tone->highvolt_count > tone->delay_500ms) 
+		play_tone(tone, &toneconfig->slowtripleup, BEEP_HV);
+	else if (tone->lowvolt_count > tone->delay_500ms) 
+		play_tone(tone, &toneconfig->slowtripledown, BEEP_LV);
 }
 
 void play_footpad_beep(ToneData *tone, MotorData *motor, FootpadSensor *fs, ToneConfig *toneconfig) {
