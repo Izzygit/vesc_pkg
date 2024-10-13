@@ -143,8 +143,10 @@ void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config, ToneData *t
 	tone->delay_100ms = config->hertz / 10;
 	tone->delay_250ms = config->hertz / 4;
 	tone->delay_500ms = config->hertz / 2;
-	tone->lowvolt_warning = config->lowvolt_warning;
-	tone->midvolt_warning = config->midvolt_warning;
+	tone->lowrange_warning = config->lowvolt_warning;
+	tone->midrange_warning = config->midvolt_warning;
+	tone->lowvolt_warning = config->tiltback_lv;
+	tone->highvolt_warning = config->tiltback_hv;
 	tone->charged_volt_diff = 0.01 / 60 / config->hertz; // volts per sec converted to volts per cycle
 	tone_reset_on_configure(tone);
 }
@@ -216,10 +218,10 @@ void check_tone(ToneData *tone, ToneConfigs *toneconfig, MotorData *motor) {
 
 	//Mid Range Warning
 	float abs_motor_current = fabsf(motor->current_filtered);
-	float vdelta = tone->midvolt_warning - input_voltage;
+	float vdelta = tone->midrange_warning - input_voltage;
 	float ratio = vdelta * 20 / abs_motor_current;
 
-	if ((vdelta > 2) || (abs_motor_current < 5 && input_voltage < tone->midvolt_warning) || (ratio > 1)) 
+	if ((vdelta > 2) || (abs_motor_current < 5 && input_voltage < tone->midrange_warning) || (ratio > 1)) 
 		tone->midrange_count++; 	//A counter is used to track duty cycle to prevent nuisance trips
 	else tone->midrange_count = 0;
 
@@ -230,10 +232,10 @@ void check_tone(ToneData *tone, ToneConfigs *toneconfig, MotorData *motor) {
 	}
 	
 	//Low Range Warning
-	vdelta = tone->lowvolt_warning - input_voltage;
+	vdelta = tone->lowrange_warning - input_voltage;
 	ratio = vdelta * 20 / abs_motor_current;
 	
-	if ((vdelta > 2) || (abs_motor_current < 5 && input_voltage < tone->lowvolt_warning) || (ratio > 1)) 
+	if ((vdelta > 2) || (abs_motor_current < 5 && input_voltage < tone->lowrange_warning) || (ratio > 1)) 
 		tone->lowrange_count++; 	//A counter is used to track duty cycle to prevent nuisance trips
 	else tone->lowrange_count = 0;
 
@@ -253,14 +255,14 @@ void check_tone(ToneData *tone, ToneConfigs *toneconfig, MotorData *motor) {
 	}
 
 	//Temperature recovery tone
-	temp_recovery_tone(tone, &tone_config->fasttripleup, motor);
+	temp_recovery_tone(tone, &toneconfig->fasttripleup, motor);
 
 	//Low and high voltages	
-	if (input_voltage > config->tiltback_hv) 
+	if (input_voltage > tone->highvolt_warning) 
 		tone->highvolt_count++; 
 	else tone->highvolt_count = 0;
 	
-	if (input_voltage < config->tiltback_lv) 
+	if (input_voltage < tone->lowvolt_warning) 
 		tone->lowvolt_count++;
 	else tone->lowvolt_count = 0;
 
