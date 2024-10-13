@@ -247,16 +247,16 @@ static void tnt_thd(void *arg) {
 			    &d->tone, &d->tone_config.currenttone); // Check for high current conditions
 			
 			// Modifiers to PID control
-			check_traction(&d->motor, &d->traction, &d->state, &d->tnt_conf,
-			    &d->braking, &d->pid, &d->traction_dbg);
-			check_tone(&d->tone, &d->tone_config, &d->motor);
 			if (d->tnt_conf.is_surge_enabled)
 				check_surge(&d->motor, &d->surge, &d->state, &d->rt, &d->pid, 
 				    d->spd.setpoint, &d->braking, &d->surge_dbg);
 			if (d->tnt_conf.is_tc_braking_enabled)
 				check_traction_braking(&d->braking, &d->motor, &d->state, &d->tnt_conf, 
 				    d->remote.inputtilt_interpolated, &d->pid, &d->braking_dbg);
-
+			check_traction(&d->motor, &d->traction, &d->state, &d->tnt_conf,
+			    &d->braking, &d->pid, &d->traction_dbg);
+			check_tone(&d->tone, &d->tone_config, &d->motor);
+			
 			// PID value application
 			d->pid.pid_value = (d->state.wheelslip && d->tnt_conf.is_traction_enabled) ? 0 : d->pid.new_pid_value;
 
