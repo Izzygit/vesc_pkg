@@ -89,7 +89,7 @@ void apply_noseangling(SetpointData *s, MotorData *motor, tnt_config *config) {
 }
 
 void calculate_setpoint_target(SetpointData *spd, State *state, MotorData *motor, RuntimeData *rt, 
-    ToneData *tone, ToneConfigs *toneconfig, tnt_config *config, float proportional) {
+    tnt_config *config, float proportional) {
 	float input_voltage = VESC_IF->mc_get_input_voltage_filtered();
 	
 	if (input_voltage < config->tiltback_hv) {
@@ -117,7 +117,6 @@ void calculate_setpoint_target(SetpointData *spd, State *state, MotorData *motor
 		}
 		state->sat = SAT_PB_DUTY;
 	} else if (motor->duty_cycle > 0.05 && input_voltage > config->tiltback_hv) {
-		play_tone(tone, &toneconfig->slowtripleup, BEEP_HV);
 		if (((rt->current_time - spd->tb_highvoltage_timer) > .5) ||
 		   (input_voltage > config->tiltback_hv + 1)) {
 		// 500ms have passed or voltage is another volt higher, time for some tiltback
@@ -133,9 +132,6 @@ void calculate_setpoint_target(SetpointData *spd, State *state, MotorData *motor
 			state->sat = SAT_NONE;
 		}
 	} else if (VESC_IF->mc_temp_fet_filtered() > motor->mc_max_temp_fet) {
-		// Use the angle from Low-Voltage tiltback, but slower speed from High-Voltage tiltback
-		play_tone(tone, &toneconfig->slowtriple2, BEEP_TEMPFET);
-		tone->fettemp_activated = true;
 		if (VESC_IF->mc_temp_fet_filtered() > (motor->mc_max_temp_fet + 1)) {
 			if (motor->erpm > 0) {
 				spd->setpoint_target = config->tiltback_ht_angle;
@@ -148,8 +144,6 @@ void calculate_setpoint_target(SetpointData *spd, State *state, MotorData *motor
 			state->sat = SAT_NONE;
 		}
 	} else if (VESC_IF->mc_temp_motor_filtered() > motor->mc_max_temp_mot) {
-		play_tone(tone, &toneconfig->slowtriple1, BEEP_TEMPMOT);
-		tone->motortemp_activated = true;
 		if (VESC_IF->mc_temp_motor_filtered() > (motor->mc_max_temp_mot + 1)) {
 			if (motor->erpm > 0) {
 				spd->setpoint_target = config->tiltback_ht_angle;
@@ -162,7 +156,6 @@ void calculate_setpoint_target(SetpointData *spd, State *state, MotorData *motor
 			state->sat = SAT_NONE;
 		}
 	} else if (motor->duty_cycle > 0.05 && input_voltage < config->tiltback_lv) {
-		play_tone(tone, &toneconfig->slowtripledown, BEEP_LV);
 		float abs_motor_current = fabsf(motor->current_filtered);
 		float vdelta = 1.0 * config->tiltback_lv - input_voltage;
 		float ratio = vdelta * 20 / abs_motor_current;
