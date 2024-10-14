@@ -145,7 +145,8 @@ void check_traction_braking(BrakingData *braking, MotorData *m, State *state, tn
 	if (-inputtilt_interpolated * m->erpm_sign_soft >= config->tc_braking_angle && 	//Minimum nose down angle from remote, can be 0
 	    state->braking_pos_smooth &&						// braking position active
 	    m->erpm_sign * pid->new_pid_value < -0.1 &&					// deadzone to prevent zero current demand
-	    m->duty_cycle > 0) {
+	    m->duty_cycle > 0 &&
+	    m->abs_erpm > config->tc_braking_min_erpm) {
 		braking->count++;
 	} else { braking->count = 0;}
 		
@@ -194,6 +195,8 @@ void check_traction_braking(BrakingData *braking, MotorData *m, State *state, tn
 				braking_dbg->debug4 = braking_dbg->debug4 * 10 + 3;
 			} else if (m->erpm_sign * pid->new_pid_value < -0.1) {
 				braking_dbg->debug4 = braking_dbg->debug4 * 10 + 4;
+			} else if (m->abs_erpm < config->tc_braking_min_erpm) {
+				braking_dbg->debug4 = braking_dbg->debug4 * 10 + 5;
 			}
 		}
 	}
