@@ -156,7 +156,7 @@ void idle_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt) {
 	
 	if (input_voltage > tone->last_voltage &&		// don't beep if the voltage keeps increasing (board is charging)
 	    rt->current_time - rt->disengage_timer > 900) {	// wait 15 minutes to discern normal battery recovery after a heavy load
-		if (input_voltage - tone->idle_voltage < tone->charged_volt_diff) // voltage is still climbing but slow so we are charged
+		if (input_voltage - tone->last_voltage < tone->charged_volt_diff) // voltage is still climbing but slow so we are charged
 			tone->charged_count++;
 		else tone->charged_count = 0;
 	} else if (rt->current_time - rt->disengage_timer > 1740 &&	// alert user after 29 minutes
