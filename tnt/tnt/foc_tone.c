@@ -153,24 +153,22 @@ void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config, ToneData *t
 
 void idle_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt) {
 	float input_voltage = VESC_IF->mc_get_input_voltage_filtered();
-	if (input_voltage > tone->idle_voltage &&		// don't beep if the voltage keeps increasing (board is charging)
+	
+	if (input_voltage > tone->last_voltage &&		// don't beep if the voltage keeps increasing (board is charging)
 	    rt->current_time - rt->disengage_timer > 900) {	// wait 15 minutes to discern normal battery recovery after a heavy load
 		if (input_voltage - tone->idle_voltage < tone->charged_volt_diff) // voltage is still climbing but slow so we are charged
 			tone->charged_count++;
 		else tone->charged_count = 0;
-		tone->idle_voltage = input_voltage;
 	} else if (rt->current_time - rt->disengage_timer > 1740 &&	// alert user after 29 minutes
-	   rt->current_time - rt->disengage_timer < 3000) {		// give up after 50 minutes
+	   rt->current_time - rt->disengage_timer < 3600) {		// give up after 60 minutes
 		if (rt->current_time - rt->nag_timer > 300) {		// beep every 5 minutes
 			rt->nag_timer = rt->current_time;
 			play_tone(tone, toneconfig, BEEP_IDLE);
 		}
-	} else {
-		rt->nag_timer = rt->current_time;
-		tone->idle_voltage = 0;
-		tone->charged_count = 0;
 	}
-
+	
+	tone->last_voltage = input_voltage;
+	
 	if (tone->charged_count > tone->delay_500ms) {	// We are charged so beep
 		play_tone(tone, toneconfig, BEEP_CHARGED);
 		tone->charged_count = 0;
