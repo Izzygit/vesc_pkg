@@ -116,7 +116,7 @@ void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config, ToneData *t
 	tone_configure(&toneconfig->fastdouble1, 659.3, 659.3, 0, beep_voltage, .1, 2, 10, 1);
 	tone_configure(&toneconfig->fastdouble2, 784, 784, 0, beep_voltage, .1, 2, 0, 1);
 	tone_configure(&toneconfig->slowdouble1, 659.3, 659.3, 0, beep_voltage, .3, 2, 30, 1);
-	tone_configure(&toneconfig->slowdouble2, 784, 784, 0, beep_voltage, .3, 2, 290, 1);		//Charged or idle
+	tone_configure(&toneconfig->slowdouble2, 784, 784, 0, beep_voltage, .3, 2, 300, 3);		//Charged or idle
 	tone_configure(&toneconfig->fasttriple1, 659.3, 659.3, 659.3, beep_voltage, .1, 3, 0, 1);	//On write
 	tone_configure(&toneconfig->slowtriple1, 659.3, 659.3, 659.3, beep_voltage, .3, 3, 10, 5); 	//Temp motor
 	tone_configure(&toneconfig->slowtriple2, 784, 784, 784, beep_voltage, .3, 3, 10, 5);		//Temp fets
@@ -159,12 +159,9 @@ void idle_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt) {
 		if (input_voltage - tone->last_voltage < tone->charged_volt_diff) // voltage is still climbing but slow so we are charged
 			tone->charged_count++;
 		else tone->charged_count = 0;
-	} else if (rt->current_time - rt->disengage_timer > 1740 &&	// alert user after 29 minutes
-	   rt->current_time - rt->disengage_timer < 3600) {		// give up after 60 minutes
-		if (rt->current_time - rt->nag_timer > 300) {		// beep every 5 minutes
-			rt->nag_timer = rt->current_time;
-			play_tone(tone, toneconfig, BEEP_IDLE);
-		}
+	} else if (rt->current_time - rt->disengage_timer > 2100 &&	// alert user after 35 minutes
+	   rt->current_time - rt->disengage_timer < 3610) {		// give up after 60 minutes
+		play_tone(tone, toneconfig, BEEP_IDLE);		// this tone will prevent auto shut down of the vesc so it should be limited
 	}
 	
 	tone->last_voltage = input_voltage;
