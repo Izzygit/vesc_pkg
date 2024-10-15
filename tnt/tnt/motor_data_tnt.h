@@ -59,6 +59,8 @@ typedef struct {
     float mc_max_temp_mot;
     float mc_current_max;
     float mc_current_min;
+
+    float voltage_filtered;
 } MotorData;
 
 void motor_data_reset(MotorData *m);
