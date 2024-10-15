@@ -116,7 +116,7 @@ void tone_reset_on_configure(ToneData *tone);
 void tone_reset(ToneData *tone);
 void tone_configure(ToneConfig *toneconfig, float freq1, float freq2, float freq3, float voltage, float duration, int times, float delay, int priority);
 void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config, ToneData *tone);
-void idle_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt);
+void idle_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt, MotorData *m);
 void temp_recovery_tone(ToneData *tone, ToneConfig *toneconfig, MotorData *motor);
 void check_tone(ToneData *tone, ToneConfigs *toneconfig, MotorData *motor);
 void play_footpad_beep(ToneData *tone, MotorData *motor, FootpadSensor *fs, ToneConfig *toneconfig);
