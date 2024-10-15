@@ -88,4 +88,6 @@ void motor_data_update(MotorData *m, tnt_config *config) {
     m->braking = m->abs_erpm > 250 && sign(m->current) != m->erpm_sign;
 
     m->duty_cycle = fabsf(VESC_IF->mc_get_duty_cycle_now());
+
+    m->voltage_filtered = VESC_IF->mc_get_input_voltage_filtered() * 0.0001 + m->voltage_filtered * (1 - 0.0001);
 }
