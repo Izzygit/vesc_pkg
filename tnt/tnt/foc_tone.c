@@ -94,7 +94,6 @@ void tone_reset(ToneData *tone) {
 	tone->duty_beep_count = 0; 
 	tone->midrange_count = 0;
 	tone->lowrange_count = 0;
-	tone->charged_count = 0;
 	tone->highvolt_count = 0;
 	tone->lowvolt_count = 0;
 }
