@@ -271,7 +271,7 @@ static void tnt_thd(void *arg) {
 			break;
 
 		case (STATE_READY):
-			idle_tone(&d->tone, &d->tone_config.slowdouble2, &d->rt);
+			idle_tone(&d->tone, &d->tone_config.slowdouble2, &d->rt, &d->motor);
 			check_odometer(&d->rt);
 			rest_timer(&d->ridetimer, &d->rt);
 
@@ -439,7 +439,7 @@ static void send_realtime_data(data *d){
 	buffer[ind++] = d->state.stop_condition;
 	buffer_append_float32_auto(buffer, d->footpad_sensor.adc1, &ind);
 	buffer_append_float32_auto(buffer, d->footpad_sensor.adc2, &ind);
-	buffer_append_float32_auto(buffer, VESC_IF->mc_get_input_voltage_filtered(), &ind);
+	buffer_append_float32_auto(buffer, d->motor.voltage_filtered, &ind);
 	buffer_append_float32_auto(buffer, d->motor.current_filtered, &ind); // current atr_filtered_current
 	buffer_append_float32_auto(buffer, d->rt.pitch_angle, &ind); 
 	buffer_append_float32_auto(buffer, d->rt.roll_angle, &ind); 
