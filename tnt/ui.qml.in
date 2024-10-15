@@ -288,7 +288,7 @@ Item {
 	                    "Switch              : " + switchString + "\n" +
 	                    "ADC1 / ADC2         : " + adc1.toFixed(2) + "V / " + adc2.toFixed(2) + "V\n" +
 	                    "Last Beep Reason    : " + beepString + "\n" +
-	                    "Voltage             : " + voltage.toFixed(2) + "V\n" +
+	                    "Voltage             : " + voltage.toFixed(3) + "V\n" +
 	                    "Current             : " + current.toFixed(1) + " A\n" +
 			    "Pitch               : " + pitch.toFixed(2) + "°\n" +
 	   		    "Roll                : " + roll.toFixed(2) + "°\n" 
