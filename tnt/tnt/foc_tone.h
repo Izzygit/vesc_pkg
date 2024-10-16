@@ -76,6 +76,7 @@ typedef struct {
 	int highvolt_count;
 	int lowvolt_count;
 	float last_voltage_timer;
+	float current_voltage;
 } ToneData;
 
 typedef struct {
