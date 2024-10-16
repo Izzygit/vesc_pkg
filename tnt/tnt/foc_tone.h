@@ -74,11 +74,11 @@ typedef struct {
 	float lowvolt_warning;
 	int highvolt_count;
 	int lowvolt_count;
-	float delayed_voltage_timer;
-	float delayed_voltage;
-	float current_voltage;
+	float last_voltage_diff;
+	float last_voltage_timer;
+	float current_voltage_diff;
 	float voltage_diff;
-	float last_voltage;
+	float last_voltage_diff;
 } ToneData;
 
 typedef struct {
