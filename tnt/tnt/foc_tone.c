@@ -151,17 +151,18 @@ void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config, ToneData *t
 }
 
 void idle_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt, MotorData *m) {
-	if (m->voltage_filtered >= tone->last_voltage &&		// don't beep if the voltage keeps increasing (board is charging)
+	if (tone->current_voltage >= tone->last_voltage &&		// don't beep if the voltage keeps increasing (board is charging)
 	    rt->current_time - rt->disengage_timer > 60) {	// wait 15 minutes to discern normal battery recovery after a heavy load
-		if (m->voltage_filtered - tone->last_voltage < 0.0001) // voltage is still climbing but slow so we are charged
+		if (tone->current_voltage - tone->last_voltage < 0.0001) // voltage is still climbing but slow so we are charged
 			play_tone(tone, toneconfig, BEEP_CHARGED);
 	} else if (rt->current_time - rt->disengage_timer > 120 &&	// alert user after 35 minutes
 	   rt->current_time - rt->disengage_timer < 3610) {		// give up after 60 minutes
 		play_tone(tone, toneconfig, BEEP_IDLE);		// this tone will prevent auto shut down of the vesc so it should be limited
 	}
 	
-	if (rt->current_time - tone->last_voltage_timer > 60) {
-		tone->last_voltage = m->voltage_filtered;
+	if (rt->current_time - tone->last_voltage_timer > 10) {
+		tone->last_voltage = tone->current_voltage;
+		tone->current_voltage = m->voltage_filtered;
 		tone->last_voltage_timer = rt->current_time;
 	}
 }
