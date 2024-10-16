@@ -96,7 +96,7 @@ void tone_reset(ToneData *tone) {
 	tone->lowrange_count = 0;
 	tone->highvolt_count = 0;
 	tone->lowvolt_count = 0;
-	tone->tone->voltage_diff = 0;
+	tone->voltage_diff = 0;
 	tone->last_voltage = VESC_IF->mc_get_input_voltage_filtered();
 	tone->delayed_voltage_timer = VESC_IF->system_time();
 	tone->delayed_voltage = 0;
