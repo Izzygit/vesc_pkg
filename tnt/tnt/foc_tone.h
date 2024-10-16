@@ -60,7 +60,6 @@ typedef struct {
 	bool lowrange_activated;
 	bool motortemp_activated;
 	bool fettemp_activated;
-	float last_voltage;
 	float tone_duty;
 	int delay_100ms;
 	int delay_250ms;
@@ -75,8 +74,11 @@ typedef struct {
 	float lowvolt_warning;
 	int highvolt_count;
 	int lowvolt_count;
-	float last_voltage_timer;
+	float delayed_voltage_timer;
+	float delayed_voltage;
 	float current_voltage;
+	float voltage_diff;
+	float last_voltage;
 } ToneData;
 
 typedef struct {
