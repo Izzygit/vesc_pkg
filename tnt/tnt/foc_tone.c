@@ -98,9 +98,9 @@ void tone_reset(ToneData *tone) {
 	tone->lowvolt_count = 0;
 	tone->voltage_diff = 0;
 	tone->last_voltage = VESC_IF->mc_get_input_voltage_filtered();
-	tone->delayed_voltage_timer = VESC_IF->system_time();
-	tone->delayed_voltage = 0;
-	tone->current_voltage = VESC_IF->mc_get_input_voltage_filtered();
+	tone->last_voltage_timer = VESC_IF->system_time();
+	tone->last_voltage_diff = 0;
+	tone->current_voltage_diff = 0;
 }
 
 void tone_configure(ToneConfig *toneconfig, float freq1, float freq2, float freq3, float voltage, float duration, int times, float delay, int priority) {
@@ -120,7 +120,7 @@ void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config, ToneData *t
 	tone_configure(&toneconfig->fastdouble1, 659.3, 659.3, 0, beep_voltage, .1, 2, 10, 1);
 	tone_configure(&toneconfig->fastdouble2, 784, 784, 0, beep_voltage, .1, 2, 0, 1);
 	tone_configure(&toneconfig->slowdouble1, 659.3, 659.3, 0, beep_voltage, .3, 2, 30, 1);
-	tone_configure(&toneconfig->slowdouble2, 784, 784, 0, beep_voltage, .3, 2, 60, 3);		//Charged or idle
+	tone_configure(&toneconfig->slowdouble2, 784, 784, 0, beep_voltage, .3, 2, 15, 3);		//Charged or idle
 	tone_configure(&toneconfig->fasttriple1, 659.3, 659.3, 659.3, beep_voltage, .1, 3, 0, 1);	//On write
 	tone_configure(&toneconfig->slowtriple1, 659.3, 659.3, 659.3, beep_voltage, .3, 3, 10, 5); 	//Temp motor
 	tone_configure(&toneconfig->slowtriple2, 784, 784, 784, beep_voltage, .3, 3, 10, 5);		//Temp fets
@@ -156,27 +156,26 @@ void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config, ToneData *t
 
 void idle_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt, MotorData *m) {
 	//Conditions to play a charged or idle tone
-	if (tone->voltage_diff > 0.25 &&			// Allow a possible charged beep if we are increasing voltage above a margin. Don't idle beep.
-	    rt->current_time - rt->disengage_timer > 60) {	// wait 15 minutes to discern normal battery recovery after a heavy load
-		if (tone->current_voltage - tone->delayed_voltage < 0.0005) // voltage is still climbing but slow so we are charged
+	if (tone->voltage_diff > 0.25) {			// Allow a possible charged beep if we are increasing voltage above a margin. Don't idle beep.
+		if (tone->current_voltage_diff < 0.005) 	// voltage from the last 60s climbing slow rnough that we are charged
 			play_tone(tone, toneconfig, BEEP_CHARGED);
 	} else if (rt->current_time - rt->disengage_timer > 120 &&	// alert user after 35 minutes
-	    tone->voltage_diff > -1) {					// give up after dropping 1 volt. this tone will prevent auto shut down of the vesc so it should be limited
+	    tone->voltage_diff > -1) {					// give up after dropping 1 volt. this tone will prevent auto shut down so it should be limited
 		play_tone(tone, toneconfig, BEEP_IDLE);	
 	}
 
-	//These variables aggregate voltage change to determine we have been charging. This is necessary to prevent small dips and recoveries from looking like charging.
+	//These variables aggregate voltage change to determine we have been charging. This is necessary to prevent small dips and recoveries that look like charging.
 	if (rt->current_time - rt->disengage_timer < 5)
 		tone->voltage_diff = 0;					// reset the voltage differential if we just disengaged
-	else if (rt->current_time - rt->disengage_timer > 45)		// start tracking after idle 13 minutes
+	else if (rt->current_time - rt->disengage_timer > 45)		// wait 15 minutes to discern normal battery recovery from charging
 		tone->voltage_diff += m->voltage_filtered - tone->last_voltage;	//aggregate the voltage change
 	tone->last_voltage = m->voltage_filtered;			// keep updated, doesn't require conditional
 
-	//These variables are used to determine that charging is finished. They are sampled at 30s intervals to ignore disturbances.
-	if (rt->current_time - tone->delayed_voltage_timer > 30) {
-		tone->delayed_voltage = tone->current_voltage;
-		tone->current_voltage = m->voltage_filtered;
-		tone->delayed_voltage_timer = rt->current_time;
+	//These variables are used to determine that charging is finished. They are sampled at 60s intervals to ignore disturbances.
+	if (rt->current_time - tone->last_voltage_timer > 60) {
+		tone->current_voltage_diff = tone->voltage_diff - tone->last_voltage_diff;  	//store voltage diff from the last 60s	
+		tone->last_voltage_diff = tone->voltage_diff;					//store aggregate voltage diff to calc current voltage diff next cycle
+		tone->last_voltage_timer = rt->current_time;
 	}
 }
 
