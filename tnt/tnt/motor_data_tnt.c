@@ -42,6 +42,8 @@ void motor_data_reset(MotorData *m) {
     }
     biquad_reset(&m->current_biquad);
     biquad_reset(&m->erpm_biquad);
+
+    m->voltage_filtered = VESC_IF->mc_get_input_voltage_filtered();
 }
 
 void motor_data_configure(MotorData *m, tnt_config *config) {
