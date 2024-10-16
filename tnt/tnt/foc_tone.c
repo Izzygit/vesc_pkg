@@ -116,7 +116,7 @@ void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config, ToneData *t
 	tone_configure(&toneconfig->fastdouble1, 659.3, 659.3, 0, beep_voltage, .1, 2, 10, 1);
 	tone_configure(&toneconfig->fastdouble2, 784, 784, 0, beep_voltage, .1, 2, 0, 1);
 	tone_configure(&toneconfig->slowdouble1, 659.3, 659.3, 0, beep_voltage, .3, 2, 30, 1);
-	tone_configure(&toneconfig->slowdouble2, 784, 784, 0, beep_voltage, .3, 2, 60, 3);		//Charged or idle
+	tone_configure(&toneconfig->slowdouble2, 784, 784, 0, beep_voltage, .3, 2, 120, 3);		//Charged or idle
 	tone_configure(&toneconfig->fasttriple1, 659.3, 659.3, 659.3, beep_voltage, .1, 3, 0, 1);	//On write
 	tone_configure(&toneconfig->slowtriple1, 659.3, 659.3, 659.3, beep_voltage, .3, 3, 10, 5); 	//Temp motor
 	tone_configure(&toneconfig->slowtriple2, 784, 784, 784, beep_voltage, .3, 3, 10, 5);		//Temp fets
@@ -160,7 +160,7 @@ void idle_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt, MotorDat
 		play_tone(tone, toneconfig, BEEP_IDLE);		// this tone will prevent auto shut down of the vesc so it should be limited
 	}
 	
-	if (rt->current_time - tone->last_voltage_timer > 10) {
+	if (rt->current_time - tone->last_voltage_timer > 60) {
 		tone->last_voltage = m->voltage_filtered;
 		tone->last_voltage_timer = rt->current_time;
 	}
