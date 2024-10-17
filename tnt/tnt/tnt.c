@@ -440,7 +440,7 @@ static void send_realtime_data(data *d){
 	buffer_append_float32_auto(buffer, d->footpad_sensor.adc1, &ind);
 	buffer_append_float32_auto(buffer, d->footpad_sensor.adc2, &ind);
 	buffer_append_float32_auto(buffer, d->motor.voltage_filtered, &ind);
-	buffer_append_float32_auto(buffer, d->tone.voltage_diff, &ind); // current atr_filtered_current d->motor.current_filtered
+	buffer_append_float32_auto(buffer, d->motor.current_filtered, &ind); // current atr_filtered_current 
 	buffer_append_float32_auto(buffer, d->rt.pitch_angle, &ind); 
 	buffer_append_float32_auto(buffer, d->rt.roll_angle, &ind); 
 
