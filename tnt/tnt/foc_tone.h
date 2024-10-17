@@ -79,6 +79,7 @@ typedef struct {
 	float current_voltage_diff;
 	float voltage_diff;
 	float last_voltage;
+	int shutdown_mode;
 } ToneData;
 
 typedef struct {
