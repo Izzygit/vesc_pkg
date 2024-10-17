@@ -120,7 +120,7 @@ void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config, ToneData *t
 	tone_configure(&toneconfig->fastdouble1, 659.3, 659.3, 0, beep_voltage, .1, 2, 10, 1);
 	tone_configure(&toneconfig->fastdouble2, 784, 784, 0, beep_voltage, .1, 2, 0, 1);
 	tone_configure(&toneconfig->slowdouble1, 659.3, 659.3, 0, beep_voltage, .3, 2, 30, 1);
-	tone_configure(&toneconfig->slowdouble2, 784, 784, 0, beep_voltage, .3, 2, 60, 3);		//Charged or idle
+	tone_configure(&toneconfig->slowdouble2, 784, 784, 0, beep_voltage, .3, 2, 300, 3);		//Charged or idle
 	tone_configure(&toneconfig->fasttriple1, 659.3, 659.3, 659.3, beep_voltage, .1, 3, 0, 1);	//On write
 	tone_configure(&toneconfig->slowtriple1, 659.3, 659.3, 659.3, beep_voltage, .3, 3, 10, 5); 	//Temp motor
 	tone_configure(&toneconfig->slowtriple2, 784, 784, 784, beep_voltage, .3, 3, 10, 5);		//Temp fets
@@ -151,6 +151,7 @@ void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config, ToneData *t
 	tone->midrange_warning = config->midvolt_warning;
 	tone->lowvolt_warning = config->tiltback_lv;
 	tone->highvolt_warning = config->tiltback_hv;
+	tone->shutdown_mode = VESC_IF->get_cfg_int(CFG_PARAM_app_shutdown_mode);
 	tone_reset_on_configure(tone);
 }
 
@@ -159,15 +160,18 @@ void idle_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt, MotorDat
 	if (tone->voltage_diff > 0.5) {			// Allow a possible charged beep if we are increasing voltage above a margin. Don't idle beep.
 		if (tone->current_voltage_diff < 0.005) 	// voltage from the last 60s climbing slow enough that we are charged
 			play_tone(tone, toneconfig, BEEP_CHARGED);
-	} else if (rt->current_time - rt->disengage_timer > 600 &&	// alert user after 35 minutes
-	    tone->voltage_diff > -1) {					// give up after dropping 1 volt. this tone will prevent auto shut down so it should be limited
+	} else if (tone->shutdown_mode > 2) {		//Autoshutdown is activated in the app settings
+		if (tone->voltage_diff < -1)		//If we are dropping voltage too fast something is wrong, so attract attention
+			play_tone(tone, toneconfig, BEEP_IDLE);	
+	} else if (rt->current_time - rt->disengage_timer > 1800 &&	// alert user after 30 minutes
+	    tone->voltage_diff > -2) {					// give up after dropping 2 volts.
 		play_tone(tone, toneconfig, BEEP_IDLE);	
 	}
-
+	
 	//These variables aggregate voltage change to determine we have been charging. This is necessary to prevent small dips and recoveries that look like charging.
 	if (rt->current_time - rt->disengage_timer < 5)
 		tone->voltage_diff = 0;					// reset the voltage differential if we just disengaged
-	else if (rt->current_time - rt->disengage_timer > 300)		// wait 15 minutes to discern normal battery recovery from charging
+	else if (rt->current_time - rt->disengage_timer > 480)		// wait 8 minutes to discern normal battery recovery from charging
 		tone->voltage_diff += m->voltage_filtered - tone->last_voltage;	//aggregate the voltage change
 	tone->last_voltage = m->voltage_filtered;			// keep updated, doesn't require conditional
 
