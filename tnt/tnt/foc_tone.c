@@ -157,7 +157,7 @@ void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config, ToneData *t
 void idle_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt, MotorData *m) {
 	//Conditions to play a charged or idle tone
 	if (tone->voltage_diff > 0.5) {			// Allow a possible charged beep if we are increasing voltage above a margin. Don't idle beep.
-		if (tone->current_voltage_diff < 0.005) 	// voltage from the last 60s climbing slow rnough that we are charged
+		if (tone->current_voltage_diff < 0.005) 	// voltage from the last 60s climbing slow enough that we are charged
 			play_tone(tone, toneconfig, BEEP_CHARGED);
 	} else if (rt->current_time - rt->disengage_timer > 600 &&	// alert user after 35 minutes
 	    tone->voltage_diff > -1) {					// give up after dropping 1 volt. this tone will prevent auto shut down so it should be limited
