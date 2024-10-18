@@ -17,8 +17,8 @@ This package has been improved thanks to the contributions of Lukas Hrazky with 
 * Dynamic Stability - faster board response at higher speeds or with a remote.
 * Alternative proportional gain user inputs for pitch.
 * Optional independent brake curve for pitch.
-* High Duty Haptic Buzz - high speed warning.
-* High Current Haptic Buzz - instant, high torque warning.
+* High Duty FOC Tone - high speed warning.
+* High Current FOC Tone - instant, high torque warning.
 
 ### Default Settings
 Default settings are based on 20s battery, Hypercore (Future Motion motor), and Little Focer v3.1 set up. These are similar to the settings I ride for trails. One exception is surge which is disabled. Here are more details on the default settings:
@@ -59,6 +59,7 @@ For more instructions on setting up your board please refer to the [Set Up Guide
   * New Feature - Traction Control Braking (beta)
     * Utilizes VESC 'set brake' fuction to apply brake current with no wheel spin
     * Parameter that allows traction braking only when a minimum nose down angle is requested via remote
+    * Parameter for minimum ERPM
   * Traction Control Improvements
     * Added low pass filter to ERPM which is used to calculate motor acceleration.
     * New parameter to adjust low pass filter frequency.
@@ -68,6 +69,7 @@ For more instructions on setting up your board please refer to the [Set Up Guide
     * Absolute value of motor acceleration must be less than Hold Condition to allow another traction control engagement.
     * New parameter allows for the termination of traction control when a pitch angle threshold is met.
     * Removed intermediate time outs and changed traction control to 1 second time out.
+    * Added conditions for traction braking.
   * FOC Play Tones
     * FOC play tones now replaces haptic buzz.
     * New parameters allow for frequency and voltage (volume) adjustment for high current and high duty tones
@@ -81,7 +83,7 @@ For more instructions on setting up your board please refer to the [Set Up Guide
       * New features Mid/Low Range Warnings - slow triple beep, descending pitch
       * Footpad disengaged above 2000 ERPM - continuous single pitch
       * On write configuration - fast triple beep, single pitch (only when idle)
-      * Idle beeper after 35 minutes for next 15 minutes - slow double beep, single pitch
+      * Idle beeper after 30 minutes for next 15 minutes - slow double beep, single pitch
       * New feature charged alert - slow double beep, single pitch
     * New parameter to adjust beeper volume.
     * Added more Last Beep Reasons to AppUI to identify the new beep features.
