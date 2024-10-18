@@ -164,7 +164,7 @@ void idle_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt, MotorDat
 		if (tone->voltage_diff < -1)		//If we are dropping voltage too fast something is wrong, so attract attention
 			play_tone(tone, toneconfig, BEEP_IDLE);	
 	} else if (rt->current_time - rt->disengage_timer > 1800 &&	// alert user after 30 minutes
-	    tone->voltage_diff > -2) {					// give up after dropping 2 volts.
+	    tone->voltage_diff > -1) {					// give up after dropping 2 volts.
 		play_tone(tone, toneconfig, BEEP_IDLE);	
 	}
 	
