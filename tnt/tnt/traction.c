@@ -71,7 +71,7 @@ void check_traction(MotorData *m, TractionData *traction, State *state, tnt_conf
 				} // else if (...TODO Put working braking condition here
 			} else if (sign(m->erpm_sign_soft) != sign(m->accel_avg)) {				// If the motor is back spinning engage but don't allow wheelslip on landing
 				start_condition2 = sign(m->current) * m->accel_avg > traction->start_accel * erpmfactor &&	// The wheel has broken free indicated by abnormally high acceleration in the direction of motor current
-			   	    !state->braking_pos_smooth && && !state->braking_active && (current_time - braking->delay_timer > braking->feature_delay2);	// Do not apply for braking 
+			   	    !state->braking_pos_smooth && !state->braking_active && (current_time - braking->delay_timer > braking->feature_delay2);	// Do not apply for braking 
 			}
 		}
 		
