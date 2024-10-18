@@ -281,7 +281,7 @@ void check_tone(ToneData *tone, ToneConfigs *toneconfig, MotorData *motor) {
 void play_footpad_beep(ToneData *tone, MotorData *motor, FootpadSensor *fs, ToneConfig *toneconfig) {
 	//Check footpad beep
 	if (fs->state == FS_NONE &&
-	    motor->abs_erpm > 2000) {
+	  motor->abs_erpm > 2000) {
 	    play_tone(tone, toneconfig, BEEP_SENSORS);
 	} else if (tone->tone_in_progress && tone->beep_reason == BEEP_SENSORS) { 
 	    end_tone(tone);
