@@ -56,6 +56,7 @@ void motor_data_configure(MotorData *m, tnt_config *config) {
     m->mc_max_temp_mot = VESC_IF->get_cfg_float(CFG_PARAM_l_temp_motor_start) - 3;
     m->mc_current_max = VESC_IF->get_cfg_float(CFG_PARAM_l_current_max); 
     m->mc_current_min = fabsf(VESC_IF->get_cfg_float(CFG_PARAM_l_current_min));    // min current is a positive value here!
+    m->voltage_filter_factor = 0.001 * 832 / config->hertz;
 }
 
 void update_erpm_sign(MotorData *m) {
@@ -91,5 +92,5 @@ void motor_data_update(MotorData *m, tnt_config *config) {
 
     m->duty_cycle = fabsf(VESC_IF->mc_get_duty_cycle_now());
 
-    m->voltage_filtered = VESC_IF->mc_get_input_voltage_filtered() * 0.001 + m->voltage_filtered * (1 - 0.001);
+    m->voltage_filtered = VESC_IF->mc_get_input_voltage_filtered() * m->voltage_filter_factor + m->voltage_filtered * (1 - m->voltage_filter_factor);
 }
