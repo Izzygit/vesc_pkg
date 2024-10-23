@@ -61,6 +61,7 @@ typedef struct {
     float mc_current_min;
 
     float voltage_filtered;
+    float voltage_filter_factor;
 } MotorData;
 
 void motor_data_reset(MotorData *m);
