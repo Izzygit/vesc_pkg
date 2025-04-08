@@ -26,6 +26,7 @@
 void motor_data_reset(MotorData *m) {
     m->duty_smooth = 0;
 
+    m->m->accel_sum = 0;
     m->acceleration = 0;
     m->accel_idx = 0;
     for (int i = 0; i < 40; i++) {
