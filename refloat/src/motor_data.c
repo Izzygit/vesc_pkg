@@ -42,6 +42,9 @@ void motor_data_configure(MotorData *m, float frequency) {
     } else {
         m->atr_filter_enabled = false;
     }
+
+    //normalize accel array size to 40 cycles at 832 Hz. Accel array size could be changed to a user input in ms, m->accel_array_size = min(500, max(5, config->accel_filter_period * config->hertz /1000));
+    m->accel_array_size = min(500, max(5, 40 * config->hertz / 832)); 
 }
 
 void motor_data_update(MotorData *m) {
@@ -58,9 +61,9 @@ void motor_data_update(MotorData *m) {
     float current_acceleration = m->erpm - m->last_erpm;
     m->last_erpm = m->erpm;
 
-    m->acceleration += (current_acceleration - m->accel_history[m->accel_idx]) / ACCEL_ARRAY_SIZE;
+    m->acceleration += (current_acceleration - m->accel_history[m->accel_idx]) / m->accel_array_size;
     m->accel_history[m->accel_idx] = current_acceleration;
-    m->accel_idx = (m->accel_idx + 1) % ACCEL_ARRAY_SIZE;
+    m->accel_idx = (m->accel_idx + 1) % m->accel_array_size;
 
     if (m->atr_filter_enabled) {
         m->atr_filtered_current = biquad_process(&m->atr_current_biquad, m->current);
