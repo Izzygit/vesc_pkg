@@ -22,8 +22,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define ACCEL_ARRAY_SIZE 40
-
 typedef struct {
     float erpm;
     float abs_erpm;
@@ -40,6 +38,7 @@ typedef struct {
     float acceleration;
     float accel_history[ACCEL_ARRAY_SIZE];
     uint8_t accel_idx;
+    int accel_array_size;
 
     bool atr_filter_enabled;
     Biquad atr_current_biquad;
