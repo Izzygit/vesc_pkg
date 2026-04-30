@@ -100,12 +100,13 @@ void update_remote(tnt_config *config, RemoteData *r) {
 		servo_val = VESC_IF->get_ppm();
 		remote_connected = VESC_IF->get_ppm_age() < 1;
 		break;
-	case (INPUTTILT_UART): ; // Don't delete ";", required to avoid compiler error with first line variable init
+	case (INPUTTILT_UART): { 
 		remote_state remote = VESC_IF->get_remote_state();
 		servo_val = remote.js_y;
 		remote_connected = remote.age_s < 1;
 		break;
-	case (INPUTTILT_NONE):
+	}
+		case (INPUTTILT_NONE):
 		break;
 	}
 
