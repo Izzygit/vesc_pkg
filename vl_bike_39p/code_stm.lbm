@@ -1,0 +1,563 @@
+(def adc-thr 0.0)
+(def adc-brake 0.0)
+
+(def val-thr 0.0)
+(def val-brake 0.0)
+(def val-lever1 0.0)
+(def val-lever2 0.0)
+(def out-mapped 0.0)
+
+(def light-on 0)
+(def drive-mode 1)
+(def kickstand-down false)
+
+(def battery-a-charging false)
+(def battery-a-chg-time 0.0)
+(def stats-battery-ah 0.0)
+
+(def cruise-on 0)
+(def cruise-ts 0)
+
+(def t-ambient 0.0)
+
+(def log-running false)
+(def last-can-id -1)
+
+(import "lib/motorconf.lbm" 'code-motorcfg)
+(read-eval-program code-motorcfg)
+
+@const-start
+
+; Clamp value to range 0-1
+(defun clamp01 (v)
+    (cond
+        ((< v 0.0) 0.0)
+        ((> v 1.0) 1.0)
+        (t v)
+))
+
+; Map and clamp the range min-max to 0-1
+(defun map-range-01 (v min max)
+    (clamp01 (/ (- (to-float v) min) (- max min)))
+)
+
+(defun lpf (val sample fconst)
+    (- val (* fconst (- val sample)))
+)
+
+(defun proc-sid (id data) {
+        (cond
+            ((= id 31) {
+                    (setq kickstand-down (= (bufget-u8 data 0) 0)) ; NOTE: Inverted
+                    (if kickstand-down (setq cruise-on 0))
+            })
+
+            ((= id 35) {
+                    (setq battery-a-charging (= (bufget-u8 data 2) 1))
+                    (setq battery-a-chg-time (bufget-u16 data 3))
+                    (setq stats-battery-ah (/ (bufget-u16 data 5) 10.0))
+            })
+
+            ((= id 200) {
+                    (setq val-lever1 (/ (bufget-i16 data 4) 1000.0))
+                    (setq val-lever2 (/ (bufget-i16 data 6) 1000.0))
+
+                    (if (or
+                            (> (abs val-lever1) 0.5)
+                            (> (abs val-lever2) 0.5)
+                        )
+                        (setq cruise-on 0)
+                    )
+            })
+
+            ((= id 201) {
+                    (var drive-mode-new (bufget-u8 data 0))
+                    (setq light-on (bufget-u8 data 1))
+
+                    (if (!= drive-mode drive-mode-new) (setq cruise-on 0))
+
+                    (setq drive-mode drive-mode-new)
+
+                    (match drive-mode
+                        (0 { ; Reverse
+                                (conf-set 'l-current-max-scale 0.4)
+                                (conf-set 'min-speed (/ -10.0 3.6))
+                        })
+                        (1 { ; Neutral
+                                (conf-set 'l-current-max-scale 0.8)
+                        })
+                        (2 { ; 1
+                                (conf-set 'l-current-max-scale 0.5)
+                                (conf-set 'max-speed (/ 26.0 3.6))
+                        })
+                        (3 { ; 2
+                                (conf-set 'l-current-max-scale 0.6)
+                                (conf-set 'max-speed (/ 46.0 3.6))
+                        })
+                        (4 { ; 3
+                                (conf-set 'l-current-max-scale 1.0)
+                                (conf-set 'max-speed (/ 200.0 3.6))
+                        })
+                    )
+            })
+
+            ; Event
+            ((= id 250) {
+                    (cond
+                        ((= (bufget-u8 data 0) 0) { ; Toggle cruise control
+                                (setq cruise-on (if (= cruise-on 0) 1 0))
+                                (if (= cruise-on 1) (setq cruise-ts (systime)))
+                        })
+                    )
+            })
+        )
+})
+
+(defun event-handler ()
+    (loopwhile t
+        (recv
+            ((event-can-sid . ((? id) . (? data))) (proc-sid id data))
+            ((event-data-rx . (? data)) (trap (eval (read data))))
+            (_ nil)
+)))
+
+(defun get-temp-ambient () {
+        (var va (get-adc 5))
+        (var res-ntc (/ (* va 33000.0) (- 5.0 va)))
+        (- (/ 1.0 (+ (/ (log (/ res-ntc 10000.0)) 3380.0) (/ 1.0 298.15))) 273.15)
+})
+
+; Persistent settings
+; Format: (label . (offset type))
+(def eeprom-addrs '(
+        (ver-code   . (0 i))
+        (thr-min    . (1 f))
+        (thr-max    . (2 f))
+        (brk-min    . (3 f))
+        (brk-max    . (4 f))
+        (use-brake  . (5 b))
+))
+
+(defun print-settings ()
+    (loopforeach it eeprom-addrs
+        (print (list (first it) (read-setting (first it))))
+))
+
+(def settings-version 281i32)
+
+(defun read-setting (name)
+    (let (
+            (addr (first (assoc eeprom-addrs name)))
+            (type (second (assoc eeprom-addrs name)))
+        )
+        (cond
+            ((eq type 'i) (eeprom-read-i addr))
+            ((eq type 'f) (eeprom-read-f addr))
+            ((eq type 'b) (!= (eeprom-read-i addr) 0))
+)))
+
+(defun write-setting (name val)
+    (let (
+            (addr (first (assoc eeprom-addrs name)))
+            (type (second (assoc eeprom-addrs name)))
+        )
+        (cond
+            ((eq type 'i) (eeprom-store-i addr val))
+            ((eq type 'f) (eeprom-store-f addr val))
+            ((eq type 'b) (eeprom-store-i addr (if val 1 0)))
+)))
+
+(defun restore-settings () {
+        (write-setting 'thr-min 0.58)
+        (write-setting 'thr-max 2.9)
+        (write-setting 'brk-min 0.58)
+        (write-setting 'brk-max 2.9)
+        (write-setting 'use-brake true)
+        (write-setting 'ver-code settings-version)
+})
+
+(defun send-settings ()
+    (send-data (str-merge
+            "settings "
+            (str-from-n (read-setting 'thr-min) "%.2f ")
+            (str-from-n (read-setting 'thr-max) "%.2f ")
+            (str-from-n (read-setting 'brk-min) "%.2f ")
+            (str-from-n (read-setting 'brk-max) "%.2f ")
+            (if (read-setting 'use-brake) "1" "0")
+)))
+
+(defun save-config (thr-min thr-max brk-min brk-max use-brake) {
+        (write-setting 'thr-min thr-min)
+        (write-setting 'thr-max thr-max)
+        (write-setting 'brk-min brk-min)
+        (write-setting 'brk-max brk-max)
+        (write-setting 'use-brake use-brake)
+        (send-data "Settings Saved!")
+})
+
+(defun send-msg (text)
+    (send-data (str-merge "msg " text))
+)
+
+(defun send-adc ()
+    (send-data (str-merge
+            "volts "
+            (str-from-n adc-thr "%.2f ")
+            (str-from-n adc-brake "%.2f ")
+            (str-from-n out-mapped "%.2f ")
+)))
+
+; Local data to log
+;
+; Format
+; (optKey optName optUnit optPrecision optIsRel optIsTime value-function)
+;
+; All entries except value-function are optional and
+; default values will be used if they are left out.
+(def loglist-local '(
+        ("Input Voltage" "V"            (get-vin))
+        ("Current" "A"                  (get-current))
+        ("Current In" "A"               (get-current-in))
+        ("Duty"                         (get-duty))
+        ("RPM"                          (get-rpm))
+        ("Temp Fet" "degC" 1            (get-temp-fet))
+        ("Temp Motor" "degC" 1          (get-temp-mot))
+        ("Batt" "%"                     (* (get-batt) 100))
+        ("kmh_vesc" "km/h" "Speed VESC" (* (get-speed) 3.6))
+        ("roll"                         (ix (get-imu-rpy) 0))
+        ("pitch"                        (ix (get-imu-rpy) 1))
+        ("yaw"                          (ix (get-imu-rpy) 2))
+        ("fault"                        (get-fault))
+        ("trip_vesc" "m"                (get-dist))
+        ("trip_vesc_abs" "m"            (get-dist-abs))
+        ("cnt_ah" "Ah" "Amp Hours"      (get-ah))
+        ("cnt_wh" "Wh" "Watt Hours"     (get-wh))
+        ("cnt_ah_chg" "Ah" "Ah Chg"     (get-ah-chg))
+        ("cnt_wh_chg" "Wh" "Wh Chg"     (get-wh-chg))
+        ("ADC1" "V"                     (get-adc 0))
+        ("ADC2" "V"                     (get-adc 1))
+        ("iq" "A"                       (get-iq))
+        ("id" "A"                       (get-id))
+        ("Fault"                        (get-fault))
+))
+
+(defun merge-lists (list-with-lists) (foldl append () list-with-lists))
+
+; CAN-data template. Same format as above, but all %d in strings will
+; be replaced with can-id. Id in the last field will also be replaced
+; with can id.
+(def loglist-can-template '(
+        ("V%d Current" "A"              (canget-current id))
+        ("V%d Current In" "A"           (canget-current-in id))
+        ("V%d Duty"                     (canget-duty id))
+        ("V%d RPM"                      (canget-rpm id))
+        ("V%d Temp Fet" "degC" 1        (canget-temp-fet id))
+        ("V%d Temp Motor" "degC" 1      (canget-temp-motor id))
+        ("V%d ADC1" "V"                 (canget-adc id 0))
+        ("V%d ADC2" "V"                 (canget-adc id 1))
+        ("V%d Input Voltage" "V"        (canget-vin id))
+))
+
+; Scan CAN-bus and make loglists for all devices
+(defun canlist-create ()
+    (merge-lists
+        (map
+            (fn (id) ; For every CAN ID
+                (map
+                    (fn (row) ; For every row in template
+                        (map
+                            (fn (e) ; For every element in that row
+                                (cond
+                                    ((eq (type-of e) type-array) (str-from-n id e))
+                                    ((eq (type-of e) type-list) (map (fn (x) (if (eq x 'id) id x)) e))
+                                    (true e)
+                                )
+                            )
+                            row
+                        )
+                    )
+                    loglist-can-template
+                )
+            )
+            (can-list-devs)
+        )
+    )
+)
+
+(defun bmslist-create()
+    (let (
+            (res ())
+            (add (fn (x) (setvar 'res (append res (list x)))))
+        )
+        (if (< (get-bms-val 'bms-msg-age) 2)
+            (progn
+                (add '("bms_v_tot" "V" "BMS Voltage" (get-bms-val 'bms-v-tot)))
+                (looprange i 0 (get-bms-val 'bms-cell-num)
+                    (add (list (str-from-n (+ i 1) "BMS_C%d") "V" 3 (list 'get-bms-val ''bms-v-cell i)))
+                )
+                (add '("bms_i_in_ic" "A" "BMS Current" (get-bms-val 'bms-i-in-ic)))
+                (add '("bms_soc" "%" "BMS SOC" (* (get-bms-val 'bms-soc) 100.0)))
+                (add '("bms_hum" "%" "BMS Hum" (get-bms-val 'bms-hum)))
+                (add '("bms_temp_hum" "degC" "BMS Temp Hum" (get-bms-val 'bms-temp-hum)))
+                (looprange i 0 (get-bms-val 'bms-temp-adc-num)
+                    (add (list (str-from-n (+ i 1) "BMS_T%d") "degC" 3 (list 'get-bms-val ''bms-temps-adc i)))
+                )
+                res
+            )
+            res
+
+)))
+
+(defun loglist-parse (id lst res-fun)
+    (looprange row 0 (length lst)
+        (let (
+                (field (ix lst row))
+                (get-field
+                    (fn (type default)
+                        (let ((f (first field)))
+                            (if (eq (type-of f) type)
+                                (progn
+                                    (setvar 'field (rest field))
+                                    f
+                                )
+                                default
+                ))))
+                (key       (get-field type-array (str-from-n row "Field %d")))
+                (unit      (get-field type-array ""))
+                (name      (get-field type-array key))
+                (precision (get-field type-i 2))
+                (is-rel    (get-field type-symbol false))
+                (is-time   (get-field type-symbol false))
+            )
+            (res-fun
+                id ; CAN id
+                row ; Field
+                key ; Key
+                name ; Name
+                unit ; Unit
+                precision ; Precision
+                is-rel ; Is relative
+                is-time ; Is timestamp
+            )
+)))
+
+; Confiure all log fields based on loglist lst
+(defun log-configure (id lst) (loglist-parse id lst 'log-config-field))
+
+; Print all parsed fields of loglist lst
+(defun print-loglist (lst) (loglist-parse 0 lst
+        (fn (id row key name unit precision is-rel is-time)
+            (print (list key name unit precision is-rel is-time (ix (ix lst row) -1)))
+)))
+
+(defun log-thd (id rate lst)
+    (loopwhile log-running
+        (progn
+            (log-send-f32 id 0
+                (map
+                    (fn (x) (eval (ix x -1)))
+                    lst
+                )
+            )
+            (sleep (/ 1.0 rate))
+)))
+
+(defun start-log (id append-gnss log-local log-can log-bms rate)
+    (progn
+        (def last-can-id id)
+        (stop-log id)
+
+        (def loglist (merge-lists
+                (list
+                    (if log-local loglist-local ())
+                    (if log-can (canlist-create) ())
+                    (if log-bms (bmslist-create) ())
+        )))
+
+        (if (eq loglist nil)
+            (send-msg "Nothing to log. Make sure that everything on the CAN-bus has status messages enabled.")
+
+            (progn
+                (log-configure id loglist)
+
+                (log-start
+                    id ; CAN id
+                    (length loglist) ; Field num
+                    rate ; Rate Hz
+                    true ; Append time
+                    append-gnss ; Append gnss
+                )
+
+                (def log-running true)
+                (def log-thd-id (spawn log-thd id rate loglist))
+                (send-data "Log Started")
+        ))
+))
+
+(defun stop-log (id) {
+        (log-stop id)
+        (if log-running {
+                (def log-running false)
+                (wait log-thd-id)
+                (send-data "Log stopped")
+        })
+})
+
+(defun start-log-defaults() {
+        (start-log
+            2 ; CAN ID
+            false ; GNSS
+            true ; Local
+            false ; CAN
+            true ; BMS
+            10 ; Rate
+        )
+})
+
+(defun main () {
+        (set-print-prefix "STM-")
+
+        (event-register-handler (spawn event-handler))
+        (event-enable 'event-can-sid)
+        (event-enable 'event-data-rx)
+
+        ; Restore settings if version number does not match
+        ; as that probably means something else is in eeprom
+        (if (not-eq (read-setting 'ver-code) settings-version) (restore-settings))
+
+        (set-aux 1 1) ; 12V always on
+
+        (gpio-configure 'pin-swdio 'pin-mode-in) ; Ambient Temperature Sensor
+
+        (setq t-ambient (get-temp-ambient))
+
+        (var thr-min (read-setting 'thr-min))
+        (var thr-max (read-setting 'thr-max))
+        (var brk-min (read-setting 'brk-min))
+        (var brk-max (read-setting 'brk-max))
+        (var use-brake (read-setting 'use-brake))
+
+        (loopwhile-thd ("Worker" 150) t {
+                (setq thr-min (read-setting 'thr-min))
+                (setq thr-max (read-setting 'thr-max))
+                (setq brk-min (read-setting 'brk-min))
+                (setq brk-max (read-setting 'brk-max))
+                (setq use-brake (read-setting 'use-brake))
+                (sleep 1.0)
+        })
+
+        (loopwhile-thd ("Worker" 150) t {
+                (setq adc-thr (get-adc 0))
+                (setq adc-brake (get-adc 1))
+
+                (setq val-thr (map-range-01 adc-thr thr-min thr-max))
+
+                (if use-brake
+                    (setq val-brake (map-range-01 adc-brake brk-min brk-max))
+                    (setq val-brake 0.0)
+                )
+
+                (setq out-mapped (- val-thr val-brake))
+
+                (if (or
+                        (= drive-mode 1)
+                        (and (= cruise-on 1) (< (secs-since cruise-ts) 2))
+                        kickstand-down
+                        ) {
+                        (setq val-thr 0.0)
+                })
+
+                (if battery-a-charging {
+                        (setq val-thr 0.0)
+                        (setq val-brake 0.0)
+                })
+
+                (if (or
+                        (< drive-mode 2)
+                        (> (abs val-thr) 0.05)
+                        (> (abs val-brake) 0.05)
+                        (> (abs val-lever1) 0.5)
+                        (> (abs val-lever2) 0.5)
+                    )
+                    (setq cruise-on 0)
+                )
+
+                (if (and (> (secs-since cruise-ts) 1) (< (* (abs (get-speed-set)) 3.6) 5.0)) {
+                        (setq cruise-on 0)
+                })
+
+                (set-remote-state (- val-thr val-brake) 0 cruise-on 0 (if (= drive-mode 0) 1 0))
+
+                (setq t-ambient (lpf t-ambient (get-temp-ambient) 0.002))
+
+                (sleep 0.02)
+        })
+
+        (def soc 0.0)
+
+        (var canbuf (bufcreate 8))
+        (loopwhile-thd ("Send CAN" 150) t {
+                (setq soc (get-batt))
+
+                (bufclear canbuf)
+                (bufset-i16 canbuf 0 (* soc 1000))
+                (bufset-i16 canbuf 2 (* (abs (get-duty)) 1000))
+                (bufset-i16 canbuf 4 (* (abs (get-speed)) 3.6 10))
+                (bufset-i16 canbuf 6 (* (get-current-in) (get-vin) 0.1))
+                (can-send-sid 20 canbuf)
+
+                (bufclear canbuf)
+                (if (> (get-bms-val 'bms-temp-adc-num) 2)
+                    (bufset-i16 canbuf 0 (* (get-bms-val 'bms-temps-adc 2) 10))
+                    (bufset-i16 canbuf 0 0)
+                )
+                (bufset-i16 canbuf 2 (* (get-temp-fet) 10))
+                (bufset-i16 canbuf 4 (* (get-temp-mot) 10))
+                (bufset-i16 canbuf 6 (* (ix (get-imu-rpy) 1) 100))
+                (can-send-sid 21 canbuf)
+
+                (bufclear canbuf)
+                (bufset-u16 canbuf 0 (* (get-wh) 10.0))
+                (bufset-u16 canbuf 2 (* (get-wh-chg) 10.0))
+                (bufset-u16 canbuf 4 (* (/ (get-dist-abs) 1000.0) 10))
+                (bufset-u16 canbuf 6 (get-fault))
+                (can-send-sid 22 canbuf)
+
+                (bufclear canbuf)
+                (bufset-u16 canbuf 0 (to-i (stats 'stat-current-avg)))
+                (bufset-u16 canbuf 2 (to-i (stats 'stat-current-max)))
+                (bufset-i16 canbuf 4 (to-i (get-current)))
+                (bufset-u16 canbuf 6 (to-i (conf-get 'si-battery-ah)))
+                (can-send-sid 23 canbuf)
+
+                (bufclear canbuf)
+                (bufset-u16 canbuf 0 (* (get-vin) 10))
+                (bufset-u32 canbuf 2 (* (/ (sysinfo 'odometer) 1000.0) 10))
+                (bufset-u16 canbuf 6 (* (abs (get-speed-set)) 3.6 10)) ; Cruise control speed
+                ; Reserved space
+                (can-send-sid 24 canbuf)
+
+                (bufclear canbuf)
+                (bufset-i16 canbuf 0 (* val-thr 1000.0))
+                (bufset-i16 canbuf 2 (* val-brake 1000.0))
+                (can-send-sid 200 canbuf)
+
+                (bufclear canbuf)
+                (bufset-u8 canbuf 0 cruise-on)
+                (can-send-sid 202 canbuf)
+
+                ;(bufclear canbuf)
+                ;(bufset-i16 canbuf 0 (* t-ambient 10))
+                ;(can-send-sid 203 canbuf)
+
+                (sleep 0.1) ; 10 Hz
+        })
+
+        ;(start-log-defaults)
+        ;(stop-log last-can-id)
+})
+
+@const-end
+
+(image-save)
+(main)

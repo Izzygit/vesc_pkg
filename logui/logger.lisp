@@ -38,8 +38,8 @@
 ; default values will be used if they are left out.
 (def loglist-local '(
         ("Input Voltage" "V"            (get-vin))
-        ("Current" "A"                  (get-current))
-        ("Current In" "A"               (get-current-in))
+        ("Current" "A"                  (get-current 1))
+        ("Current In" "A"               (get-current-in 1))
         ("Duty"                         (get-duty))
         ("RPM"                          (get-rpm))
         ("Temp Fet" "degC" 1            (get-temp-fet))
@@ -58,8 +58,10 @@
         ("cnt_wh_chg" "Wh" "Wh Chg"     (get-wh-chg))
         ("ADC1" "V"                     (get-adc 0))
         ("ADC2" "V"                     (get-adc 1))
-        ("iq" "A"                       (get-iq))
-        ("id" "A"                       (get-id))
+        ("iq" "A"                       (get-iq 1))
+        ("id" "A"                       (get-id 1))
+        ("vq" "V"                       (get-vq 1))
+        ("vd" "V"                       (get-vd 1))
         ("Fault"                        (get-fault))
 ))
 
@@ -239,7 +241,7 @@
 (defun event-handler ()
     (loopwhile t
         (recv
-            ((event-data-rx . (? data)) (eval (read data)))
+            ((event-data-rx . (? data)) (trap (eval (read data))))
             (event-shutdown (stop-log last-can-id))
             (_ nil) ; Ignore other events
 )))
@@ -358,22 +360,19 @@
         ; as that probably means something else is in eeprom
         (if (not-eq (read-setting 'ver-code) settings-version) (restore-settings))
 
-        ; Avoid delay in case this script is imported and executed.
-        (loopwhile-thd 200 t {
-                ; Wait for things to start up
-                (sleep 10)
+        ; Wait for things to start up
+        (sleep 10)
 
-                ; Start logging at boot if configured
-                (if (read-setting 'log-at-boot)
-                    (start-log
-                        (read-setting 'can-id)
-                        (read-setting 'append-gnss)
-                        (read-setting 'log-local)
-                        (read-setting 'log-can)
-                        (read-setting 'log-bms)
-                        (read-setting 'log-rate)
-                ))
-        })
+        ; Start logging at boot if configured
+        (if (read-setting 'log-at-boot)
+            (start-log
+                (read-setting 'can-id)
+                (read-setting 'append-gnss)
+                (read-setting 'log-local)
+                (read-setting 'log-can)
+                (read-setting 'log-bms)
+                (read-setting 'log-rate)
+        ))
 })
 
 @const-end

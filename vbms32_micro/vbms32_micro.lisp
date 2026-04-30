@@ -34,6 +34,7 @@
         (soc . 0.5)
         (charge-fault . false)
         (updated . false)
+        (beeper-en . true)
 ))
 
 (def is-bal false)
@@ -53,12 +54,40 @@
 
 @const-start
 
+;;; Hack until problem is found ;;;
+; Pre-load all functions that are loaded with the dynamic loader. This will
+; make them end up in the image and there is no need to load them dynamically.
+
+str-merge
+foldl
+foldr
+zipwith
+filter
+str-cmp-asc
+str-cmp-dsc
+second
+third
+abs
+
+defun
+defunret
+defmacro
+loopfor
+loopwhile
+looprange
+loopforeach
+loopwhile-thd
+
+;;; Hack End ;;;
+
 ; Current inverted and different shunt compared to stock FW
 ; TODO: The hardware should provide a unitless raw value...
 (defun bms-current () (* (bms-get-current) -0.2))
 
 (defun beep (times dt) {
-        (mutex-lock buz-mutex)
+        (if (assoc rtc-val 'beeper-en)
+        {
+                (mutex-lock buz-mutex)
 
         (loopwhile (> times 0) {
                 (pwm-set-duty 0.5 0)
@@ -68,13 +97,25 @@
                 (setq times (- times 1))
         })
 
-        (mutex-unlock buz-mutex)
+                (mutex-unlock buz-mutex)
+        })
 })
 
-(def rtc-val-magic 115)
+(defun beeper-enabled (enabled) {
+        (setassoc rtc-val 'beeper-en enabled)
+})
+
+(defun send-config () {
+        (var config-string "settings ")
+        (setq config-string (str-merge config-string (if (assoc rtc-val 'beeper-en) "1" "0")))
+        (send-data config-string)
+})
+
+(def rtc-val-magic 116)
 
 ; If in deepsleep, this will return 4
 ; (bms-direct-cmd 1 0x00)
+
 
 ; Exit deepsleep
 ; (bms-subcmd-cmdonly 1 0x000e)
@@ -215,12 +256,27 @@
 
 (defun update-temps () {
         ; Exit if any of the BQs has invalid temperature settings
-        (if (or
-                (!= (bms-read-reg 1 0x92fd 1) 0x3b)
-                (and (> (bms-get-param 'cells_ic2) 0) (!= (with-com '(bms-read-reg 2 0x92fd 1)) 0x3b))
-            )
-            (exit-error 0)
-        )
+        (if (!= (bms-read-reg 1 0x92fd 1) 0x3b) {
+                (print "Invalid temp reg, retrying...")
+                (sleep 0.01)
+
+                (if (!= (bms-read-reg 1 0x92fd 1) 0x3b) {
+                        (print "Temp reg still invalid, exit error!")
+                        (exit-error 0)
+                })
+        })
+
+        (if (> (bms-get-param 'cells_ic2) 0) {
+                (if (!= (with-com '(bms-read-reg 2 0x92fd 1)) 0x3b) {
+                        (print "Invalid temp IC2 reg, retrying...")
+                        (sleep 0.01)
+
+                        (if (!= (with-com '(bms-read-reg 2 0x92fd 1)) 0x3b) {
+                                (print "Temp reg IC2 still invalid, exit error!")
+                                (exit-error 0)
+                        })
+                })
+        })
 
         (var bms-temps (with-com '(bms-get-temps)))
         (var temp-ext-num (truncate (bms-get-param 'temp_num) 0 4))
@@ -329,7 +385,7 @@
         ))
 
         (var ichg 0.0)
-        (if (and (test-chg 400) charge-ok charge-wakeup) {
+        (if (and charge-ok charge-wakeup (test-chg 400)) {
                 (set-chg true)
 
                 (looprange i 0 (* charger-max-delay 10.0) {
@@ -510,7 +566,14 @@
             (set-bms-val 'bms-temps-adc 1 t-min) ; Cell Min
             (set-bms-val 'bms-temps-adc 2 t-max) ; Cell Max
             (set-bms-val 'bms-temps-adc 3 t-mos) ; Mosfet
-            (set-bms-val 'bms-temps-adc 4 -300.0) ; Ambient
+
+            ; Use channel 4 as ambient-sensor when not used as a cell sensor
+            ; and when it shows a valid reading
+            (if (and (< temp-ext-num 4) (> (ix bms-temps 4) -50))
+                (set-bms-val 'bms-temps-adc 4 (ix bms-temps 4))
+                (set-bms-val 'bms-temps-adc 4 -300.0)
+            )
+
             (looprange i 0 temp-ext-num {
                     (set-bms-val 'bms-temps-adc (+ 5 i) (ix bms-temps (+ i 1)))
             })
@@ -772,6 +835,7 @@
                     (setq bal-ok true)
                     (setq bal-ok false)
             ))
+            ((event-data-rx ? data) (trap (eval (read data))))
             (_ nil)
             ;((? a) (print a))
 )))
@@ -855,6 +919,7 @@
         (event-enable 'event-bms-reset-cnt)
         (event-enable 'event-bms-force-bal)
         (event-enable 'event-bms-zero-ofs)
+        (event-enable 'event-data-rx)
 
         (set-bms-val 'bms-cell-num cell-num)
         (set-bms-val 'bms-can-id (can-local-id))

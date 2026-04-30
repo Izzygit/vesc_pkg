@@ -35,12 +35,7 @@ void pid_init(PID *pid) {
 }
 
 void pid_update(
-    PID *pid,
-    float setpoint,
-    const MotorData *md,
-    const IMU *imu,
-    const State *state,
-    const RefloatConfig *config
+    PID *pid, float setpoint, const MotorData *md, const IMU *imu, const RefloatConfig *config
 ) {
     pid->p = setpoint - imu->balance_pitch;
     pid->i = pid->i + pid->p * config->ki;
@@ -48,10 +43,6 @@ void pid_update(
     // I term filter
     if (config->ki_limit > 0 && fabsf(pid->i) > config->ki_limit) {
         pid->i = config->ki_limit * sign(pid->i);
-    }
-    // quickly ramp down integral component during reverse stop
-    if (state->sat == SAT_REVERSESTOP) {
-        pid->i *= 0.9;
     }
 
     // brake scale coefficient smoothing
@@ -77,10 +68,6 @@ void pid_update(
 
     pid->p *= config->kp * (pid->p > 0 ? pid->kp_accel_scale : pid->kp_brake_scale);
 
-    pid->rate_p = -imu->gyro_y * config->kp2;
+    pid->rate_p = -imu->pitch_rate * config->kp2;
     pid->rate_p *= pid->rate_p > 0 ? pid->kp2_accel_scale : pid->kp2_brake_scale;
-}
-
-void pid_reset_integral(PID *pid) {
-    pid->i = 0;
 }
