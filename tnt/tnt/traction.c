@@ -92,7 +92,7 @@ void check_traction(MotorData *m, TractionData *traction, State *state, tnt_conf
 			traction->highaccelon1 = true;
 			traction->highaccelon2 = true;
 			traction->timeron = current_time;
-			if (start_condition2)
+			if (m->erpm_sign != sign(traction->erpm_limited)
 				traction->reverse_wheelslip = true;
 
 			//Debug Section
