@@ -57,9 +57,9 @@ void apply_filters(RuntimeData *rt, tnt_config *config){
 		rt->pitch_smooth_kalman = rt->pitch_smooth;
 
 	if (config->pitch_filter > 0) 
-		rt->gyro_z_smooth = biquad_process(&rt->gyro_z_biquad, rt->gyro_z);
+		rt->gyro_y_smooth = biquad_process(&rt->gyro_y_biquad, rt->gyro_y);
 	else
-		rt->gyro_z_smooth = rt->gyro_z;
+		rt->gyro_y_smooth = rt->gyro_y;
 }
 
 void calc_yaw_change(YawData *yaw, RuntimeData *rt, YawDebugData *yaw_dbg, int hertz){ 
@@ -96,7 +96,7 @@ void reset_runtime(RuntimeData *rt, YawData *yaw, YawDebugData *yaw_dbg) {
 	
 	rt->brake_timeout = 0;
 
-	biquad_reset(&rt->gyro_z_biquad);
+	biquad_reset(&rt->gyro_y_biquad);
 	rt->gyro_y_smooth = 0;
 }
 
@@ -124,7 +124,7 @@ void configure_runtime(RuntimeData *rt, tnt_config *config) {
 	rt->ema_factor = min(1 , config->ema_factor * 832.0 / config->hertz);
 
 	//Gyro Z Biquad Configure
-	biquad_configure(&rt->gyro_z_biquad, BQ_NOTCH, 1.0 * config->pitch_filter / config->hertz); 
+	biquad_configure(&rt->gyro_y_biquad, BQ_NOTCH, 1.0 * config->pitch_filter / config->hertz); 
 }
 
 void check_odometer(RuntimeData *rt) { 
