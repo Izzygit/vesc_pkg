@@ -46,15 +46,20 @@ void runtime_data_update(RuntimeData *rt) {
 
 void apply_filters(RuntimeData *rt, tnt_config *config){
 	//Apply low pass and Kalman filters to pitch
-	if (config->pitch_filter > 0) 
-		rt->pitch_smooth = biquad_process(&rt->pitch_biquad, rt->pitch_angle);
-	else
+	//if (config->pitch_filter > 0) 
+	//	rt->pitch_smooth = biquad_process(&rt->pitch_biquad, rt->pitch_angle);
+	//else
 		rt->pitch_smooth = rt->pitch_angle;
 
 	if (config->kalman_factor1 > 0) 
 		 apply_kalman(rt->pitch_smooth, rt->gyro[1], &rt->pitch_smooth_kalman, rt->diff_time, &rt->pitch_kalman);
 	else 
 		rt->pitch_smooth_kalman = rt->pitch_smooth;
+
+	if (config->pitch_filter > 0) 
+		rt->gyro_z_smooth = biquad_process(&rt->gyro_z_biquad, rt->gyro_z);
+	else
+		rt->gyro_z_smooth = rt->gyro_z;
 }
 
 void calc_yaw_change(YawData *yaw, RuntimeData *rt, YawDebugData *yaw_dbg, int hertz){ 
@@ -114,6 +119,9 @@ void configure_runtime(RuntimeData *rt, tnt_config *config) {
 	// EMA Filter Factor
 	float imu_sample_rate = VESC_IF->get_cfg_int(CFG_PARAM_IMU_sample_rate);
 	rt->ema_factor = min(1 , config->ema_factor * 832.0 / config->hertz);
+
+	//Gyro Z Biquad Configure
+	biquad_configure(&rt->gyro_z_biquad, BQ_NOTCH, 1.0 * config->pitch_filter / config->hertz); 
 }
 
 void check_odometer(RuntimeData *rt) { 
