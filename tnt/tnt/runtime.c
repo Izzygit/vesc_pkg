@@ -95,6 +95,9 @@ void reset_runtime(RuntimeData *rt, YawData *yaw, YawDebugData *yaw_dbg) {
 	yaw_dbg->debug3 = 0;
 	
 	rt->brake_timeout = 0;
+
+	biquad_reset(&rt->gyro_z_biquad);
+	rt->gyro_y_smooth = 0;
 }
 
 void configure_runtime(RuntimeData *rt, tnt_config *config) {
