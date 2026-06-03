@@ -338,7 +338,7 @@ float apply_yaw_kp(KpArray *yaw_accel_kp, KpArray *yaw_brake_kp, PidData *p, flo
 void brake(float current, RuntimeData *rt, MotorData *motor) {
 	// Brake timeout logic
 	float brake_timeout_length = 1;  // Brake Timeout hard-coded to 1s
-	if (fabsf(motor->abs_erpm) > 10 || rt->brake_timeout == 0)
+	if (fabsf(motor->abs_erpm) > 50 || rt->brake_timeout == 0)
 		rt->brake_timeout = rt->current_time + brake_timeout_length;
 
 	if (rt->current_time > rt->brake_timeout)
