@@ -46,9 +46,9 @@ void runtime_data_update(RuntimeData *rt) {
 
 void apply_filters(RuntimeData *rt, tnt_config *config){
 	//Apply low pass and Kalman filters to pitch
-	//if (config->pitch_filter > 0) 
-	//	rt->pitch_smooth = biquad_process(&rt->pitch_biquad, rt->pitch_angle);
-	//else
+	if (config->pitch_filter > 0) 
+		rt->pitch_smooth = biquad_process(&rt->pitch_biquad, rt->pitch_angle);
+	else
 		rt->pitch_smooth = rt->pitch_angle;
 
 	if (config->kalman_factor1 > 0) 
@@ -56,7 +56,7 @@ void apply_filters(RuntimeData *rt, tnt_config *config){
 	else 
 		rt->pitch_smooth_kalman = rt->pitch_smooth;
 
-	if (config->pitch_filter > 0) 
+	if (config->gyro_filter > 0) 
 		rt->gyro_y_smooth = biquad_process(&rt->gyro_y_biquad, rt->gyro_y);
 	else
 		rt->gyro_y_smooth = rt->gyro_y;
@@ -124,7 +124,7 @@ void configure_runtime(RuntimeData *rt, tnt_config *config) {
 	rt->ema_factor = min(1 , config->ema_factor * 832.0 / config->hertz);
 
 	//Gyro Z Biquad Configure
-	biquad_configure(&rt->gyro_y_biquad, BQ_NOTCH, 1.0 * config->pitch_filter * 10 / config->hertz); 
+	biquad_configure(&rt->gyro_y_biquad, BQ_NOTCH, 1.0 * config->gyro_filter / config->hertz); 
 }
 
 void check_odometer(RuntimeData *rt) { 
