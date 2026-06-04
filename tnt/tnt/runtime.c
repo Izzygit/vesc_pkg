@@ -124,7 +124,7 @@ void configure_runtime(RuntimeData *rt, tnt_config *config) {
 	rt->ema_factor = min(1 , config->ema_factor * 832.0 / config->hertz);
 
 	//Gyro Z Biquad Configure
-	biquad_configure(&rt->gyro_y_biquad, BQ_NOTCH, 1.0 * config->pitch_filter / config->hertz); 
+	biquad_configure(&rt->gyro_y_biquad, BQ_NOTCH, 1.0 * config->pitch_filter * 10 / config->hertz); 
 }
 
 void check_odometer(RuntimeData *rt) { 
