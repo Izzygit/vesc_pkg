@@ -149,6 +149,8 @@ void apply_kp_modifiers(data *d) {
 	if (sign(d->rt.gyro_y_smooth) != sign(d->pid.proportional)) 
 		d->pid.pid_mod = apply_kp_rate(&d->accel_kp, &d->brake_kp, d->pid.brake_pitch, &d->pid_dbg) 
 			* -d->rt.gyro_y_smooth * d->pid.stability_kprate;
+	else
+		d->pid.pid_mod = 0;
 	d->pid_dbg.debug4 = d->rt.gyro_y_smooth;
 	d->pid_dbg.debug6 = d->pid_dbg.debug10 * (d->pid.stability_kprate - 1); //stability rate kp
 	d->pid_dbg.debug9 = d->pid_dbg.debug10; // pitch rate kp
