@@ -146,7 +146,7 @@ static void reset_vars(data *d) {
 
 void apply_kp_modifiers(data *d) {
 	//Select and Apply Pitch kp rate
-	if (sign(d->rt.gyro_y_smooth) != sign(d->pid.proportional)) 
+	if (sign(d->rt.gyro_y_smooth) == sign(d->pid.proportional)) 
 		d->pid.pid_mod = apply_kp_rate(&d->accel_kp, &d->brake_kp, d->pid.brake_pitch, &d->pid_dbg) 
 			* -d->rt.gyro_y_smooth * d->pid.stability_kprate;
 	else
