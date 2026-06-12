@@ -146,7 +146,7 @@ static void reset_vars(data *d) {
 
 void apply_kp_modifiers(data *d) {
 	//Select and Apply Pitch kp rate
-	bool gyro_braking = (sign(d->motor.current) == sign(d->rt.gyro_y_smooth));
+	bool gyro_braking = (sign(d->motor.erpm) == sign(d->rt.gyro_y_smooth));
 	d->pid.pid_mod = apply_kp_rate(&d->accel_kp, &d->brake_kp, gyro_braking, &d->pid_dbg) 
 		* -d->rt.gyro_y_smooth * d->pid.stability_kprate;
 	d->pid_dbg.debug4 = d->rt.gyro_y_smooth;
