@@ -22,30 +22,25 @@
 
 float angle_kp_select(float angle, const KpArray *k) {
 	float kp_mod = 0;
-	float kp_min = 0;
-	float scale_angle_min = 0;
-	float scale_angle_max = 1;
-	float kp_max = 0;
-	int i = k->count;
-	//Determine the correct kp to use based on angle
+	int low_idx = 0;
+	int high_idx = 0;
+	int i = k->count; //The number of angles defined in our kp array
+	//Find the angle in the kp array higher and lower than the target angle
 	while (i >= 0) {
 		if (angle>= k->angle_kp[i][0]) {
-			kp_min = k->angle_kp[i][1];
-			scale_angle_min = k->angle_kp[i][0];
+			min_idx = i;
 			if (i == k->count) { //if we are at the highest current only use highest kp
-				kp_max = k->angle_kp[i][1];
-				scale_angle_max = 90;
+				high_idx = i;
 			} else {
-				kp_max = k->angle_kp[i+1][1];
-				scale_angle_max = k->angle_kp[i+1][0];
+				high_idx = i + 1;
 			}
 			i=-1;
 		}
 		i--;
 	}
 	
-	//Interpolate the kp values according to angle
-	kp_mod = lerp(scale_angle_min, scale_angle_max, kp_min, kp_max, angle);
+	//Interpolate the kp values according to angle. Use 90 degrees if we are above max angle in kp array.
+	kp_mod = lerp(k->angle_kp[low_idx][0], (high_idx == k->count) ? 90 : k->angle_kp[high_idx][0], k->angle_kp[low_idx][1],  k->angle_kp[high_idx][1], angle);
 	return kp_mod;
 }
 
