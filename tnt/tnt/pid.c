@@ -28,7 +28,7 @@ float angle_kp_select(float angle, const KpArray *k) {
 	//Find the angle in the kp array higher and lower than the target angle
 	while (i >= 0) {
 		if (angle>= k->angle_kp[i][0]) {
-			min_idx = i;
+			low_idx = i;
 			if (i == k->count) { //if we are at the highest current only use highest kp
 				high_idx = i;
 			} else {
