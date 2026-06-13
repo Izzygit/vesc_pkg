@@ -53,7 +53,17 @@ Default settings are based on 20s battery, Hypercore (Future Motion motor), and 
 For more instructions on setting up your board please refer to the [Set Up Guide.](https://github.com/Izzygit/TrickandTrailReleases/wiki/Set-Up-Guide) https://github.com/Izzygit/TrickandTrailReleases/wiki/Set-Up-Guide
 
 ## Change Log
-### 1.6
+### 1.7
+* **This version requires 6.05+ firmware minimum, 7.0+ optimal**
+* _Features_
+  * Dynamic Stability
+    * Pitch Rate Stability no longer affects pitch rate current for braking
+* _Fixes/Improvements_
+   * Changed the way Braking Pitch Rate Kp is applied to make it more impactful to the board tune
+   * Changed EMA Filter Factor calculation for higher IMU sample rates
+   * Change the yaw calculation for higher IMU sample rates
+   * Improved efficiency of the control algorithm
+* ### 1.6
 * **This version requires 6.05+ firmware to function properly**
 * _Features_
   * New Feature - Yaw Rate Kp in the Yaw menu
