@@ -70,6 +70,16 @@ typedef struct {
 	float debug16; 	// max roll angle
 	float debug17; // roll erpm scale
 	float debug18; // roll anngle demand
+	bool enable1;	//enable pitch debug
+	bool enable2;	//enable stability debug
+	bool enable3;	//enable yaw debug
+	bool enable4;	//enable roll debug
+	float debug21; //change
+	float debug22; //max kp
+	float debug23; //kp unscaled
+	float debug24; //kp scaled
+	float debug25; //erpm scaler
+	float debug26; // yaw angle current
 } PidDebug;
 
 void pitch_kp_configure(const tnt_config *config, KpArray *k, int mode);
@@ -83,12 +93,12 @@ void check_brake_kp(PidData *p, State *state, tnt_config *config, KpArray *roll_
 float roll_erpm_scale(PidData *p, State *state, float abs_erpm, KpArray *roll_accel_kp, tnt_config *config);
 void reset_pid(PidData *p, PidDebug *pid_dbg);
 void apply_soft_start(PidData *p, float mc_current_max);
-void configure_pid(PidData *p, tnt_config *config);
+void configure_pid(PidData *p, tnt_config *config, PidDebug *pid_dbg);
 float apply_pitch_kp(KpArray *accel_kp, KpArray *brake_kp, PidData *p, PidDebug *pid_dbg);
 float apply_kp_rate(KpArray *accel_kp, KpArray *brake_kp, bool braking, PidDebug *pid_dbg);
 float apply_roll_kp(KpArray *roll_accel_kp, KpArray *roll_brake_kp, PidData *p, int erpm_sign, float abs_roll_angle, float roll_erpm_scale, PidDebug *pid_dbg);
 float yaw_erpm_scale(PidData *p, State *state, float abs_erpm, tnt_config *config);
-float apply_yaw_kp(KpArray *yaw_accel_kp, KpArray *yaw_brake_kp, PidData *p, float erpm_sign, float abs_change, float yaw_erpm_scale, YawDebugData *yaw_dbg);
+float apply_yaw_kp(KpArray *yaw_accel_kp, KpArray *yaw_brake_kp, PidData *p, float erpm_sign, float abs_change, float yaw_erpm_scale, PidDebug *pid_dbg);
 void brake(float current, RuntimeData *rt, MotorData *motor);
 void set_current(float current, RuntimeData *rt );
 void set_dutycycle(float dutycycle, RuntimeData *rt);
