@@ -66,7 +66,6 @@ typedef struct {
 	RuntimeData rt; 			//runtime data (IMU, times, etc)
 	FootpadSensor footpad_sensor;		//Footpad states and detection
 	YawData yaw;				//Yaw change data
-	YawDebugData yaw_dbg;			//Yaw debug
 
 	// Throttle/Brake Curves for Pitch Roll and Yaw
 	KpArray accel_kp;
@@ -133,7 +132,7 @@ static void reset_vars(data *d) {
 	if (d->rt.current_time - d->rt.disengage_timer > 1) {//Delay reset in case there is a minor disengagement
 		motor_data_reset(&d->motor);				//Motor
 		setpoint_reset(&d->spd, &d->tnt_conf, &d->rt);		//Setpoint
-		reset_runtime(&d->rt, &d->yaw, &d->yaw_dbg);		//Runtime 
+		reset_runtime(&d->rt, &d->yaw, &d->pid_dbg);		//Runtime 
 		reset_pid(&d->pid, &d->pid_dbg);			//Control variables
 		reset_remote(&d->remote, &d->st_tilt);			//Remote
 		reset_surge(&d->surge);					//Surge
@@ -149,28 +148,41 @@ void apply_kp_modifiers(data *d) {
 	bool gyro_braking = (sign(d->motor.erpm) == sign(d->rt.gyro_y_smooth - d->rt.gyro_z)); //same sign is braking
 	float kp_rate = apply_kp_rate(&d->accel_kp, &d->brake_kp, gyro_braking, &d->pid_dbg);
 	d->pid.pid_mod =  kp_rate * -d->rt.gyro_y_smooth * (gyro_braking ? 1 : d->pid.stability_kprate);
-	d->pid_dbg.debug4 = d->rt.gyro_y_smooth;
-	d->pid_dbg.debug6 = d->pid_dbg.debug10 * (d->pid.stability_kprate - 1); //stability rate kp
-	d->pid_dbg.debug9 = d->pid_dbg.debug10; // pitch rate kp
+	
+	//Debug
+	if (d->pid_dbg.pitch) {
+		d->pid_dbg.debug9 = d->pid_dbg.debug10; // pitch rate kp		
+		d->pid_dbg.debug4 = d->rt.gyro_y_smooth;
+	} else if (d->pid_dbg.stability) {
+		d->pid_dbg.debug6 = d->pid_dbg.debug10 * (d->pid.stability_kprate - 1); //stability rate kp
+	}
 	
 	//Select and Apply Yaw kp rate			
 	d->pid.pid_mod += apply_kp_rate(&d->yaw_accel_kp, &d->yaw_brake_kp, gyro_braking, &d->pid_dbg) * d->rt.gyro_z;
-	d->pid_dbg.debug5 = d->rt.gyro_z;
-	d->pid_dbg.debug11 = d->pid_dbg.debug10; //yaw rate kp
+	
+	//Debug
+	if (d->pid_dbg.yaw) {
+		d->pid_dbg.debug5 = d->rt.gyro_z;
+		d->pid_dbg.debug11 = d->pid_dbg.debug10; //yaw rate kp
+	}
 	
 	//Select and apply roll kp
 	float roll_erpm_scaler = roll_erpm_scale(&d->pid,  &d->state, d->motor.abs_erpm, &d->roll_accel_kp, &d->tnt_conf);
-	d->pid_dbg.debug17 = roll_erpm_scaler;
 	d->pid.pid_mod += apply_roll_kp(&d->roll_accel_kp, &d->roll_brake_kp, &d->pid, d->motor.erpm_sign, d->rt.abs_roll_angle, 
 	    roll_erpm_scaler, &d->pid_dbg);
 
+	//Debug
+	if (d->pid_dbg.roll)
+		d->pid_dbg.debug17 = roll_erpm_scaler;
+
+
 	// Calculate yaw change
-	calc_yaw_change(&d->yaw, &d->rt, &d->yaw_dbg, d->tnt_conf.hertz);
+	calc_yaw_change(&d->yaw, &d->rt, &d->pid_dbg, d->tnt_conf.hertz);
 		
 	//Select and apply yaw kp
+	float yaw_erpm_scaler = yaw_erpm_scale(&d->pid,  &d->state, d->motor.abs_erpm, &d->tnt_conf);
 	d->pid.pid_mod += apply_yaw_kp(&d->yaw_accel_kp, &d->yaw_brake_kp, &d->pid, d->motor.erpm_sign, d->yaw.abs_change, 
-	    yaw_erpm_scale(&d->pid,  &d->state, d->motor.abs_erpm, &d->tnt_conf), 
-	    &d->yaw_dbg);
+		yaw_erpm_scaler, &d->pid_dbg);
 }
 
 static void imu_ref_callback(float *acc, float *gyro, float *mag, float dt) {
@@ -525,10 +537,10 @@ static void send_realtime_data(data *d){
 	} else if (d->tnt_conf.is_yawdebug_enabled) {
 		buffer[ind++] = 5;
 		buffer_append_float32_auto(buffer, d->rt.yaw_angle, &ind); //yaw angle
-		buffer_append_float32_auto(buffer, d->yaw_dbg.debug1 * d->tnt_conf.hertz, &ind); //yaw change
-		buffer_append_float32_auto(buffer, d->yaw_dbg.debug3 * d->tnt_conf.hertz, &ind); //max yaw change		
-		buffer_append_float32_auto(buffer, d->yaw_dbg.debug4, &ind); //yaw kp 	
-		buffer_append_float32_auto(buffer, d->yaw_dbg.debug6, &ind); //yaw kp current demand
+		buffer_append_float32_auto(buffer, d->pid_dbg.debug21 * d->tnt_conf.hertz, &ind); //yaw change
+		buffer_append_float32_auto(buffer, d->pid_dbg.debug23 * d->tnt_conf.hertz, &ind); //max yaw change		
+		buffer_append_float32_auto(buffer, d->pid_dbg.debug24, &ind); //yaw kp 	
+		buffer_append_float32_auto(buffer, d->pid_dbg.debug26, &ind); //yaw kp current demand
 		buffer_append_float32_auto(buffer, d->pid_dbg.debug5, &ind); //yaw rate
 		buffer_append_float32_auto(buffer, d->pid_dbg.debug5 * d->pid_dbg.debug11, &ind); //yaw gyro current demand		
 	} else if (d->tnt_conf.is_rolldebug_enabled) {
