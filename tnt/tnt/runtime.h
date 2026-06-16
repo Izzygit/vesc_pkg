@@ -74,7 +74,7 @@ typedef struct {
 
 void runtime_data_update(RuntimeData *rt);
 void apply_filters(RuntimeData *rt, tnt_config *config);
-void calc_yaw_change(YawData *yaw, RuntimeData *rt, YawDebugData *yaw_dbg, int hertz);
-void reset_runtime(RuntimeData *rt, YawData *yaw, YawDebugData *yaw_dbg);
+void calc_yaw_change(YawData *yaw, RuntimeData *rt, PidDebug *pid_dbg, int hertz);
+void reset_runtime(RuntimeData *rt, YawData *yaw, PidDebug *pid_dbg);
 void configure_runtime(RuntimeData *rt, tnt_config *config);
 void check_odometer(RuntimeData *rt);
