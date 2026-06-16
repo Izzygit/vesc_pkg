@@ -52,6 +52,7 @@ typedef struct {
 	float freq_factor;
 	float max_time;
 	uint32_t bonks_total;
+	bool enabled;
 } TractionDebug;
 
 typedef struct {
@@ -75,6 +76,7 @@ typedef struct {
 	float debug9;
 	float aggregate_timer;
 	float freq_factor;
+	bool enabled;
 } BrakingDebug;
 
 void check_traction(MotorData *m, TractionData *traction, State *state, tnt_config *config, PidData *p, TractionDebug *traction_dbg);
