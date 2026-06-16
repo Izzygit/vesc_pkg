@@ -285,7 +285,6 @@ float apply_kp_rate(KpArray *accel_kp, KpArray *brake_kp, bool braking, PidDebug
 float apply_roll_kp(KpArray *roll_accel_kp, KpArray *roll_brake_kp, PidData *p, int erpm_sign, float abs_roll_angle, float roll_erpm_scale, PidDebug *pid_dbg) {
 	// Select Roll Kp
 	float rollkp = 0;
-	float pid_mod = 0;
 	rollkp = angle_kp_select(abs_roll_angle, 
 		p->brake_roll ? roll_brake_kp : roll_accel_kp);
 	pid_dbg->debug16 = max(abs_roll_angle, pid_dbg->debug16);
@@ -296,9 +295,8 @@ float apply_roll_kp(KpArray *roll_accel_kp, KpArray *roll_brake_kp, PidData *p, 
 
 	//Apply Roll Boost
 	p->roll_pid_mod = .99 * p->roll_pid_mod + .01 * rollkp * fabsf(p->new_pid_value) * erpm_sign; 	//always act in the direciton of travel
-	pid_mod += p->roll_pid_mod;
 	pid_dbg->debug18 =  p->roll_pid_mod;
-	return pid_mod;
+	return p->roll_pid_mod;
 }
 
 float yaw_erpm_scale(PidData *p, State *state, float abs_erpm, tnt_config *config) {
@@ -312,7 +310,6 @@ float yaw_erpm_scale(PidData *p, State *state, float abs_erpm, tnt_config *confi
 float apply_yaw_kp(KpArray *yaw_accel_kp, KpArray *yaw_brake_kp, PidData *p, float erpm_sign, float abs_change, float yaw_erpm_scale, YawDebugData *yaw_dbg) {
 	//Select Yaw Kp
 	float yawkp = 0;
-	float pid_mod = 0;
 	yawkp = angle_kp_select(abs_change, 
 		p->brake_yaw ? yaw_brake_kp : yaw_accel_kp);
 	
@@ -324,10 +321,8 @@ float apply_yaw_kp(KpArray *yaw_accel_kp, KpArray *yaw_brake_kp, PidData *p, flo
 	
 	//Apply Yaw Boost
 	p->yaw_pid_mod = .99 * p->yaw_pid_mod + .01 * yawkp * fabsf(p->new_pid_value) * erpm_sign; 	//always act in the direciton of travel
-	pid_mod += p->yaw_pid_mod;
 	yaw_dbg->debug6 = p->yaw_pid_mod;
-
-	return pid_mod;
+	return p->roll_pid_mod;
 }
 
 void brake(float current, RuntimeData *rt, MotorData *motor) {
