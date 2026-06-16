@@ -62,7 +62,7 @@ void apply_filters(RuntimeData *rt, tnt_config *config){
 		rt->gyro_y_smooth = rt->gyro_y;
 }
 
-void calc_yaw_change(YawData *yaw, RuntimeData *rt, YawDebugData *yaw_dbg, int hertz){ 
+void calc_yaw_change(YawData *yaw, RuntimeData *rt, PidDebug *pid_dbg, int hertz){ 
 	float new_change = (rt->yaw_angle - yaw->last_angle) / rt->imu_rate_factor;
 	//if ((new_change == 0) || // Exact 0's only happen when the IMU is not updating between loops
 	//    (fabsf(new_change) > 100)) { // yaw flips signs at 180, ignore those changes
@@ -74,11 +74,11 @@ void calc_yaw_change(YawData *yaw, RuntimeData *rt, YawDebugData *yaw_dbg, int h
 	yaw->last_angle = rt->yaw_angle;
 	ema(&yaw->change, 0.2 * 832 / hertz, new_change); //originally configured for 0.2 at 832 Hz
 	yaw->abs_change = fabsf(yaw->change);
-	yaw_dbg->debug1 = yaw->change;
-	yaw_dbg->debug3 = fmaxf(yaw->abs_change, yaw_dbg->debug3);
+	pid_dbg->debug21 = yaw->change;
+	pid_dbg->debug23 = fmaxf(yaw->abs_change, pid_dbg->debug23);
 }
 
-void reset_runtime(RuntimeData *rt, YawData *yaw, YawDebugData *yaw_dbg) {
+void reset_runtime(RuntimeData *rt, YawData *yaw, PidDebug *pid_dbg) {
 	//Low pass pitch filter
 	rt->pitch_smooth = rt->pitch_angle;
 	biquad_reset(&rt->pitch_biquad);
@@ -91,8 +91,8 @@ void reset_runtime(RuntimeData *rt, YawData *yaw, YawDebugData *yaw_dbg) {
 	yaw->last_angle = rad2deg(VESC_IF->ahrs_get_yaw(&rt->m_att_ref));
 	yaw->last_change = 0;
 	yaw->abs_change = 0;
-	yaw_dbg->debug2 = 0;
-	yaw_dbg->debug3 = 0;
+	pid_dbg->debug21 = 0;
+	pid_dbg->debug23 = 0;
 	
 	rt->brake_timeout = 0;
 
