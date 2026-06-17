@@ -70,10 +70,10 @@ typedef struct {
 	float debug16; 	// max roll angle
 	float debug17; // roll erpm scale
 	float debug18; // roll anngle demand
-	bool enable1;	//enable pitch debug
-	bool enable2;	//enable stability debug
-	bool enable3;	//enable yaw debug
-	bool enable4;	//enable roll debug
+	bool pitch;	//enable pitch debug
+	bool stability;	//enable stability debug
+	bool yaw;	//enable yaw debug
+	bool roll;	//enable roll debug
 	float debug21; //change
 	float debug22; //max kp
 	float debug23; //kp unscaled
