@@ -333,10 +333,10 @@ float apply_yaw_kp(KpArray *yaw_accel_kp, KpArray *yaw_brake_kp, PidData *p, flo
 
 	//Debug
 	if	(pid_dbg->yaw) {
-		yaw_dbg->debug26 = p->yaw_pid_mod;
-		yaw_dbg->debug25 = yaw_erpm_scale;
-		yaw_dbg->debug24 = p->brake_yaw ? -yawkp : yawkp;
-		yaw_dbg->debug22 = fmaxf(yaw_dbg->debug2, yawkp);
+		pid_dbg->debug26 = p->yaw_pid_mod;
+		pid_dbg->debug25 = yaw_erpm_scale;
+		pid_dbg->debug24 = p->brake_yaw ? -yawkp : yawkp;
+		pid_dbg->debug22 = fmaxf(pid_dbg->debug22, yawkp);
 	}
 	
 	return p->yaw_pid_mod;
