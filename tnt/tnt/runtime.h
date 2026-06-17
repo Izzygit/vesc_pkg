@@ -70,7 +70,7 @@ typedef struct {
 	float debug4; //kp scaled
 	float debug5; //erpm scaler
 	float debug6; // yaw angle current
-} YawDebugData;
+} YawDebug;
 
 void runtime_data_update(RuntimeData *rt);
 void apply_filters(RuntimeData *rt, tnt_config *config);
