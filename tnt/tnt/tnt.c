@@ -91,15 +91,15 @@ typedef struct {
 
 static void configure(data *d) {
 	state_init(&d->state, d->tnt_conf.disable_pkg);				//Initialize
-	configure_runtime(&d->rt, &d->tnt_conf);				//runtime data (IMU, times, etc)
-	configure_pid(&d->pid, &d->tnt_conf);					//control variables 
-	setpoint_configure(&d->spd, &d->tnt_conf);				//setpoint adjustment
+	configure_runtime(&d->rt, &d->tnt_conf);					//runtime data (IMU, times, etc)
+	configure_pid(&d->pid, &d->tnt_conf, &d->pid_dbg);			//control variables 
+	setpoint_configure(&d->spd, &d->tnt_conf);					//setpoint adjustment
 	configure_remote_features(&d->tnt_conf, &d->remote, &d->st_tilt);	//remote input
 	motor_data_configure(&d->motor, &d->tnt_conf);				//motor data
-	configure_surge(&d->surge, &d->tnt_conf);				//surge feature
+	configure_surge(&d->surge, &d->tnt_conf, &d->surge_dbg);	//surge feature
 	configure_traction(&d->traction, &d->braking, &d->tnt_conf, 
-		&d->traction_dbg, &d->braking_dbg); 				//traction control and traction braking
-	tone_configure_all(&d->tone_config, &d->tnt_conf, &d->tone);		//FOC play tones
+		&d->traction_dbg, &d->braking_dbg); 					//traction control and traction braking
+	tone_configure_all(&d->tone_config, &d->tnt_conf, &d->tone);	//FOC play tones
 	configure_ride_tracking(&d->ridetrack, &d->tnt_conf);			//Ride tracking
 	reset_ride_tracking_on_configure(&d->ridetrack, &d->tnt_conf, &d->traction_dbg);	//Reset current trip information
 	configure_ride_tracking(&d->ridetrack, &d->tnt_conf);			//Ride tracking
