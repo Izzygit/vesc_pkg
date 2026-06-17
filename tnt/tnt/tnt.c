@@ -178,7 +178,7 @@ void apply_kp_modifiers(data *d) {
 
 
 	// Calculate yaw change
-	calc_yaw_change(&d->yaw, &d->rt, &d->pid_dbg, d->tnt_conf.hertz);
+	calc_yaw_change(&d->yaw, &d->rt, &d->yaw_dbg, d->tnt_conf.hertz);
 		
 	//Select and apply yaw kp
 	float yaw_erpm_scaler = yaw_erpm_scale(&d->pid,  &d->state, d->motor.abs_erpm, &d->tnt_conf);
