@@ -91,7 +91,7 @@ void reset_runtime(RuntimeData *rt, YawData *yaw, PidDebug *pid_dbg) {
 	yaw->last_angle = rad2deg(VESC_IF->ahrs_get_yaw(&rt->m_att_ref));
 	yaw->last_change = 0;
 	yaw->abs_change = 0;
-	pid_dbg->debug21 = 0;
+	pid_dbg->debug22 = 0;
 	pid_dbg->debug23 = 0;
 	
 	rt->brake_timeout = 0;
