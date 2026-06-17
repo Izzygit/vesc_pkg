@@ -25,7 +25,8 @@ void check_traction(MotorData *m, TractionData *traction, State *state, tnt_conf
 	bool start_condition1 = false;
 	bool start_condition2 = false;
 	float current_time = VESC_IF->system_time();
-	traction_dbg->debug2 = traction->erpm_limited;
+	if (traction_dbg->enabled)
+		traction_dbg->debug2 = traction->erpm_limited;
 	
 	// Conditions to end traction control
 	if (state->wheelslip) {
@@ -96,17 +97,19 @@ void check_traction(MotorData *m, TractionData *traction, State *state, tnt_conf
 				traction->reverse_wheelslip = true;
 
 			//Debug Section
-			if (current_time - traction_dbg->aggregate_timer > 5) { // Aggregate the number of drop activations in 5 seconds
-				traction_dbg->aggregate_timer = current_time;
-				traction_dbg->debug5 = 0;
-				traction_dbg->debug6 = traction->erpm_limited;
-				traction_dbg->debug9 = m->erpm;
-				traction_dbg->debug3 = m->erpm_at_accel_start;
-				traction_dbg->debug4 = 0;
-				traction_dbg->debug8 = 0;
-			}
+			if (traction_dbg->enabled) {
+				if (current_time - traction_dbg->aggregate_timer > 5) { // Aggregate the number of drop activations in 5 seconds
+					traction_dbg->aggregate_timer = current_time;
+					traction_dbg->debug5 = 0;
+					traction_dbg->debug6 = traction->erpm_limited;
+					traction_dbg->debug9 = m->erpm;
+					traction_dbg->debug3 = m->erpm_at_accel_start;
+					traction_dbg->debug4 = 0;
+					traction_dbg->debug8 = 0;
+				}
 			
-			traction_dbg->debug5 += 1; // count number of traction losses
+				traction_dbg->debug5 += 1; // count number of traction losses
+			}
 		}
 	}
 }
@@ -124,16 +127,21 @@ void deactivate_traction(TractionData *traction, State *state, TractionDebug *tr
 	traction->timeroff = VESC_IF->system_time();
 	traction->reverse_wheelslip = false;
 	traction->end_accel_hold = true; //activate high accel hold to prevent traction control
-	if (traction_dbg->debug5 == 1) //only save the first activation duration
-		traction_dbg->debug8 = traction->timeroff - traction->timeron;
-	if (traction_dbg->debug4 > 10000) 
-		traction_dbg->debug4 = traction_dbg->debug4 % 10000;
-	traction_dbg->debug4 = traction_dbg->debug4 * 10 + exit; //aggregate the last traction deactivations
-	
-	if (exit == 2 && traction_dbg->debug8 > 0.1)
+
+	//Debug
+	if (traction_dbg->enabled){
+		if (traction_dbg->debug5 == 1) //only save the first activation duration
+			traction_dbg->debug8 = traction->timeroff - traction->timeron;
+		if (traction_dbg->debug4 > 10000) 
+			traction_dbg->debug4 = traction_dbg->debug4 % 10000;
+		traction_dbg->debug4 = traction_dbg->debug4 * 10 + exit; //aggregate the last traction deactivations
+	}
+
+	//Use for Ride Tracking
+	if (exit == 2 && traction->timeroff - traction->timeron > 0.1)
 		traction_dbg->bonks_total++;
 	if (exit > 0 && abs_erpm < 12000)	
-		traction_dbg->max_time = max(traction_dbg->max_time, traction_dbg->debug8);
+		traction_dbg->max_time = max(traction_dbg->max_time, traction->timeroff - traction->timeron);
 }
 
 void configure_traction(TractionData *traction, BrakingData *braking, tnt_config *config, TractionDebug *traction_dbg, BrakingDebug *braking_dbg){
@@ -149,7 +157,7 @@ void configure_traction(TractionData *traction, BrakingData *braking, tnt_config
 }
 
 void check_traction_braking(BrakingData *braking, MotorData *m, State *state, tnt_config *config,
-    float inputtilt_interpolated, PidData *pid, BrakingDebug *braking_dbg){
+    float inputtilt_interpolated, PidData *pid, BrakingDebug *braking_dbg) {
 	float current_time = VESC_IF->system_time();
 	braking_dbg->debug2 = m->i_batt;
 
@@ -162,61 +170,67 @@ void check_traction_braking(BrakingData *braking, MotorData *m, State *state, tn
 	    -inputtilt_interpolated * m->erpm_sign_soft >= config->tc_braking_angle && 	// Minimum nose down angle from remote, can be 0
 	    !(state->wheelslip && config->is_traction_enabled) &&			// not currently in traction control
 	    m->abs_erpm > config->tc_braking_min_erpm) {				// Minimum speed threshold
-		state->braking_active = true;
-		braking->off_timer = current_time;
-		
-		//Debug Section
-		if (current_time - braking_dbg->aggregate_timer > 5) { // Reset these values after we have not braked for a few seconds
-			braking_dbg->debug5 = 0;
-			braking_dbg->debug8 = 0;
-			braking_dbg->debug6 = 0;
-			braking_dbg->debug4 = 0;
-			braking_dbg->debug1 = 0;
-			braking_dbg->debug3 = m->abs_erpm;
-			braking_dbg->debug9 = 0;
-		}
-		braking_dbg->aggregate_timer = current_time;
-		if (!braking->last_active) // Just entered traction braking, reset
-			braking->timeron = current_time;
-		braking_dbg->debug6 = max(braking_dbg->debug6, fabsf(m->accel_avg / braking_dbg->freq_factor));
-		braking_dbg->debug9 = max(braking_dbg->debug9, m->abs_erpm);
-		braking_dbg->debug3 = min(braking_dbg->debug3, m->abs_erpm);	
-		braking_dbg->debug8 = current_time - braking->timeron + braking_dbg->debug1; //running on time tracker
+			//Engage traction braking
+			state->braking_active = true;
+			braking->off_timer = current_time;
+			
+			//Debug Section
+			if (braking_dbg->enabled) {
+				if (!braking->last_active) // Just entered traction braking, reset
+					braking->timeron = current_time;
+				if (current_time - braking_dbg->aggregate_timer > 5) { // Reset these values after we have not braked for a few seconds
+					braking_dbg->debug5 = 0;
+					braking_dbg->debug8 = 0;
+					braking_dbg->debug6 = 0;
+					braking_dbg->debug4 = 0;
+					braking_dbg->debug1 = 0;
+					braking_dbg->debug3 = m->abs_erpm;
+					braking_dbg->debug9 = 0;
+				}
+				braking_dbg->debug6 = max(braking_dbg->debug6, fabsf(m->accel_avg / braking_dbg->freq_factor));
+				braking_dbg->debug9 = max(braking_dbg->debug9, m->abs_erpm);
+				braking_dbg->debug3 = min(braking_dbg->debug3, m->abs_erpm);	
+				braking_dbg->debug8 = current_time - braking->timeron + braking_dbg->debug1; //running on time tracker
+				braking_dbg->aggregate_timer = current_time;
+			}
 	}
 
+	//Disengage traction braking
 	if (current_time - braking->off_timer > braking->off_time_limit) {
 		state->braking_active = false; 
-
-		//Debug Section
 		if (braking->last_active) {
 			braking->timeroff = current_time;
-			braking_dbg->debug1 += braking->timeroff - braking->timeron; //sum all activation times
-			braking_dbg->debug8 = braking_dbg->debug1; //deactivated on time tracker
-		
-			if (braking_dbg->debug4 > 10000)  //Save 5 of the most recent deactivation reasons
-				braking_dbg->debug4 = braking_dbg->debug4 % 10000;
+
+			//Debug Section
+			if (braking_dbg->enabled) {
+				braking_dbg->debug1 += braking->timeroff - braking->timeron; //sum all activation times
+				braking_dbg->debug8 = braking_dbg->debug1; //deactivated on time tracker
 			
-			if (-inputtilt_interpolated * m->erpm_sign < config->tc_braking_angle) {
-				braking_dbg->debug4 = braking_dbg->debug4 * 10 + 1;
-			} else if (m->i_batt >= 0) {
-				braking_dbg->debug4 = braking_dbg->debug4 * 10 + 2;
-			} else if (m->duty_cycle <= 0) {
-				braking_dbg->debug4 = braking_dbg->debug4 * 10 + 3;
-			} else if (sign(m->vq) == sign(m->iq)) {
-				braking_dbg->debug4 = braking_dbg->debug4 * 10 + 4;
-			} else if (m->abs_erpm < config->tc_braking_min_erpm) {
-				braking_dbg->debug4 = braking_dbg->debug4 * 10 + 5;
-			} else if (!state->braking_pos_smooth) {
-				braking_dbg->debug4 = braking_dbg->debug4 * 10 + 6;
-			} else if (m->erpm_sign * pid->new_pid_value >= 0) {
-				braking_dbg->debug4 = braking_dbg->debug4 * 10 + 7;
+				if (braking_dbg->debug4 > 10000)  //Save 5 of the most recent deactivation reasons
+					braking_dbg->debug4 = braking_dbg->debug4 % 10000;
+				
+				if (-inputtilt_interpolated * m->erpm_sign < config->tc_braking_angle) {
+					braking_dbg->debug4 = braking_dbg->debug4 * 10 + 1;
+				} else if (m->i_batt >= 0) {
+					braking_dbg->debug4 = braking_dbg->debug4 * 10 + 2;
+				} else if (m->duty_cycle <= 0) {
+					braking_dbg->debug4 = braking_dbg->debug4 * 10 + 3;
+				} else if (sign(m->vq) == sign(m->iq)) {
+					braking_dbg->debug4 = braking_dbg->debug4 * 10 + 4;
+				} else if (m->abs_erpm < config->tc_braking_min_erpm) {
+					braking_dbg->debug4 = braking_dbg->debug4 * 10 + 5;
+				} else if (!state->braking_pos_smooth) {
+					braking_dbg->debug4 = braking_dbg->debug4 * 10 + 6;
+				} else if (m->erpm_sign * pid->new_pid_value >= 0) {
+					braking_dbg->debug4 = braking_dbg->debug4 * 10 + 7;
+				}
+	
+				if (braking_dbg->debug5 > 10000)  //Save 5 of the most recent deactivation reasons
+					braking_dbg->debug5 = braking_dbg->debug5 % 10000;
+	
+				if (braking->timeroff - braking->timeron > 1) //Only save end conditions from braking period greater than 1 seconds
+					braking_dbg->debug5 = braking_dbg->debug5 * 10 + braking_dbg->debug4 % 10;
 			}
-
-			if (braking_dbg->debug5 > 10000)  //Save 5 of the most recent deactivation reasons
-				braking_dbg->debug5 = braking_dbg->debug5 % 10000;
-
-			if (braking->timeroff - braking->timeron > 1) //Only save end conditions from braking period greater than 1 seconds
-				braking_dbg->debug5 = braking_dbg->debug5 * 10 + braking_dbg->debug4 % 10;
 		}
 	}
 	braking->last_active = state->braking_active;
