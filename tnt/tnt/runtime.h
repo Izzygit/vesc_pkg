@@ -70,11 +70,11 @@ typedef struct {
 	float debug4; //kp scaled
 	float debug5; //erpm scaler
 	float debug6; // yaw angle current
-} YawDebug;
+} YawDebugData;
 
 void runtime_data_update(RuntimeData *rt);
 void apply_filters(RuntimeData *rt, tnt_config *config);
-void calc_yaw_change(YawData *yaw, RuntimeData *rt, YawDebug *yaw_dbg, int hertz);
-void reset_runtime(RuntimeData *rt, YawData *yaw, YawDebug *yaw_dbg);
+void calc_yaw_change(YawData *yaw, RuntimeData *rt, YawDebugData *yaw_dbg, int hertz);
+void reset_runtime(RuntimeData *rt, YawData *yaw, YawDebugData *yaw_dbg);
 void configure_runtime(RuntimeData *rt, tnt_config *config);
 void check_odometer(RuntimeData *rt);
