@@ -66,6 +66,7 @@ typedef struct {
 	RuntimeData rt; 			//runtime data (IMU, times, etc)
 	FootpadSensor footpad_sensor;		//Footpad states and detection
 	YawData yaw;				//Yaw change data
+	YawDebugData yaw_dbg;			//Yaw debug
 
 	// Throttle/Brake Curves for Pitch Roll and Yaw
 	KpArray accel_kp;
@@ -132,7 +133,7 @@ static void reset_vars(data *d) {
 	if (d->rt.current_time - d->rt.disengage_timer > 1) {//Delay reset in case there is a minor disengagement
 		motor_data_reset(&d->motor);				//Motor
 		setpoint_reset(&d->spd, &d->tnt_conf, &d->rt);		//Setpoint
-		reset_runtime(&d->rt, &d->yaw, &d->pid_dbg);		//Runtime 
+		reset_runtime(&d->rt, &d->yaw, &d->yaw_dbg);		//Runtime 
 		reset_pid(&d->pid, &d->pid_dbg);			//Control variables
 		reset_remote(&d->remote, &d->st_tilt);			//Remote
 		reset_surge(&d->surge);					//Surge
@@ -537,8 +538,8 @@ static void send_realtime_data(data *d){
 	} else if (d->tnt_conf.is_yawdebug_enabled) {
 		buffer[ind++] = 5;
 		buffer_append_float32_auto(buffer, d->rt.yaw_angle, &ind); //yaw angle
-		buffer_append_float32_auto(buffer, d->pid_dbg.debug21 * d->tnt_conf.hertz, &ind); //yaw change
-		buffer_append_float32_auto(buffer, d->pid_dbg.debug23 * d->tnt_conf.hertz, &ind); //max yaw change		
+		buffer_append_float32_auto(buffer, d->yaw_dbg.debug1 * d->tnt_conf.hertz, &ind); //yaw change
+		buffer_append_float32_auto(buffer, d->yaw_dbg.debug3 * d->tnt_conf.hertz, &ind); //max yaw change		
 		buffer_append_float32_auto(buffer, d->pid_dbg.debug24, &ind); //yaw kp 	
 		buffer_append_float32_auto(buffer, d->pid_dbg.debug26, &ind); //yaw kp current demand
 		buffer_append_float32_auto(buffer, d->pid_dbg.debug5, &ind); //yaw rate
