@@ -146,7 +146,7 @@ static void reset_vars(data *d) {
 
 void apply_kp_modifiers(data *d) {
 	//Select and Apply Pitch kp rate
-	bool gyro_braking = (sign(d->motor.erpm) == sign(d->rt.gyro_y_smooth - d->rt.gyro_z)); //same sign is braking
+	bool gyro_braking = d->motor.erpm_sign == sign(d->rt.gyro_y_smooth); //same sign is braking
 	float kp_rate = apply_kp_rate(&d->accel_kp, &d->brake_kp, gyro_braking, &d->pid_dbg);
 	d->pid.pid_mod =  kp_rate * -d->rt.gyro_y_smooth * (gyro_braking ? 1 : d->pid.stability_kprate);
 	
@@ -175,7 +175,6 @@ void apply_kp_modifiers(data *d) {
 	//Debug
 	if (d->pid_dbg.roll)
 		d->pid_dbg.debug17 = roll_erpm_scaler;
-
 
 	// Calculate yaw change
 	calc_yaw_change(&d->yaw, &d->rt, &d->yaw_dbg, d->tnt_conf.hertz);
