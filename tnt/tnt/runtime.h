@@ -63,15 +63,6 @@ typedef struct {
 	float aggregate;
 } YawData;
 
-typedef struct {
-	float debug1; //change
-	float debug2; //max kp
-	float debug3; //kp unscaled
-	float debug4; //kp scaled
-	float debug5; //erpm scaler
-	float debug6; // yaw angle current
-} YawDebugData;
-
 void runtime_data_update(RuntimeData *rt);
 void apply_filters(RuntimeData *rt, tnt_config *config);
 void calc_yaw_change(YawData *yaw, RuntimeData *rt, PidDebug *pid_dbg, int hertz);
