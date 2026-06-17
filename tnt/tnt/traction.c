@@ -154,12 +154,17 @@ void configure_traction(TractionData *traction, BrakingData *braking, tnt_config
 	traction->erpm_rate_limit = 1000.0 * config->wheelslip_erpm_rate_limit / config->hertz;
 	traction->erpm_exclusion_rate = 1000.0 * config->wheelslip_erpm_exclusion_rate / config->hertz;
 	braking->off_time_limit = 1.0 * config->tc_braking_off_time / 1000.0;
+	if (config->is_tcdebug_enabled)
+		traction_dbg->enabled = true;
+	else if (config->is_brakingdebug_enabled)
+		braking_dbg->enabled = true;
 }
 
 void check_traction_braking(BrakingData *braking, MotorData *m, State *state, tnt_config *config,
     float inputtilt_interpolated, PidData *pid, BrakingDebug *braking_dbg) {
 	float current_time = VESC_IF->system_time();
-	braking_dbg->debug2 = m->i_batt;
+	if (braking_dbg->enabled)
+		braking_dbg->debug2 = m->i_batt;
 
 	//Check that conditions for traciton braking are satisfied and add to counter
 	if (state->braking_pos_smooth &&						// braking position active, IMU
