@@ -57,12 +57,14 @@ For more instructions on setting up your board please refer to the [Set Up Guide
 * **This version requires 6.05+ firmware minimum, 7.0+ optimal**
 * _Features_
   * Dynamic Stability
-    * Pitch Rate Stability no longer affects pitch rate current for braking
+    * Pitch Rate Stability no longer affects pitch rate for braking currents
 * _Fixes/Improvements_
+   * Fixed a bug causing yaw gain to not be applied, but debug values were reading correctly
    * Changed the way Braking Pitch Rate Kp is applied to make it more impactful to the board tune
    * Changed EMA Filter Factor calculation for higher IMU sample rates
    * Change the yaw calculation for higher IMU sample rates
-   * Improved efficiency of the control algorithm
+   * Improved efficiency of the searching function for pitch, roll, and yaw gain
+   * Improved efficiency of the debug calculations by only caluclating values displayed on AppUI
 * ### 1.6
 * **This version requires 6.05+ firmware to function properly**
 * _Features_
