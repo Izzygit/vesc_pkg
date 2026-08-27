@@ -111,7 +111,7 @@ void configure_runtime(RuntimeData *rt, tnt_config *config) {
 	rt->motor_timeout_s = 20.0f / config->hertz;
 	
 	//Pitch Biquad Configure
-	biquad_configure(&rt->pitch_biquad, BQ_LOWPASS, 1.0 * config->pitch_filter / config->hertz); 
+	biquad_configure(&rt->pitch_biquad, BQ_LOWPASS, min(1, 1.0 * config->pitch_filter / config->hertz)); 
 
 	//Pitch Kalman Configure
 	configure_kalman(config, &rt->pitch_kalman);
@@ -124,7 +124,7 @@ void configure_runtime(RuntimeData *rt, tnt_config *config) {
 	rt->ema_factor = min(1 , config->ema_factor * 832.0 / config->hertz);
 
 	//Gyro Z Biquad Configure
-	biquad_configure(&rt->gyro_y_biquad, BQ_NOTCH, 1.0 * config->gyro_filter / config->hertz); 
+	biquad_configure(&rt->gyro_y_biquad, BQ_NOTCH,  min(1, 1.0 * config->gyro_filter / config->hertz)); 
 }
 
 void check_odometer(RuntimeData *rt) { 
