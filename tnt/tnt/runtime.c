@@ -68,13 +68,14 @@ void calc_yaw_change(YawData *yaw, RuntimeData *rt, YawDebugData *yaw_dbg, int h
 	//    (fabsf(new_change) > 100)) { // yaw flips signs at 180, ignore those changes
 	//	new_change = yaw->last_change;
 	//}
-	if (sign(rt->yaw_angle) != sign(yaw->last_angle)) // yaw flips signs at 180, ignore those changes
-		new_change = yaw->last_change;
-	yaw->last_change = new_change;
-	yaw->last_angle = rt->yaw_angle;
-	ema(&yaw->change, 0.2 * 832 / hertz, new_change); //originally configured for 0.2 at 832 Hz
-	yaw->abs_change = fabsf(yaw->change);
-	yaw_dbg->debug1 = yaw->change;
+	//if (sign(rt->yaw_angle) != sign(yaw->last_angle)) // yaw flips signs at 180, ignore those changes
+	//	new_change = yaw->last_change;
+	//yaw->last_change = new_change;
+	//yaw->last_angle = rt->yaw_angle;
+	//ema(&yaw->change, 0.2 * 832 / hertz, new_change); //originally configured for 0.2 at 832 Hz
+	//yaw->abs_change = fabsf(yaw->change);
+	yaw->abs_change = fabsf(rt->gyro[2]);
+	yaw_dbg->debug1 = rt->gyro[2];
 	yaw_dbg->debug3 = fmaxf(yaw->abs_change, yaw_dbg->debug3);
 }
 
