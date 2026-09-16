@@ -158,8 +158,9 @@ void apply_kp_modifiers(data *d) {
 		d->pid_dbg.debug6 = d->pid_dbg.debug10 * (d->pid.stability_kprate - 1); //stability rate kp
 	}
 	
-	//Select and Apply Yaw kp rate			
-	d->pid.pid_mod += apply_kp_rate(&d->yaw_accel_kp, &d->yaw_brake_kp, gyro_braking, &d->pid_dbg) * d->rt.gyro_z;
+	//Select and Apply Yaw kp rate
+	float yaw_kp_rate = apply_kp_rate(&d->yaw_accel_kp, &d->yaw_brake_kp, gyro_braking, &d->pid_dbg);
+	d->pid.pid_mod += yaw_kp_rate * d->rt.gyro_z;
 	
 	//Debug
 	if (d->pid_dbg.yaw) {
@@ -167,22 +168,24 @@ void apply_kp_modifiers(data *d) {
 		d->pid_dbg.debug11 = d->pid_dbg.debug10; //yaw rate kp
 	}
 	
-	//Select and apply roll kp
-	float roll_erpm_scaler = roll_erpm_scale(&d->pid,  &d->state, d->motor.abs_erpm, &d->roll_accel_kp, &d->tnt_conf);
+	//Compute erpm scalers
+	float roll_erpm_scaler = roll_erpm_scale(&d->pid, &d->state, d->motor.abs_erpm, &d->roll_accel_kp, &d->tnt_conf);
+	float yaw_erpm_scaler = yaw_erpm_scale(&d->pid, &d->state, d->motor.abs_erpm, &d->tnt_conf);
+	
+	//Select and apply roll kp	
 	d->pid.pid_mod += apply_roll_kp(&d->roll_accel_kp, &d->roll_brake_kp, &d->pid, d->motor.erpm_sign, d->rt.abs_roll_angle, 
 	    roll_erpm_scaler, &d->pid_dbg);
-
-	//Debug
-	if (d->pid_dbg.roll)
-		d->pid_dbg.debug17 = roll_erpm_scaler;
 
 	// Calculate yaw change
 	calc_yaw_change(&d->yaw, &d->rt, &d->yaw_dbg, d->tnt_conf.hertz);
 		
 	//Select and apply yaw kp
-	float yaw_erpm_scaler = yaw_erpm_scale(&d->pid,  &d->state, d->motor.abs_erpm, &d->tnt_conf);
 	d->pid.pid_mod += apply_yaw_kp(&d->yaw_accel_kp, &d->yaw_brake_kp, &d->pid, d->motor.erpm_sign, d->yaw.abs_change, 
 		yaw_erpm_scaler, &d->pid_dbg);
+	
+	//Debug
+	if (d->pid_dbg.roll)
+		d->pid_dbg.debug17 = roll_erpm_scaler;
 }
 
 static void imu_ref_callback(float *acc, float *gyro, float *mag, float dt) {
