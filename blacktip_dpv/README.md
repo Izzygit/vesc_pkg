@@ -2,7 +2,7 @@
 
 ![Blacktip DPV Logo](https://raw.githubusercontent.com/vedderb/vesc_pkg/main/blacktip_dpv/assets/shark_with_laser.png)
 
-**Version:** 1.5.0
+**Version:** 1.5.2
 
 ## License
 
@@ -37,6 +37,19 @@ Some videos showing the basic commands to control Smart Cruise while diving:
 - [manually enabling and disabling Smart Cruise](https://youtu.be/riwqB_mttLM)
 
 ---
+
+## What's New in Version 1.5.2
+
+Bugfix release:
+
+- **Fix: Trigger input during startup** — Trigger presses held or made before the runtime is ready are ignored, preventing an incomplete start. A release arms the next click sequence as soon as the motor, display and trigger paths are running.
+- **Fix: Smart Cruise timer rotation** — The remaining-time bar now rotates with the display at 90°, 180° and 270°.
+
+## What's New in Version 1.5.1
+
+Bugfix release:
+
+- **Fix: Display rotation at 90° and 270°** — Display symbols now use the documented, consistent clockwise rotation.
 
 ## What's New in Version 1.5.0
 
@@ -226,6 +239,8 @@ The existing OFF&#95;AFTER&#95;5H setting remains the fallback when manual shutd
 A distinctive musical theme plays on power-up to confirm successful initialization:
 
 - Plays automatically when the scooter is turned on
+- Trigger input becomes ready as soon as the motor, display and trigger paths have started; the startup and battery sounds continue in the background.
+- The startup display indicates readiness. If the trigger was held during startup, release it once before making a new click sequence.
 - When battery is full (3 bars, >75%), only the startup sound plays
 - When battery is not full (<75%), the startup sound is followed by battery level beeps
 - Volume matches your configured beep volume setting
@@ -502,7 +517,7 @@ All settings are accessible through the VESC mobile app or VESC Tool:
 - **Battery Beeps:** Enable/disable capacity beeps
 - **Beep Volume:** 0-5 volume level
 - **Display Brightness:** Adjust LED brightness
-- **Display Rotation:** 0°, 90°, 180°, 270°
+- **Display Rotation:** 0°, 90°, 180°, 270°. Positive rotation is clockwise in the physical display view.
 - **Trigger Click Beeps:** Enable/disable click feedback beeps
 
 ### Safety Settings
