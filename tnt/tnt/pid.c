@@ -20,28 +20,31 @@
 #include <math.h>
 #include "vesc_c_if.h"
 
-float angle_kp_select(float angle, const KpArray *k) {
-	float kp_mod = 0;
+float angle_kp_select(const float angle, const KpArray *k) {
+	// For sorted array, linear search is optimal at this small size
 	int low_idx = 0;
-	int high_idx = 0;
-	int i = k->count; //The number of angles defined in our kp array
-	//Find the angle in the kp array higher and lower than the target angle
-	while (i >= 0) {
-		if (angle>= k->angle_kp[i][0]) {
+	
+	// Find the interval containing angle
+	for (size_t i = 0; i < k->count - 1; i++) {
+		if (angle < k->angle_kp[i + 1][0]) {
 			low_idx = i;
-			if (i == k->count) { //if we are at the highest current only use highest kp
-				high_idx = i;
-			} else {
-				high_idx = i + 1;
-			}
-			i=-1;
+			break;
 		}
-		i--;
 	}
 	
-	//Interpolate the kp values according to angle. Use 90 degrees if we are above max angle in kp array.
-	kp_mod = lerp(k->angle_kp[low_idx][0], (high_idx == k->count) ? 90 : k->angle_kp[high_idx][0], k->angle_kp[low_idx][1],  k->angle_kp[high_idx][1], angle);
-	return kp_mod;
+	// Handle case where angle exceeds all values
+	if (angle >= k->angle_kp[k->count - 1][0]) {
+		low_idx = k->count - 1;
+	}
+	
+	size_t high_idx = (low_idx == k->count - 1) ? low_idx : low_idx + 1;
+	
+	// Interpolate
+	return lerp(k->angle_kp[low_idx][0], 
+		(high_idx == k->count) ? 90.0f : k->angle_kp[high_idx][0],
+		k->angle_kp[low_idx][1],
+		k->angle_kp[high_idx][1], 
+		angle);
 }
 
 void pitch_kp_configure(const tnt_config *config, KpArray *k, int mode){
