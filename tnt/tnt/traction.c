@@ -27,8 +27,11 @@ void check_traction(MotorData *m, TractionData *traction, State *state, tnt_conf
 	float accel_avg = m->accel_avg;
 	float abs_erpm = m->abs_erpm;
 	int erpm_sign = m->erpm_sign;
-	int current_sign = sign(m->current); 
+	int current_sign = sign(m->current);
+	int erpm_limited_sign = sign(traction->erpm_limited);
 	bool accel_condition = false;
+	bool start_condition1 = false;
+	bool start_condition2 = false;
 	
 	if (traction_dbg->enabled)
 		traction_dbg->debug2 = traction->erpm_limited;
@@ -67,7 +70,7 @@ void check_traction(MotorData *m, TractionData *traction, State *state, tnt_conf
 				int erpm_limited_sign = sign(traction->erpm_limited);
 				if (erpm_sign == erpm_limited_sign) {
 					if (fabsf(traction->erpm_limited) < 3000.0f)
-						traction->erpm_limited = 3000.0f * limited_sign;
+						traction->erpm_limited = 3000.0f * erpm_limited_sign;
 					deactivate_traction(traction, state, traction_dbg, abs_erpm, 3);
 				}
 			}
@@ -83,7 +86,6 @@ void check_traction(MotorData *m, TractionData *traction, State *state, tnt_conf
 				!state->braking_pos_smooth && !state->braking_active;
 			
 			int accel_sign = sign(accel_avg);
-			int erpm_limited_sign = sign(traction->erpm_limited);
 			
 			//Check motor erpm and acceleration to determine the correct detection condition to use if any
 			if (erpm_sign == sign(m->erpm_at_accel_start)) { 								//Check sign of the motor at the start of acceleration 
