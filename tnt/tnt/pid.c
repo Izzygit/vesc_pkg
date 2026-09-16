@@ -25,7 +25,7 @@ float angle_kp_select(const float angle, const KpArray *k) {
 	int low_idx = 0;
 	
 	// Find the interval containing angle
-	for (size_t i = 0; i < k->count - 1; i++) {
+	for (int i = 0; i < k->count - 1; i++) {
 		if (angle < k->angle_kp[i + 1][0]) {
 			low_idx = i;
 			break;
@@ -37,7 +37,7 @@ float angle_kp_select(const float angle, const KpArray *k) {
 		low_idx = k->count - 1;
 	}
 	
-	size_t high_idx = (low_idx == k->count - 1) ? low_idx : low_idx + 1;
+	int high_idx = (low_idx == k->count - 1) ? low_idx : low_idx + 1;
 	
 	// Interpolate
 	return lerp(k->angle_kp[low_idx][0], 
