@@ -186,12 +186,14 @@ void yaw_kp_configure(const tnt_config *config, KpArray *k, int mode){
 	} else {k->count = 0;}
 }
 
-float erpm_scale(float lowvalue, float highvalue, float lowscale, float highscale, float abs_erpm){ 
+float erpm_scale(float lowvalue, float highvalue, float lowscale, float highscale, float abs_erpm) {
 	float scaler = lerp(lowvalue, highvalue, lowscale, highscale, abs_erpm);
-	if (lowscale < highscale) {
-		scaler = min(max(scaler, lowscale), highscale);
-	} else { scaler = max(min(scaler, lowscale), highscale); }
-	return scaler;
+	
+	// Clamp using branchless min/max
+	float min_scale = fminf(lowscale, highscale);
+	float max_scale = fmaxf(lowscale, highscale);
+	
+	return fminf(fmaxf(scaler, min_scale), max_scale);
 }
 
 void apply_stability(PidData *p, float abs_erpm, float inputtilt_interpolated, tnt_config *config) {
