@@ -107,7 +107,8 @@ void configure_runtime(RuntimeData *rt, tnt_config *config) {
 
 	// Loop time in microseconds
 	rt->loop_time_us = 1e6 / config->hertz;
-
+	rt->slow_loop_time_us = 1e6 / VESC_IF->get_cfg_int(CFG_PARAM_IMU_sample_rate);
+	
 	// Loop time in seconds times 20 for a nice long grace period
 	rt->motor_timeout_s = 20.0f / config->hertz;
 	
