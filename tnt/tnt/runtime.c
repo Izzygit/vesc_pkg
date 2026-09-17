@@ -30,7 +30,9 @@ void runtime_data_update(RuntimeData *rt) {
 	}
 	rt->diff_time = rt->current_time - rt->last_time;
 	rt->last_time = rt->current_time;
-	
+}
+
+void imu_data_update(RuntimeData *rt) {	
 	// Get the IMU Values
 	float roll_rad = VESC_IF->imu_get_roll();
 	rt->roll_angle = rad2deg(roll_rad);
