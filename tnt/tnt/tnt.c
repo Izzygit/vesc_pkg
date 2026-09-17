@@ -213,10 +213,11 @@ static void tnt_thd(void *arg) {
 		} else {
 			slow_loop = false;
 		}
-
-		//Low priority and IMU calculations
+		runtime_data_update(&d->rt); // Update the time with the VESC system time
+		
+		//Low priority and IMU calculations run at the sample rate of the IMU App Cfg
 		if (slow_loop) {
-			runtime_data_update(&d->rt);
+			imu_data_update(&d->rt);
 			apply_filters(&d->rt, &d->tnt_conf);
 			temp_recovery_tone(&d->tone, &d->tone_config.fasttripleup, &d->motor);
 			ride_tracking_update(&d->ridetrack, &d->rt, &d->yaw, &d->tnt_conf);			
@@ -250,7 +251,7 @@ static void tnt_thd(void *arg) {
 
 			play_footpad_beep(&d->tone, &d->motor, &d->footpad_sensor, &d->tone_config.continuousfootpad);
 
-			if (slow_loop){
+			if (slow_loop) {
 				//Ride Timer
 				ride_timer(&d->ridetrack, &d->rt);
 				d->rt.disengage_timer = d->rt.current_time;
