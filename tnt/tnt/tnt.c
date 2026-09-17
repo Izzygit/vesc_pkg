@@ -540,8 +540,8 @@ static void send_realtime_data(data *d){
 	} else if (d->tnt_conf.is_yawdebug_enabled) {
 		buffer[ind++] = 5;
 		buffer_append_float32_auto(buffer, d->rt.yaw_angle, &ind); //yaw angle
-		buffer_append_float32_auto(buffer, d->yaw_dbg.debug1 * d->tnt_conf.hertz, &ind); //yaw change
-		buffer_append_float32_auto(buffer, d->yaw_dbg.debug3 * d->tnt_conf.hertz, &ind); //max yaw change		
+		buffer_append_float32_auto(buffer, d->yaw_dbg.debug1, &ind); //yaw change
+		buffer_append_float32_auto(buffer, d->yaw_dbg.debug3, &ind); //max yaw change		
 		buffer_append_float32_auto(buffer, d->pid_dbg.debug24, &ind); //yaw kp 	
 		buffer_append_float32_auto(buffer, d->pid_dbg.debug26, &ind); //yaw kp current demand
 		buffer_append_float32_auto(buffer, d->pid_dbg.debug5, &ind); //yaw rate
