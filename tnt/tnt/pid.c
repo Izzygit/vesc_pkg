@@ -25,23 +25,18 @@ float angle_kp_select(const float angle, const KpArray *k) {
 	int low_idx = 0;
 	
 	// Find the interval containing angle
-	for (int i = 0; i < k->count - 1; i++) {
-		if (angle < k->angle_kp[i + 1][0]) {
+	for (int i = k->count; i >=0 ; i--) {
+		if (angle >= k->angle_kp[i][0]) {
 			low_idx = i;
 			break;
 		}
 	}
 	
-	// Handle case where angle exceeds all values
-	if (angle >= k->angle_kp[k->count - 1][0]) {
-		low_idx = k->count - 1;
-	}
-	
-	int high_idx = (low_idx == k->count - 1) ? low_idx : low_idx + 1;
+	int high_idx = (low_idx == k->count) ? low_idx : low_idx + 1;
 	
 	// Interpolate
 	return lerp(k->angle_kp[low_idx][0], 
-		(high_idx == k->count) ? 90.0f : k->angle_kp[high_idx][0],
+		k->angle_kp[high_idx][0],
 		k->angle_kp[low_idx][1],
 		k->angle_kp[high_idx][1], 
 		angle);
@@ -152,9 +147,9 @@ void roll_kp_configure(const tnt_config *config, KpArray *k, int mode){
 void yaw_kp_configure(const tnt_config *config, KpArray *k, int mode){
 	float accel_yaw_kp[7][2] = { //Accel curve
 	{0, 0}, 
-	{config->yaw1 / config->hertz, config->yaw_kp1},
-	{config->yaw2 / config->hertz, config->yaw_kp2},
-	{config->yaw3 / config->hertz, config->yaw_kp3},
+	{config->yaw1, config->yaw_kp1},
+	{config->yaw2, config->yaw_kp2},
+	{config->yaw3, config->yaw_kp3},
 	{0, 0},
 	{0, 0},
 	{0, 0},
@@ -162,9 +157,9 @@ void yaw_kp_configure(const tnt_config *config, KpArray *k, int mode){
 	
 	float brake_yaw_kp[7][2] = { //Brake Curve
 	{0, 0}, 
-	{config->brkyaw1 / config->hertz, config->brkyaw_kp1},
-	{config->brkyaw2 / config->hertz, config->brkyaw_kp2},
-	{config->brkyaw3 / config->hertz, config->brkyaw_kp3},
+	{config->brkyaw1, config->brkyaw_kp1},
+	{config->brkyaw2, config->brkyaw_kp2},
+	{config->brkyaw3, config->brkyaw_kp3},
 	{0, 0},
 	{0, 0},
 	{0, 0},
