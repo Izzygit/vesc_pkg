@@ -68,7 +68,9 @@ For more instructions on setting up your board please refer to the [Set Up Guide
    * Change the yaw calculation for higher IMU sample rates
    * Improved efficiency of the function that calculates pitch, roll, and yaw gain
    * Improved efficiency of the debug calculations by only calculating values displayed on AppUI
-* ### 1.6
+   * Changed the main control loop so that IMU updates and lower priority functions operate a the IMU sample rate. Other functions continue to operate at the package loop rate.
+
+### 1.6
 * **This version requires 6.05+ firmware to function properly**
 * _Features_
   * New Feature - Yaw Rate Kp in the Yaw menu
