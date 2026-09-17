@@ -196,19 +196,37 @@ static void imu_ref_callback(float *acc, float *gyro, float *mag, float dt) {
 
 static void tnt_thd(void *arg) {
 	data *d = (data*)arg;
-
+	
+	// Accumulated time for operations that run at the slower loop rate. Initializing this to run slow loop on first pass
+	uint32_t slow_loop_elapsed_us = d->rt.slow_loop_time_us;	
+	// Indicates whether the current iteration should execute the slow-loop
+	bool slow_loop = false;
+		
 	configure(d);
 
 	while (!VESC_IF->should_terminate()) {
-		runtime_data_update(&d->rt);
-		apply_filters(&d->rt, &d->tnt_conf);
+		// Accumulate the normal loop period until the configured slow-loop period has elapsed.
+		slow_loop_elapsed_us += d->rt.loop_time_us;
+		if (slow_loop_elapsed_us >= d->rt.slow_loop_time_us) {
+			slow_loop = true;
+			slow_loop_elapsed_us -= d->rt.slow_loop_time_us;
+		} else {
+			slow_loop = false;
+		}
+
+		//Low priority and IMU calculations
+		if (slow_loop) {
+			runtime_data_update(&d->rt);
+			apply_filters(&d->rt, &d->tnt_conf);
+			temp_recovery_tone(&d->tone, &d->tone_config.fasttripleup, &d->motor);
+			ride_tracking_update(&d->ridetrack, &d->rt, &d->yaw, &d->tnt_conf);			
+			update_remote(&d->tnt_conf, &d->remote);
+		}
+
+		//High priority and motor calculations
 		motor_data_update(&d->motor, &d->tnt_conf);
-		update_remote(&d->tnt_conf, &d->remote);
-		temp_recovery_tone(&d->tone, &d->tone_config.fasttripleup, &d->motor);
 		tone_update(&d->tone, &d->rt, &d->state);
-	        footpad_sensor_update(&d->footpad_sensor, &d->tnt_conf);
-		ride_tracking_update(&d->ridetrack, &d->rt, &d->yaw, &d->tnt_conf);
-	      	d->pid.new_pid_value = 0;		
+	    footpad_sensor_update(&d->footpad_sensor, &d->tnt_conf);	
 
 		// Control Loop State Logic
 		switch(d->state.state) {
@@ -232,44 +250,46 @@ static void tnt_thd(void *arg) {
 
 			play_footpad_beep(&d->tone, &d->motor, &d->footpad_sensor, &d->tone_config.continuousfootpad);
 
-			//Ride Timer
-			ride_timer(&d->ridetrack, &d->rt);
-			d->rt.disengage_timer = d->rt.current_time;
-			d->rt.odometer_dirty = 1;
-			
-			// Calculate setpoint and interpolation
-			calculate_setpoint_target(&d->spd, &d->state, &d->motor, &d->rt, &d->tnt_conf, d->pid.proportional);
-			calculate_setpoint_interpolated(&d->spd, &d->state);
-			d->spd.setpoint = d->spd.setpoint_target_interpolated;
+			if (slow_loop){
+				//Ride Timer
+				ride_timer(&d->ridetrack, &d->rt);
+				d->rt.disengage_timer = d->rt.current_time;
+				d->rt.odometer_dirty = 1;
+				
+				// Calculate setpoint and interpolation
+				calculate_setpoint_target(&d->spd, &d->state, &d->motor, &d->rt, &d->tnt_conf, d->pid.proportional);
+				calculate_setpoint_interpolated(&d->spd, &d->state);
+				d->spd.setpoint = d->spd.setpoint_target_interpolated;
+		
+				//Apply Remote Tilt and Sticky Tilt
+				float input_tiltback_target = d->remote.throttle_val * d->tnt_conf.inputtilt_angle_limit;
+				if (d->tnt_conf.is_stickytilt_enabled)
+					apply_stickytilt(&d->remote, &d->st_tilt, d->motor.current_filtered, &input_tiltback_target);
+				apply_inputtilt(&d->remote, input_tiltback_target); 	//produces output d->remote.setpoint
+				d->spd.setpoint += d->tnt_conf.enable_throttle_stability ? 0 : d->remote.setpoint; //Don't apply if we are using the throttle for stability
 
-			//Apply Remote Tilt and Sticky Tilt
-			float input_tiltback_target = d->remote.throttle_val * d->tnt_conf.inputtilt_angle_limit;
-			if (d->tnt_conf.is_stickytilt_enabled)
-				apply_stickytilt(&d->remote, &d->st_tilt, d->motor.current_filtered, &input_tiltback_target);
-			apply_inputtilt(&d->remote, input_tiltback_target); 	//produces output d->remote.setpoint
-			d->spd.setpoint += d->tnt_conf.enable_throttle_stability ? 0 : d->remote.setpoint; //Don't apply if we are using the throttle for stability
+				//Adjust Setpoint as required
+				apply_noseangling(&d->spd, &d->motor, &d->tnt_conf);
 
-			//Adjust Setpoint as required
-			apply_noseangling(&d->spd, &d->motor, &d->tnt_conf);
+				//Apply Stability
+				if (d->tnt_conf.enable_speed_stability || 
+				    d->tnt_conf.enable_throttle_stability) 
+					apply_stability(&d->pid, d->motor.abs_erpm, d->remote.setpoint, &d->tnt_conf);
+				
+				// Calculate proportional difference for raw and filtered pitch
+				calculate_proportional(&d->rt, &d->pid, d->spd.setpoint);
 
-			//Apply Stability
-			if (d->tnt_conf.enable_speed_stability || 
-			    d->tnt_conf.enable_throttle_stability) 
-				apply_stability(&d->pid, d->motor.abs_erpm, d->remote.setpoint, &d->tnt_conf);
-			
-			// Calculate proportional difference for raw and filtered pitch
-			calculate_proportional(&d->rt, &d->pid, d->spd.setpoint);
+				//Check for braking conditions and braking curves, and kp values for pitch roll and yaw
+				d->state.braking_pos = sign(d->pid.proportional) != d->motor.erpm_sign;
+				d->state.braking_pos_smooth = sign(d->pid.prop_smooth) != d->motor.erpm_sign;
+				check_brake_kp(&d->pid,  &d->state,  &d->tnt_conf,  &d->roll_brake_kp,  &d->yaw_brake_kp);
 
-			//Check for braking conditions and braking curves, and kp values for pitch roll and yaw
-			d->state.braking_pos = sign(d->pid.proportional) != d->motor.erpm_sign;
-			d->state.braking_pos_smooth = sign(d->pid.prop_smooth) != d->motor.erpm_sign;
-			check_brake_kp(&d->pid,  &d->state,  &d->tnt_conf,  &d->roll_brake_kp,  &d->yaw_brake_kp);
-
-			//Apply Pitch, Roll, Yaw Kp, and Soft Start
-			d->pid.new_pid_value = apply_pitch_kp(&d->accel_kp, &d->brake_kp, &d->pid, &d->pid_dbg);
-			apply_kp_modifiers(d);			//Roll Yaw
-			apply_soft_start(&d->pid, d->motor.mc_current_max);	//Soft start
-			d->pid.new_pid_value += d->pid.pid_mod;
+				//Apply Pitch, Roll, Yaw Kp, and Soft Start
+				d->pid.new_pid_value = apply_pitch_kp(&d->accel_kp, &d->brake_kp, &d->pid, &d->pid_dbg);
+				apply_kp_modifiers(d);			//Roll Yaw
+				apply_soft_start(&d->pid, d->motor.mc_current_max);	//Soft start
+				d->pid.new_pid_value += d->pid.pid_mod;
+			}
 			
 			// Current Limiting
 			float current_limit = d->motor.braking ? d->motor.mc_current_min : d->motor.mc_current_max;
