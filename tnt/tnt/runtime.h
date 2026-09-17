@@ -45,6 +45,7 @@ typedef struct { //Run time values used in various features
 	bool brake_pitch, brake_roll, brake_yaw;
 	float disengage_timer, nag_timer;
 	uint32_t loop_time_us;
+	uint32_t slow_loop_time_us;
 	float motor_timeout_s;
 	float odo_timer;
 	int odometer_dirty;
