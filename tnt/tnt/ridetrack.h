@@ -53,7 +53,7 @@ typedef struct {
 } RideTrackData;
 
 
-void configure_ride_tracking(RideTrackData *ridetrack, tnt_config *config);
+void configure_ride_tracking(RideTrackData *ridetrack);
 void reset_ride_tracking(RideTrackData *ridetrack);
 void rest_timer(RideTrackData *ridetrack, RuntimeData *rt);
 void ride_timer(RideTrackData *ridetrack, RuntimeData *rt);
