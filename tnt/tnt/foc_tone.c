@@ -19,33 +19,49 @@
 #include "utils_tnt.h"
 #include <math.h>
 
-void tone_update(ToneData *tone, RuntimeData *rt, State *state) {
+void tone_update(ToneData *tone, const RuntimeData *rt, const State *state) {
 	//This function is updated every code cycle to execute initiated tones
-	int index;
+	const float current_time = rt->current_time;
+	const int is_running = state->state == STATE_RUNNING;
 	
-	if (tone->duration > 30 &&		//Don't allow continuous tones outiside run state
-	    state->state != STATE_RUNNING) {	
+	if (tone->duration > 30.0f && !is_running) { //Don't allow continuous tones outiside run state
 		end_tone(tone);
 	}
-	
-	if (!tone->pause) { 					//only play or stop tones outside of pause period
-		tone->pause_timer = rt->current_time; 		// keep updated until we are in pause state
-		if (!tone->tone_in_progress && tone->times != 0) { //play if times>0 and we are ready for the next tone
-			index = min(2, tone->times - 1);	//Use index/times to play frequencies in reverser order: 3 2 1
-			if (state->state == STATE_RUNNING) { 	//Choose function based on state
-				tone->tone_in_progress = VESC_IF->foc_play_tone(0,  tone->freq[index], tone->voltage);
-			} else { tone->tone_in_progress = VESC_IF->foc_beep(tone->freq[index], tone->duration, tone->voltage); }
-			tone->timer = rt->current_time;		//Used to track tone duration
-			tone->times--; 				//Decrement the times property until 0
-		} else if (rt->current_time - tone->timer > tone->duration && tone->tone_in_progress) {
-			VESC_IF->foc_stop_audio(true);	//stop foc play tone after duration
-			if (tone->times > 0) 		
-				tone->pause = true; 		//put in pause if there is another play to do
-			tone->tone_in_progress = false; 
+
+	if (tone->pause) { 	// Pause tones until timeout.
+		if (current_time - tone->pause_timer > 0.1f) {
+			tone->pause = false;
 		}
-	} else if (rt->current_time - tone->pause_timer > 0.1) { //Hard coded pause of 100 ms
-		tone->pause = false;
+		return;
 	}
+	
+	tone->pause_timer = current_time;	// Keep the pause timer current while not paused.
+	
+	if (tone->tone_in_progress) { // Stop an active tone once its duration has elapsed.
+		if (current_time - tone->timer > tone->duration) {
+			VESC_IF->foc_stop_audio(true);
+			tone->tone_in_progress = false;
+			if (tone->times > 0) {
+				tone->pause = true;
+			}
+		}
+		return; // skip the rest of the code if we are already making tones
+	}
+
+	if (tone->times <= 0) { // Exit if no tone is queued.
+		return;
+	}
+	
+	const int index = tone->times - 1; 	//Use tone->times to play freq[index] in reverser order: index 2 1 0
+	
+	if (is_running) {
+		tone->tone_in_progress = VESC_IF->foc_play_tone(0, tone->freq[index], tone->voltage);
+	} else {
+		tone->tone_in_progress = VESC_IF->foc_beep(tone->freq[index], tone->duration, tone->voltage);
+	}
+
+	tone->timer = current_time; //update timer
+	tone->times--; //decrement the number of times the tone is executed
 }
 
 void play_tone(ToneData *tone, ToneConfig *toneconfig, int beep_reason) {
