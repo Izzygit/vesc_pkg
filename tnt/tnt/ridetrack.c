@@ -19,8 +19,8 @@
 #include "utils_tnt.h"
 #include <math.h>
 
-void configure_ride_tracking(RideTrackData *ridetrack, tnt_config *config) {
-	ridetrack->min_yaw_change = 100.0f / config->hertz;
+void configure_ride_tracking(RideTrackData *ridetrack) {
+	ridetrack->min_yaw_change = 100.0f;
 }
 
 void reset_ride_tracking(RideTrackData *ridetrack) {
