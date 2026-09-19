@@ -112,7 +112,7 @@ typedef struct {
 	ToneConfig currenttone;
 } ToneConfigs;
 
-void tone_update(ToneData *tone, RuntimeData *rt, State *state);
+void tone_update(ToneData *tone, const RuntimeData *rt, const State *state);
 void play_tone(ToneData *tone, ToneConfig *toneconfig, int beep_reason);
 void end_tone(ToneData *tone);
 void tone_reset_on_configure(ToneData *tone);
