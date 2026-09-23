@@ -5,6 +5,8 @@ Trick and Trail Package was developed based on Float Package 1.2 by Surfdado and
 
 This package has been improved thanks to the contributions of Lukas Hrazky with Refloat.
 
+This package was not written with AI. I started in 2023 before AI was readily available. I have since used AI to help optimize the code, but I read and understand every line. I apply the changes manually.
+
 [READ THE WIKI](https://github.com/Izzygit/TrickandTrailReleases/wiki) https://github.com/Izzygit/TrickandTrailReleases/wiki
 
 ### Features
@@ -62,13 +64,14 @@ For more instructions on setting up your board please refer to the [Set Up Guide
     * Added new filter Gyro Notch Filter under Acceleration->Filter
     * The parameter defines the center frequency of the stop band to exclude gyro IMU noise
 * _Fixes/Improvements_
-   * Fixed a bug causing yaw gain to not be applied, but debug values were reading correctly
+   * Changed the main control loop so the IMU and lower priority functions operate at the IMU sample rate. Other functions continue to operate at the package loop rate.
+   * Fixed a bug causing yaw gain to not be applied, even though debug values were reading correctly
    * Changed the way Braking Pitch Rate Kp is applied to make it more impactful to the board tune
    * Changed EMA Filter Factor calculation for higher IMU sample rates
-   * Change the yaw calculation for higher IMU sample rates
-   * Improved efficiency of the function that calculates pitch, roll, and yaw gain
-   * Improved efficiency of the debug calculations by only calculating values displayed on AppUI
-   * Changed the main control loop so that IMU updates and lower priority functions operate a the IMU sample rate. Other functions continue to operate at the package loop rate.
+   * Change the yaw calculation to use the gyro instead of yaw angle for better response and tune consistency across different IMU and package loop rates
+   * Optimized the function that calculates pitch, roll, and yaw gain
+   * Optimized the debug calculations by only calculating values currently displayed on AppUI
+   * Optimized traction control functions
 
 ### 1.6
 * **This version requires 6.05+ firmware to function properly**
