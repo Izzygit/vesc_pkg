@@ -79,7 +79,7 @@ void calc_yaw_change(YawData *yaw, RuntimeData *rt, YawDebugData *yaw_dbg, int h
 		if (new_abs_change < yaw->last_change + rt->yaw_change_limit) // Restrict ramp up rate
 			yaw->abs_change = new_abs_change; //unrestricted
 		else yaw->abs_change = yaw->last_change + rt->yaw_change_limit; //restricted
-	yaw->last_change = new_abs_change;
+	yaw->last_change = yaw->abs_change;
 	yaw_dbg->debug1 = rt->gyro[2];
 	yaw_dbg->debug3 = fmaxf(yaw->abs_change, yaw_dbg->debug3);
 }
