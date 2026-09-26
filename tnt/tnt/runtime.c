@@ -78,8 +78,8 @@ void calc_yaw_change(YawData *yaw, RuntimeData *rt, YawDebugData *yaw_dbg, int h
 	float new_abs_change =fabsf(rt->gyro[2]);
 		if (new_abs_change < yaw->last_change + rt->yaw_rate_change) // Restrict ramp up rate
 			yaw->abs_change = new_abs_change; //unrestricted
-		else yaw->abs_change = yaw->last_change + rt->yaw_rate_change //restricted
-	yaw->last_change = new_abs_change
+		else yaw->abs_change = yaw->last_change + rt->yaw_rate_change; //restricted
+	yaw->last_change = new_abs_change;
 	yaw_dbg->debug1 = rt->gyro[2];
 	yaw_dbg->debug3 = fmaxf(yaw->abs_change, yaw_dbg->debug3);
 }
@@ -119,7 +119,7 @@ void configure_runtime(RuntimeData *rt, tnt_config *config) {
 	rt->motor_timeout_s = 20.0f / config->hertz;
 	
 	//Pitch Biquad Configure
-	biquad_configure(&rt->pitch_biquad, BQ_LOWPASS, min(1, 1.0f * config->pitch_filter / config->hertz)); 
+	biquad_configure(&rt->pitch_biquad, BQ_LOWPASS, min(1, 1.0f * config->pitch_filter / config->slow_loop_time_us)); 
 
 	//Pitch Kalman Configure
 	configure_kalman(config, &rt->pitch_kalman);
@@ -131,7 +131,7 @@ void configure_runtime(RuntimeData *rt, tnt_config *config) {
 	rt->ema_factor = min(1 , config->ema_factor * 832.0f / config->hertz);
 
 	//Gyro Z Biquad Configure
-	biquad_configure(&rt->gyro_y_biquad, BQ_NOTCH,  min(1, 1.0f * config->gyro_filter / config->hertz)); 
+	biquad_configure(&rt->gyro_y_biquad, BQ_NOTCH,  min(1, 1.0f * config->gyro_filter / config->slow_loop_time_us)); 
 
 	rt->yaw_rate_change = config->kalman_factor2 *10.0f / imu_sample_rate;
 }
