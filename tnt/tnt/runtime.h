@@ -54,6 +54,7 @@ typedef struct { //Run time values used in various features
 	float fault_angle_pitch_timer, fault_angle_roll_timer, fault_switch_timer, fault_switch_half_timer; // Seconds
 	float imu_rate_factor;
 	float ema_factor;
+	float yaw_change_limit;
 } RuntimeData;
 
 typedef struct {
