@@ -76,9 +76,9 @@ void calc_yaw_change(YawData *yaw, RuntimeData *rt, YawDebugData *yaw_dbg, int h
 	//yaw->last_angle = rt->yaw_angle;
 	//yaw->abs_change = fabsf(yaw->change);
 	float new_abs_change =fabsf(rt->gyro[2]);
-		if (new_abs_change < yaw->last_change + rt->yaw_rate_change) // Restrict ramp up rate
+		if (new_abs_change < yaw->last_change + rt->yaw_change_limit) // Restrict ramp up rate
 			yaw->abs_change = new_abs_change; //unrestricted
-		else yaw->abs_change = yaw->last_change + rt->yaw_rate_change; //restricted
+		else yaw->abs_change = yaw->last_change + rt->yaw_change_limit; //restricted
 	yaw->last_change = new_abs_change;
 	yaw_dbg->debug1 = rt->gyro[2];
 	yaw_dbg->debug3 = fmaxf(yaw->abs_change, yaw_dbg->debug3);
@@ -133,7 +133,7 @@ void configure_runtime(RuntimeData *rt, tnt_config *config) {
 	//Gyro Z Biquad Configure
 	biquad_configure(&rt->gyro_y_biquad, BQ_NOTCH,  min(1, 1.0f * config->gyro_filter / rt->slow_loop_time_us)); 
 
-	rt->yaw_rate_change = config->kalman_factor2 *10.0f / imu_sample_rate;
+	rt->yaw_change_limit = config->kalman_factor2 *10.0f / imu_sample_rate;
 }
 
 void check_odometer(RuntimeData *rt) { 
