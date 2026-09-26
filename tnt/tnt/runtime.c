@@ -57,7 +57,7 @@ void apply_filters(RuntimeData *rt, tnt_config *config){
 		 apply_kalman(rt->pitch_smooth, rt->gyro[1], &rt->pitch_smooth_kalman, rt->diff_time, &rt->pitch_kalman);
 	else 
 		rt->pitch_smooth_kalman = rt->pitch_smooth;
-
+	
 	if (config->gyro_filter > 0) 
 		rt->gyro_y_smooth = biquad_process(&rt->gyro_y_biquad, rt->gyro_y);
 	else
@@ -74,9 +74,12 @@ void calc_yaw_change(YawData *yaw, RuntimeData *rt, YawDebugData *yaw_dbg, int h
 	//	new_change = yaw->last_change;
 	//yaw->last_change = new_change;
 	//yaw->last_angle = rt->yaw_angle;
-	//ema(&yaw->change, 0.2 * 832 / hertz, new_change); //originally configured for 0.2 at 832 Hz
 	//yaw->abs_change = fabsf(yaw->change);
-	yaw->abs_change = fabsf(rt->gyro[2]);
+	float new_abs_change =fabsf(rt->gyro[2]);
+		if (new_abs_change < yaw->last_change + rt->yaw_rate_change) // Restrict ramp up rate
+			yaw->abs_change = new_abs_change; //unrestricted
+		else yaw->abs_change = yaw->last_change + rt->yaw_rate_change //restricted
+	yaw->last_change = new_abs_change
 	yaw_dbg->debug1 = rt->gyro[2];
 	yaw_dbg->debug3 = fmaxf(yaw->abs_change, yaw_dbg->debug3);
 }
@@ -108,14 +111,15 @@ void configure_runtime(RuntimeData *rt, tnt_config *config) {
 	rt->disengage_timer = rt->current_time - 1;
 
 	// Loop time in microseconds
-	rt->slow_loop_time_us = 1e6 / VESC_IF->get_cfg_int(CFG_PARAM_IMU_sample_rate);
+	float imu_sample_rate = VESC_IF->get_cfg_int(CFG_PARAM_IMU_sample_rate);
+	rt->slow_loop_time_us = 1e6 / imu_sample_rate;
 	rt->loop_time_us = min(rt->slow_loop_time_us, 1e6 / config->hertz); // If the IMU is faster than the user configured pkg loop rate, use the IMU rate
 
 	// Loop time in seconds times 20 for a nice long grace period
 	rt->motor_timeout_s = 20.0f / config->hertz;
 	
 	//Pitch Biquad Configure
-	biquad_configure(&rt->pitch_biquad, BQ_LOWPASS, min(1, 1.0 * config->pitch_filter / config->hertz)); 
+	biquad_configure(&rt->pitch_biquad, BQ_LOWPASS, min(1, 1.0f * config->pitch_filter / config->hertz)); 
 
 	//Pitch Kalman Configure
 	configure_kalman(config, &rt->pitch_kalman);
@@ -124,11 +128,12 @@ void configure_runtime(RuntimeData *rt, tnt_config *config) {
 	rt->imu_rate_factor = 1; //lerp(832, 10000, 1, 2, config->hertz);
 	
 	// EMA Filter Factor
-	//float imu_sample_rate = VESC_IF->get_cfg_int(CFG_PARAM_IMU_sample_rate);
-	rt->ema_factor = min(1 , config->ema_factor * 832.0 / config->hertz);
+	rt->ema_factor = min(1 , config->ema_factor * 832.0f / config->hertz);
 
 	//Gyro Z Biquad Configure
-	biquad_configure(&rt->gyro_y_biquad, BQ_NOTCH,  min(1, 1.0 * config->gyro_filter / config->hertz)); 
+	biquad_configure(&rt->gyro_y_biquad, BQ_NOTCH,  min(1, 1.0f * config->gyro_filter / config->hertz)); 
+
+	rt->yaw_rate_change = config->kalman_factor2 *10.0f / imu_sample_rate;
 }
 
 void check_odometer(RuntimeData *rt) { 
