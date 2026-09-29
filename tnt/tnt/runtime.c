@@ -65,16 +65,17 @@ void apply_filters(RuntimeData *rt, tnt_config *config){
 }
 
 void calc_yaw_change(YawData *yaw, RuntimeData *rt, YawDebugData *yaw_dbg, int hertz){ 
-	float new_change = rt->gyro[2];
-	if(new_change > 0)
-		if (new_change < yaw->last_change + rt->yaw_change_limit) // Restrict ramp up rate
-			yaw->abs_change = new_change; //unrestricted
-		else yaw->abs_change = yaw->last_change + rt->yaw_change_limit; //restricted
-	else if(new_change > yaw->last_change - rt->yaw_change_limit)
-		yaw->abs_change = new_change; //unrestricted
-	else yaw->abs_change = yaw->last_change - rt->yaw_change_limit; //restricted
-	
-	yaw->last_change = yaw->abs_change;
+	float new_change = (rt->yaw_angle - yaw->last_angle) / rt->imu_rate_factor;
+	//if ((new_change == 0) || // Exact 0's only happen when the IMU is not updating between loops
+	//    (fabsf(new_change) > 100)) { // yaw flips signs at 180, ignore those changes
+	//	new_change = yaw->last_change;
+	//}
+	if (sign(rt->yaw_angle) != sign(yaw->last_angle)) // yaw flips signs at 180, ignore those changes
+		new_change = yaw->last_change;
+	yaw->last_change = new_change;
+	yaw->last_angle = rt->yaw_angle;
+	ema(&yaw->change, rt->imu_rate_factor, new_change); //originally configured for 0.2 at 832 Hz
+	yaw->abs_change = fabsf(yaw->change);
 	yaw_dbg->debug1 = rt->gyro[2];
 	yaw_dbg->debug3 = fmaxf(yaw->abs_change, yaw_dbg->debug3);
 }
@@ -119,16 +120,14 @@ void configure_runtime(RuntimeData *rt, tnt_config *config) {
 	//Pitch Kalman Configure
 	configure_kalman(config, &rt->pitch_kalman);
 
-	//Yaw change correction factor
-	rt->imu_rate_factor = 1; //lerp(832, 10000, 1, 2, config->hertz);
+	//Yaw change ema filter factor
+	rt->imu_rate_factor = min(1, 0.2f * 832.0f / config->hertz); //based on 0.2 at 832Hz
 	
-	// EMA Filter Factor
+	// EMA Filter Factor for Current Output
 	rt->ema_factor = min(1 , config->ema_factor * 832.0f / config->hertz);
 
 	//Gyro Z Biquad Configure
 	biquad_configure(&rt->gyro_y_biquad, BQ_NOTCH,  min(1, 1.0f * config->gyro_filter / rt->slow_loop_time_us)); 
-
-	rt->yaw_change_limit = config->kalman_factor2 *10.0f / imu_sample_rate;
 }
 
 void check_odometer(RuntimeData *rt) { 
