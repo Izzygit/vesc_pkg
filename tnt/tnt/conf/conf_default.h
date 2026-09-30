@@ -885,7 +885,7 @@
 
 // Package Version
 #ifndef APPCONF_TNT_VERSION
-#define APPCONF_TNT_VERSION 1.6
+#define APPCONF_TNT_VERSION 1.7
 #endif
 
 // CONF_DEFAULT_H_
