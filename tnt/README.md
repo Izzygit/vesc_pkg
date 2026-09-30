@@ -68,7 +68,6 @@ For more instructions on setting up your board please refer to the [Set Up Guide
    * Fixed a bug causing yaw gain to not be applied, even though debug values were reading correctly
    * Changed the way Braking Pitch Rate Kp is applied to make it more impactful to the board tune
    * Changed EMA Filter Factor calculation for higher IMU sample rates
-   * Change the yaw calculation to use the gyro instead of yaw angle for better response and tune consistency across different IMU and package loop rates
    * Optimized the function that calculates pitch, roll, and yaw gain
    * Optimized the debug calculations by only calculating values currently displayed on AppUI
    * Optimized traction control functions
