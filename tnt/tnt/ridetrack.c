@@ -20,7 +20,7 @@
 #include <math.h>
 
 void configure_ride_tracking(RideTrackData *ridetrack) {
-	ridetrack->min_yaw_change = 80.0f;
+	ridetrack->min_yaw_change = 100.0f / VESC_IF->get_cfg_int(CFG_PARAM_IMU_sample_rate);
 }
 
 void reset_ride_tracking(RideTrackData *ridetrack) {
@@ -84,7 +84,7 @@ void carve_tracking(RuntimeData *rt, YawData *yaw, RideTrackData *ridetrack, tnt
 	//Apply a minimum yaw change and time yaw change is applied to filter out noise
 	if (yaw->abs_change < ridetrack->min_yaw_change) {
 		ridetrack->yaw_timer = rt->current_time;
-	} else if (rt->current_time - ridetrack->yaw_timer > .01) {
+	} else if (rt->current_time - ridetrack->yaw_timer > .05) {
 		ridetrack->yaw_sign = sign(yaw->change);
 
 		// Track the change in yaw change sign to determine carves
