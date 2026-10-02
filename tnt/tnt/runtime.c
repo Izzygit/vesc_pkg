@@ -35,15 +35,18 @@ void runtime_data_update(RuntimeData *rt) {
 void imu_data_update(RuntimeData *rt) {	
 	// Get the IMU Values
 	float roll_rad = VESC_IF->imu_get_roll();
+	float sin_roll = sinf(roll_rad);
+	float cos_roll = cosf(roll_rad);
 	rt->roll_angle = rad2deg(roll_rad);
 	rt->abs_roll_angle = fabsf(rt->roll_angle);
 	rt->true_pitch_angle = rad2deg(VESC_IF->ahrs_get_pitch(&rt->m_att_ref)); // True pitch is derived from the secondary IMU filter running with kp=0.2
 	rt->pitch_angle = rad2deg(VESC_IF->imu_get_pitch());
 	VESC_IF->imu_get_gyro(rt->gyro);
-	rt->gyro_y = rt->gyro[1];
-	rt->gyro_z = sinf(roll_rad) * sinf(roll_rad) * rt->gyro[1] - cosf(roll_rad) * sinf(roll_rad) * rt->gyro[2];
-	VESC_IF->imu_get_accel(rt->accel); //Used for drop detection
+	rt->gyro_y = rt->gyro[1]; // where y is up and down
+	rt->gyro_z = sin_roll * sin_roll * rt->gyro[1] - cos_roll * sin_roll * rt->gyro[2]; //the yaw gyro that is applied to pitch because of roll angle, where z is left and right
+	//VESC_IF->imu_get_accel(rt->accel); //Used for drop detection
 	rt->yaw_angle = rad2deg(VESC_IF->ahrs_get_yaw(&rt->m_att_ref));
+	rt->gyro_yaw = ((1 + sin_roll * sin_roll) * rt->gyro[2] - sin_roll * cos_roll * rt->gyro[1]);
 }
 
 void apply_filters(RuntimeData *rt, tnt_config *config){
@@ -62,10 +65,15 @@ void apply_filters(RuntimeData *rt, tnt_config *config){
 		rt->gyro_y_smooth = biquad_process(&rt->gyro_y_biquad, rt->gyro_y);
 	else
 		rt->gyro_y_smooth = rt->gyro_y;
+
+	if (config->kalman_factor2 > 0) 
+		rt->gyro_yaw_smooth = biquad_process(&rt->gyro_yaw_biquad, rt->gyro_yaw);
+	else
+		rt->gyro_yaw_smooth = rt->gyro_yaw;
 }
 
 void calc_yaw_change(YawData *yaw, RuntimeData *rt, YawDebugData *yaw_dbg){ 
-	float new_change = rt->yaw_angle - yaw->last_angle / rt->imu_rate_factor;
+	/*float new_change = rt->yaw_angle - yaw->last_angle / rt->imu_rate_factor;
 	//if ((new_change == 0) || // Exact 0's only happen when the IMU is not updating between loops
 	//    (fabsf(new_change) > 100)) { // yaw flips signs at 180, ignore those changes
 	//	new_change = yaw->last_change;
@@ -73,7 +81,10 @@ void calc_yaw_change(YawData *yaw, RuntimeData *rt, YawDebugData *yaw_dbg){
 	if (sign(rt->yaw_angle) != sign(yaw->last_angle)) // yaw flips signs at 180, ignore those changes
 		new_change = yaw->last_change;
 	yaw->last_change = new_change;
-	yaw->last_angle = rt->yaw_angle;
+	yaw->last_angle = rt->yaw_angle;*/
+	
+	float imu_sample_rate = VESC_IF->get_cfg_int(CFG_PARAM_IMU_sample_rate);
+	float new_change = rt->gyro_yaw_smooth / imu_sample_rate;
 	ema(&yaw->change, 0.2, new_change); //originally configured for 0.2 at 832 Hz
 	yaw->abs_change = fabsf(yaw->change);
 	yaw_dbg->debug1 = yaw->change;
@@ -100,6 +111,9 @@ void reset_runtime(RuntimeData *rt, YawData *yaw, YawDebugData *yaw_dbg) {
 
 	biquad_reset(&rt->gyro_y_biquad);
 	rt->gyro_y_smooth = 0;
+
+	biquad_reset(&rt->gyro_yaw_biquad);
+	rt->gyro_yaw_smooth = 0;
 }
 
 void configure_runtime(RuntimeData *rt, tnt_config *config) {
@@ -126,8 +140,11 @@ void configure_runtime(RuntimeData *rt, tnt_config *config) {
 	// EMA Filter Factor for Current Output
 	rt->ema_factor = min(1 , config->ema_factor * 832.0f / config->hertz);
 
-	//Gyro Z Biquad Configure
+	//Gyro Y Biquad Configure
 	biquad_configure(&rt->gyro_y_biquad, BQ_NOTCH,  min(1, 1.0f * config->gyro_filter / imu_sample_rate)); 
+	
+	//Gyro Yaw Biquad Configure
+	biquad_configure(&rt->gyro_yaw_biquad, BQ_LOWPASS,  min(1, 1.0f * config->kalman_factor2 / imu_sample_rate)); 
 }
 
 void check_odometer(RuntimeData *rt) { 
