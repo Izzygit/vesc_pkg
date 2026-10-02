@@ -159,11 +159,11 @@ void apply_kp_modifiers(data *d) {
 	
 	//Select and Apply Yaw kp rate
 	float yaw_kp_rate = apply_kp_rate(&d->yaw_accel_kp, &d->yaw_brake_kp, gyro_braking, &d->pid_dbg);
-	d->pid.pid_mod += yaw_kp_rate * d->rt.gyro_z;
+	d->pid.pid_mod += yaw_kp_rate * d->rt.gyro_turning;
 	
 	//Debug
 	if (d->pid_dbg.yaw) {
-		d->pid_dbg.debug5 = d->rt.gyro_z;
+		d->pid_dbg.debug5 = d->rt.gyro_turning;
 		d->pid_dbg.debug11 = d->pid_dbg.debug10; //yaw rate kp
 	}
 	
