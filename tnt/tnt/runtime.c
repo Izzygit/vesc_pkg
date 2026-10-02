@@ -43,10 +43,10 @@ void imu_data_update(RuntimeData *rt) {
 	rt->pitch_angle = rad2deg(VESC_IF->imu_get_pitch());
 	VESC_IF->imu_get_gyro(rt->gyro);
 	rt->gyro_y = rt->gyro[1]; // where y is up and down
-	rt->gyro_z = sin_roll * sin_roll * rt->gyro[1] - cos_roll * sin_roll * rt->gyro[2]; //the yaw gyro that is applied to pitch because of roll angle, where z is left and right
+	rt->gyro_turning = sin_roll * sin_roll * rt->gyro[1] - cos_roll * sin_roll * rt->gyro[2]; //the gyro imparted to the y direction from turning the board
 	//VESC_IF->imu_get_accel(rt->accel); //Used for drop detection
 	rt->yaw_angle = rad2deg(VESC_IF->ahrs_get_yaw(&rt->m_att_ref));
-	rt->gyro_yaw = ((1 + sin_roll * sin_roll) * rt->gyro[2] - sin_roll * cos_roll * rt->gyro[1]);
+	rt->gyro_yaw = cos_roll * rt->gyro[2] + sin_roll * rt->gyro[1]; // yaw relative to level
 }
 
 void apply_filters(RuntimeData *rt, tnt_config *config){
