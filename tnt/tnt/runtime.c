@@ -83,7 +83,7 @@ void calc_yaw_change(YawData *yaw, RuntimeData *rt, YawDebugData *yaw_dbg){
 	yaw->last_change = new_change;
 	yaw->last_angle = rt->yaw_angle;*/
 	
-	float new_change = rt->gyro_yaw_smooth / rt->imu_sample_rate;
+	float new_change = rt->gyro_yaw_smooth;
 	ema(&yaw->change, 0.2, new_change); //originally configured for 0.2 at 832 Hz
 	yaw->abs_change = fabsf(yaw->change);
 	yaw_dbg->debug1 = yaw->change;
@@ -114,7 +114,7 @@ void reset_runtime(RuntimeData *rt, YawData *yaw, YawDebugData *yaw_dbg, tnt_con
 	biquad_reset(&rt->gyro_yaw_biquad);
 	rt->gyro_yaw_smooth = 0;
 
-	if (rt->imu_sample_rate != VESC_IF->get_cfg_int(CFG_PARAM_IMU_sample_rate)) 
+	if (rt->imu_sample_rate != VESC_IF->get_cfg_int(CFG_PARAM_IMU_sample_rate)) //New IMU sample rate was written in App Cfg and not configured in TNT
 		configure_runtime(rt, config);
 }
 
