@@ -155,9 +155,10 @@ void apply_kp_modifiers(data *d) {
 		d->pid_dbg.debug4 = d->rt.gyro_y_smooth;
 	} else if (d->pid_dbg.stability) {
 		d->pid_dbg.debug6 = d->pid_dbg.debug10 * (d->pid.stability_kprate - 1); //stability rate kp
+		d->pid_dbg.debug14 = d->pid_dbg.debug10 * (d->pid.stability_kprate - 1) * -d->rt.gyro_y_smooth; //stability rate deamnd
  	} else if (d->pid_dbg.current) {
 		d->pid_dbg.debug15 = d->pid_dbg.debug10 * -d->rt.gyro_y_smooth;  // pitch rate current	
-		d->pid_dbg.debug6 = d->pid_dbg.debug10 * (d->pid.stability_kprate - 1) * -d->rt.gyro_y_smooth; //stability rate kp
+		d->pid_dbg.debug14 = d->pid_dbg.debug10 * (d->pid.stability_kprate - 1) * -d->rt.gyro_y_smooth; //stability rate deamnd
 	}
 	
 	//Select and Apply Yaw kp rate
@@ -562,7 +563,7 @@ static void send_realtime_data(data *d){
 		buffer_append_float32_auto(buffer, d->pid_dbg.debug8, &ind); // added pitch kp 
 		buffer_append_float32_auto(buffer, d->pid_dbg.debug6, &ind); // added stability rate P for pitch
 		buffer_append_float32_auto(buffer, d->pid_dbg.debug13, &ind); // added demand for pitch angle
-		buffer_append_float32_auto(buffer, -d->pid_dbg.debug6 * d->pid_dbg.debug4, &ind); // added demand for pitch rate
+		buffer_append_float32_auto(buffer, d->pid_dbg.debug14, &ind); // added demand for pitch rate
 	} else if (d->tnt_conf.is_yawdebug_enabled) {
 		buffer[ind++] = 5;
 		buffer_append_float32_auto(buffer, d->rt.yaw_angle, &ind); //yaw angle
@@ -596,7 +597,7 @@ static void send_realtime_data(data *d){
 		buffer_append_float32_auto(buffer, d->pid_dbg.debug15, &ind); //yaw gyro current demand		
 		buffer_append_float32_auto(buffer, d->pid_dbg.debug18, &ind); //roll current demand
 		buffer_append_float32_auto(buffer, d->pid_dbg.debug13, &ind); // added stablity demand for pitch angle
-		buffer_append_float32_auto(buffer, d->pid_dbg.debug6 + d->pid_dbg.debug27, &ind); // added stability demand for pitch and yaw rate
+		buffer_append_float32_auto(buffer, d->pid_dbg.debug14 + d->pid_dbg.debug27, &ind); // added stability demand for pitch and yaw rate
 	} else { 
 		buffer[ind++] = 0;
 	}
