@@ -561,7 +561,7 @@ static void send_realtime_data(data *d){
 		float imu_sample_rate = VESC_IF->get_cfg_int(CFG_PARAM_IMU_sample_rate);
 		buffer[ind++] = 5;
 		buffer_append_float32_auto(buffer, d->rt.yaw_angle, &ind); //yaw angle
-		buffer_append_float32_auto(buffer, d->yaw_dbg.debug1 * imu_sample_rate, &ind); //yaw change
+		buffer_append_float32_auto(buffer, d-rt.gyro_yaw_smooth, &ind); //yaw change
 		buffer_append_float32_auto(buffer, d->yaw_dbg.debug3 * imu_sample_rate, &ind); //max yaw change		
 		buffer_append_float32_auto(buffer, d->pid_dbg.debug24, &ind); //yaw kp 	
 		buffer_append_float32_auto(buffer, d->pid_dbg.debug26, &ind); //yaw kp current demand
