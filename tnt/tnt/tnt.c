@@ -257,12 +257,12 @@ static void tnt_thd(void *arg) {
 				//Ride Timer
 				ride_timer(&d->ridetrack, &d->rt);
 				d->rt.disengage_timer = d->rt.current_time;
-				d->rt.odometer_dirty = 1;debug15
+				d->rt.odometer_dirty = 1;
 				
 				// Calculate setpoint and interpolation
 				calculate_setpoint_target(&d->spd, &d->state, &d->motor, &d->rt, &d->tnt_conf, d->pid.proportional);
 				calculate_setpoint_interpolated(&d->spd, &d->state);
-				d->spd.setpoint = d->spd.setpoint_target_interpolatdebug15ed;
+				d->spd.setpoint = d->spd.setpoint_target_interpolated;
 		
 				//Apply Remote Tilt and Sticky Tilt
 				float input_tiltback_target = d->remote.throttle_val * d->tnt_conf.inputtilt_angle_limit;
@@ -493,7 +493,7 @@ static void send_realtime_data(data *d){
 	// Board State
 	buffer[ind++] = d->state.wheelslip ? 4 : d->state.state; 
 	buffer[ind++] = d->state.sat; 
-	buffer[ind++] = d->footpad_sensor.state;debug15
+	buffer[ind++] = d->footpad_sensor.state;
 	buffer[ind++] =	d->tone.beep_reason;
 	buffer[ind++] = d->state.stop_condition;
 	buffer_append_float32_auto(buffer, d->footpad_sensor.adc1, &ind);
