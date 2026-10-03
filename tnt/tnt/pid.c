@@ -148,9 +148,9 @@ void yaw_kp_configure(const tnt_config *config, KpArray *k, int mode){
 	float imu_sample_rate = VESC_IF->get_cfg_int(CFG_PARAM_IMU_sample_rate);
 	float accel_yaw_kp[7][2] = { //Accel curve
 	{0, 0}, 
-	{config->yaw1 / imu_sample_rate, config->yaw_kp1},
-	{config->yaw2 / imu_sample_rate, config->yaw_kp2},
-	{config->yaw3 / imu_sample_rate, config->yaw_kp3},
+	{config->yaw1, config->yaw_kp1},
+	{config->yaw2, config->yaw_kp2},
+	{config->yaw3, config->yaw_kp3},
 	{0, 0},
 	{0, 0},
 	{0, 0},
@@ -158,9 +158,9 @@ void yaw_kp_configure(const tnt_config *config, KpArray *k, int mode){
 	
 	float brake_yaw_kp[7][2] = { //Brake Curve
 	{0, 0}, 
-	{config->brkyaw1 / imu_sample_rate, config->brkyaw_kp1},
-	{config->brkyaw2 / imu_sample_rate, config->brkyaw_kp2},
-	{config->brkyaw3 / imu_sample_rate, config->brkyaw_kp3},
+	{config->brkyaw1, config->brkyaw_kp1},
+	{config->brkyaw2, config->brkyaw_kp2},
+	{config->brkyaw3, config->brkyaw_kp3},
 	{0, 0},
 	{0, 0},
 	{0, 0},
@@ -256,8 +256,8 @@ void configure_pid(PidData *p, tnt_config *config, PidDebug *pid_dbg) {
 	p->stabl_step_size_down = 1.0 * config->stabl_ramp_down / 100.0 / config->hertz;
 	
 	// Feature: Soft Start
-	p->softstart_step_size = 100.0 / config->hertz;
-
+	p->softstart_step_size = 100.0f / VESC_IF->get_cfg_int(CFG_PARAM_IMU_sample_rate);
+	
 	//Debug
 	pid_dbg->pitch = config->is_pitchdebug_enabled;
 	pid_dbg->stability = config->is_stabilitydebug_enabled;
@@ -300,7 +300,7 @@ float apply_roll_kp(KpArray *roll_accel_kp, KpArray *roll_brake_kp, PidData *p, 
 	rollkp *= roll_erpm_scale;
 
 	//Apply Roll Boost
-	p->roll_pid_mod = .99 * p->roll_pid_mod + .01 * rollkp * fabsf(p->new_pid_value) * erpm_sign; 	//always act in the direciton of travel
+	ema(&p->roll_pid_mod, 0.01, rollkp * fabsf(p->new_pid_value) * erpm_sign); 	//always act in the direciton of travel
 
 	//Debug
 	if (pid_dbg->roll) {
@@ -330,7 +330,7 @@ float apply_yaw_kp(KpArray *yaw_accel_kp, KpArray *yaw_brake_kp, PidData *p, flo
 	yawkp *= yaw_erpm_scale;
 	
 	//Apply Yaw Boost
-	p->yaw_pid_mod = .99 * p->yaw_pid_mod + .01 * yawkp * fabsf(p->new_pid_value) * erpm_sign; 	//always act in the direciton of travel
+	ema(&p->yaw_pid_mod, 0.01, yawkp * fabsf(p->new_pid_value) * erpm_sign); 	//always act in the direciton of travel
 
 	//Debug
 	if	(pid_dbg->yaw) {
