@@ -20,7 +20,7 @@
 #include <math.h>
 
 void configure_ride_tracking(RideTrackData *ridetrack) {
-	ridetrack->min_yaw_change = 100.0f / VESC_IF->get_cfg_int(CFG_PARAM_IMU_sample_rate);
+	ridetrack->min_yaw_change = 50.0f / VESC_IF->get_cfg_int(CFG_PARAM_IMU_sample_rate);
 }
 
 void reset_ride_tracking(RideTrackData *ridetrack) {
