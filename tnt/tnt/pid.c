@@ -263,6 +263,7 @@ void configure_pid(PidData *p, tnt_config *config, PidDebug *pid_dbg) {
 	pid_dbg->stability = config->is_stabilitydebug_enabled;
 	pid_dbg->yaw = config->is_yawdebug_enabled;
 	pid_dbg->roll = config->is_rolldebug_enabled;
+	pid_dbg->current = config->is_currentdebug_enabled;
 }
 
 
@@ -271,13 +272,20 @@ float apply_pitch_kp(KpArray *accel_kp, KpArray *brake_kp, PidData *p, PidDebug 
 	float kp_mod, new_pid_value;
 	kp_mod = angle_kp_select(p->abs_prop_smooth, 
 		p->brake_pitch ? brake_kp : accel_kp);
+	
+	//Debug before applying stability
 	if (pid_dbg->pitch) {
 		pid_dbg->debug1 = p->brake_pitch ? -kp_mod : kp_mod;
 		pid_dbg->debug12 = kp_mod * p->proportional; // pitch demand without stability
 	} else if (pid_dbg->stability) {
 		pid_dbg->debug8 = (p->stability_kp - 1) * kp_mod;  //stability contribution to pitch kp
 		pid_dbg->debug13 = pid_dbg->debug8 * p->proportional; // pitch demand from stability
+	} else if (pid_dbg->current) {
+		pid_dbg->debug12 = kp_mod * p->proportional; // pitch demand without stability
+		pid_dbg->debug13 = (p->stability_kp - 1) * kp_mod * p->proportional; // pitch demand from stability
 	}
+
+	//Calc final kp and new current value
 	kp_mod *= p->stability_kp;
 	new_pid_value = p->proportional * kp_mod;
 
@@ -286,7 +294,11 @@ float apply_pitch_kp(KpArray *accel_kp, KpArray *brake_kp, PidData *p, PidDebug 
 
 float apply_kp_rate(KpArray *accel_kp, KpArray *brake_kp, bool braking, PidDebug *pid_dbg) {
 	float kp_rate = braking ? brake_kp->kp_rate : accel_kp->kp_rate;	
-	pid_dbg->debug10 = kp_rate;
+	
+	//Debug
+	if (pid_dbg->pitch) 
+		pid_dbg->debug10 = kp_rate;
+	
 	return kp_rate;
 }
 
@@ -306,6 +318,8 @@ float apply_roll_kp(KpArray *roll_accel_kp, KpArray *roll_brake_kp, PidData *p, 
 	if (pid_dbg->roll) {
 		pid_dbg->debug16 = max(abs_roll_angle, pid_dbg->debug16);
 		pid_dbg->debug2 = p->brake_roll ? -rollkp : rollkp;	
+		pid_dbg->debug18 =  p->roll_pid_mod;
+	} else if (pid_dbg->current) {
 		pid_dbg->debug18 =  p->roll_pid_mod;
 	}
 	
@@ -338,6 +352,8 @@ float apply_yaw_kp(KpArray *yaw_accel_kp, KpArray *yaw_brake_kp, PidData *p, flo
 		pid_dbg->debug25 = yaw_erpm_scale;
 		pid_dbg->debug24 = p->brake_yaw ? -yawkp : yawkp;
 		pid_dbg->debug22 = fmaxf(pid_dbg->debug22, yawkp);
+	} else if (pid_dbg->current) {
+		pid_dbg->debug26 = p->yaw_pid_mod;
 	}
 	
 	return p->yaw_pid_mod;
