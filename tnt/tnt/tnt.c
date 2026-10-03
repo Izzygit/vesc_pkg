@@ -155,6 +155,9 @@ void apply_kp_modifiers(data *d) {
 		d->pid_dbg.debug4 = d->rt.gyro_y_smooth;
 	} else if (d->pid_dbg.stability) {
 		d->pid_dbg.debug6 = d->pid_dbg.debug10 * (d->pid.stability_kprate - 1); //stability rate kp
+ 	} else if (d->pid_dbg.current) {
+		d->pid_dbg.debug15 = d->pid_dbg.debug10 * -d->rt.gyro_y_smooth;  // pitch rate current	
+		d->pid_dbg.debug6 = d->pid_dbg.debug10 * (d->pid.stability_kprate - 1) * -d->rt.gyro_y_smooth; //stability rate kp
 	}
 	
 	//Select and Apply Yaw kp rate
@@ -165,6 +168,9 @@ void apply_kp_modifiers(data *d) {
 	if (d->pid_dbg.yaw) {
 		d->pid_dbg.debug5 = d->rt.gyro_turning;
 		d->pid_dbg.debug11 = d->pid_dbg.debug10; //yaw rate kp
+ 	} else if (d->pid_dbg.current) {
+		d->pid_dbg.debug15 = d->pid_dbg.debug10 * d->rt.gyro_turning; // yaw rate current
+		d->pid_dbg.debug27 = d->pid_dbg.debug10 * (d->pid.stability_kprate - 1 )* d->rt.gyro_turning; //yaw stability rate current
 	}
 	
 	//Compute erpm scalers
@@ -254,12 +260,12 @@ static void tnt_thd(void *arg) {
 				//Ride Timer
 				ride_timer(&d->ridetrack, &d->rt);
 				d->rt.disengage_timer = d->rt.current_time;
-				d->rt.odometer_dirty = 1;
+				d->rt.odometer_dirty = 1;debug15
 				
 				// Calculate setpoint and interpolation
 				calculate_setpoint_target(&d->spd, &d->state, &d->motor, &d->rt, &d->tnt_conf, d->pid.proportional);
 				calculate_setpoint_interpolated(&d->spd, &d->state);
-				d->spd.setpoint = d->spd.setpoint_target_interpolated;
+				d->spd.setpoint = d->spd.setpoint_target_interpolatdebug15ed;
 		
 				//Apply Remote Tilt and Sticky Tilt
 				float input_tiltback_target = d->remote.throttle_val * d->tnt_conf.inputtilt_angle_limit;
@@ -490,7 +496,7 @@ static void send_realtime_data(data *d){
 	// Board State
 	buffer[ind++] = d->state.wheelslip ? 4 : d->state.state; 
 	buffer[ind++] = d->state.sat; 
-	buffer[ind++] = d->footpad_sensor.state;
+	buffer[ind++] = d->footpad_sensor.state;debug15
 	buffer[ind++] =	d->tone.beep_reason;
 	buffer[ind++] = d->state.stop_condition;
 	buffer_append_float32_auto(buffer, d->footpad_sensor.adc1, &ind);
@@ -585,12 +591,12 @@ static void send_realtime_data(data *d){
 	} else if (d->tnt_conf.is_currentdebug_enabled) {
 		buffer[ind++] = 8;
 		buffer_append_float32_auto(buffer, d->pid_dbg.debug12, &ind); // pitch angle demand
-		buffer_append_float32_auto(buffer, -d->pid_dbg.debug4 * d->pid_dbg.debug9, &ind); //	pitch rate demand												
-		buffer_append_float32_auto(buffer, d->pid_dbg.debug15, &ind); //yaw kp current demand
-		buffer_append_float32_auto(buffer, d->pid_dbg.debug5 * d->pid_dbg.debug11, &ind); //yaw gyro current demand		
+		buffer_append_float32_auto(buffer, d->pid_dbg.debug6, &ind); //	pitch rate demand												
+		buffer_append_float32_auto(buffer, d->pid_dbg.debug26, &ind); //yaw kp current demand
+		buffer_append_float32_auto(buffer, d->pid_dbg.debug15, &ind); //yaw gyro current demand		
 		buffer_append_float32_auto(buffer, d->pid_dbg.debug18, &ind); //roll current demand
 		buffer_append_float32_auto(buffer, d->pid_dbg.debug13, &ind); // added stablity demand for pitch angle
-		buffer_append_float32_auto(buffer, -d->pid_dbg.debug6 * d->pid_dbg.debug4 + d->pid_dbg.debug7 * d->pid_dbg.debug5, &ind); // added stability demand for pitch and yaw rate
+		buffer_append_float32_auto(buffer, d->pid_dbg.debug6 + d->pid_dbg.debug27, &ind); // added stability demand for pitch and yaw rate
 	} else { 
 		buffer[ind++] = 0;
 	}
