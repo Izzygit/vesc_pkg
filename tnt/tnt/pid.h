@@ -74,6 +74,7 @@ typedef struct {
 	bool stability;	//enable stability debug
 	bool yaw;	//enable yaw debug
 	bool roll;	//enable roll debug
+	bool current; // enable currents debug
 	float debug21; //change
 	float debug22; //max kp
 	float debug23; //kp unscaled
