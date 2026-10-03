@@ -57,6 +57,7 @@ typedef struct { //Run time values used in various features
 	float gyro_yaw;
 	float gyro_yaw_smooth;
 	Biquad gyro_yaw_biquad; // Low Pass Filter
+	int imu_sample_rate;
 } RuntimeData;
 
 typedef struct {
