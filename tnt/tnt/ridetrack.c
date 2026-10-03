@@ -110,7 +110,7 @@ void carve_tracking(RuntimeData *rt, YawData *yaw, RideTrackData *ridetrack, tnt
 		ridetrack->yaw_sign = 0;
 	} else {
 		ridetrack->max_carve_chain = fmaxf(ridetrack->max_carve_chain, ridetrack->carve_chain);
-		ridetrack->max_yaw_temp = fmaxf( ridetrack->max_yaw_temp, yaw->abs_change > 1500.0 / config->hertz ? 0 : yaw->abs_change);
+		ridetrack->max_yaw_temp = fmaxf( ridetrack->max_yaw_temp, yaw->abs_change > 1500f ? 0f : yaw->abs_change);
 		ridetrack->max_roll_temp = fmaxf( ridetrack->max_roll_temp, rt->abs_roll_angle);
 	}
 	ridetrack->last_yaw_sign = ridetrack->yaw_sign;
