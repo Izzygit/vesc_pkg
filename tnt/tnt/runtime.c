@@ -42,7 +42,7 @@ void imu_data_update(RuntimeData *rt) {
 	rt->true_pitch_angle = rad2deg(VESC_IF->ahrs_get_pitch(&rt->m_att_ref)); // True pitch is derived from the secondary IMU filter running with kp=0.2
 	rt->pitch_angle = rad2deg(VESC_IF->imu_get_pitch());
 	VESC_IF->imu_get_gyro(rt->gyro);
-	rt->gyro_y = rt->gyro[1]; // where y is up and down
+	rt->gyro_y = rt->gyro[1]; // where y is up and down according to the IMU
 	rt->gyro_turning = sin_roll * sin_roll * rt->gyro[1] - cos_roll * sin_roll * rt->gyro[2]; //the gyro imparted to the y direction from turning the board
 	//VESC_IF->imu_get_accel(rt->accel); //Used for drop detection
 	rt->yaw_angle = rad2deg(VESC_IF->ahrs_get_yaw(&rt->m_att_ref));
@@ -141,7 +141,7 @@ void configure_runtime(RuntimeData *rt, tnt_config *config) {
 	rt->ema_factor = min(1 , config->ema_factor * 832.0f / config->hertz);
 
 	//Gyro Y Biquad Configure
-	biquad_configure(&rt->gyro_y_biquad, BQ_NOTCH,  min(1, 1.0f * config->gyro_filter / imu_sample_rate)); 
+	biquad_configure(&rt->gyro_y_biquad, BQ_NOTCH,  max(0.03f, min(0.1f, 1.0f * config->gyro_filter / imu_sample_rate))); 
 	
 	//Gyro Yaw Biquad Configure
 	biquad_configure(&rt->gyro_yaw_biquad, BQ_LOWPASS,  min(1, 1.0f * config->kalman_factor2 / imu_sample_rate)); 
