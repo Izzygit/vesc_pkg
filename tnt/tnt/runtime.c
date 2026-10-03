@@ -115,7 +115,7 @@ void reset_runtime(RuntimeData *rt, YawData *yaw, YawDebugData *yaw_dbg, tnt_con
 	rt->gyro_yaw_smooth = 0;
 
 	if (rt->imu_sample_rate != VESC_IF->get_cfg_int(CFG_PARAM_IMU_sample_rate)) 
-		configure_runtime(&rt, &config);
+		configure_runtime(rt, config);
 }
 
 void configure_runtime(RuntimeData *rt, tnt_config *config) {
