@@ -83,15 +83,14 @@ void calc_yaw_change(YawData *yaw, RuntimeData *rt, YawDebugData *yaw_dbg){
 	yaw->last_change = new_change;
 	yaw->last_angle = rt->yaw_angle;*/
 	
-	float imu_sample_rate = VESC_IF->get_cfg_int(CFG_PARAM_IMU_sample_rate);
-	float new_change = rt->gyro_yaw_smooth / imu_sample_rate;
+	float new_change = rt->gyro_yaw_smooth / rt->imu_sample_rate;
 	ema(&yaw->change, 0.2, new_change); //originally configured for 0.2 at 832 Hz
 	yaw->abs_change = fabsf(yaw->change);
 	yaw_dbg->debug1 = yaw->change;
 	yaw_dbg->debug3 = fmaxf(yaw->abs_change, yaw_dbg->debug3);
 }
 
-void reset_runtime(RuntimeData *rt, YawData *yaw, YawDebugData *yaw_dbg) {
+void reset_runtime(RuntimeData *rt, YawData *yaw, YawDebugData *yaw_dbg, tnt_config *config) {
 	//Low pass pitch filter
 	rt->pitch_smooth = rt->pitch_angle;
 	biquad_reset(&rt->pitch_biquad);
@@ -114,6 +113,9 @@ void reset_runtime(RuntimeData *rt, YawData *yaw, YawDebugData *yaw_dbg) {
 
 	biquad_reset(&rt->gyro_yaw_biquad);
 	rt->gyro_yaw_smooth = 0;
+
+	if (rt->imu_sample_rate != VESC_IF->get_cfg_int(CFG_PARAM_IMU_sample_rate)) 
+		configure_runtime(&rt, &config);
 }
 
 void configure_runtime(RuntimeData *rt, tnt_config *config) {
@@ -121,30 +123,30 @@ void configure_runtime(RuntimeData *rt, tnt_config *config) {
 	rt->disengage_timer = rt->current_time - 1;
 
 	// Loop time in microseconds
-	float imu_sample_rate = VESC_IF->get_cfg_int(CFG_PARAM_IMU_sample_rate);
-	rt->slow_loop_time_us = 1e6 / imu_sample_rate;
+	rt->imu_sample_rate = VESC_IF->get_cfg_int(CFG_PARAM_IMU_sample_rate);
+	rt->slow_loop_time_us = 1e6 / rt->imu_sample_rate;
 	rt->loop_time_us = min(rt->slow_loop_time_us, 1e6 / config->hertz); // If the IMU is faster than the user configured pkg loop rate, use the IMU rate
 
 	// Loop time in seconds times 20 for a nice long grace period
 	rt->motor_timeout_s = 20.0f / config->hertz;
 	
 	//Pitch Biquad Configure
-	biquad_configure(&rt->pitch_biquad, BQ_LOWPASS, min(1, 1.0f * config->pitch_filter / imu_sample_rate)); 
+	biquad_configure(&rt->pitch_biquad, BQ_LOWPASS, min(1, 1.0f * config->pitch_filter / rt->imu_sample_rate)); 
 
 	//Pitch Kalman Configure
 	configure_kalman(config, &rt->pitch_kalman);
 	
 	//Yaw change correction factor
-	rt->imu_rate_factor = lerp(832, 10000, 1, 2, imu_sample_rate);
+	rt->imu_rate_factor = lerp(832, 10000, 1, 2, rt->imu_sample_rate);
 	
 	// EMA Filter Factor for Current Output
 	rt->ema_factor = min(1 , config->ema_factor * 832.0f / config->hertz);
 
 	//Gyro Y Biquad Configure
-	biquad_configure(&rt->gyro_y_biquad, BQ_NOTCH,  max(0.03f, min(0.1f, 1.0f * config->gyro_filter / imu_sample_rate))); 
+	biquad_configure(&rt->gyro_y_biquad, BQ_NOTCH,  max(0.03f, min(0.1f, 1.0f * config->gyro_filter / rt->imu_sample_rate))); 
 	
 	//Gyro Yaw Biquad Configure
-	biquad_configure(&rt->gyro_yaw_biquad, BQ_LOWPASS,  min(1, 1.0f * config->kalman_factor2 / imu_sample_rate)); 
+	biquad_configure(&rt->gyro_yaw_biquad, BQ_LOWPASS,  min(1, 1.0f * config->kalman_factor2 / rt->imu_sample_rate)); 
 }
 
 void check_odometer(RuntimeData *rt) { 
