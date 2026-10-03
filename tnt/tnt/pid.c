@@ -145,7 +145,6 @@ void roll_kp_configure(const tnt_config *config, KpArray *k, int mode){
 }
 
 void yaw_kp_configure(const tnt_config *config, KpArray *k, int mode){
-	float imu_sample_rate = VESC_IF->get_cfg_int(CFG_PARAM_IMU_sample_rate);
 	float accel_yaw_kp[7][2] = { //Accel curve
 	{0, 0}, 
 	{config->yaw1, config->yaw_kp1},
