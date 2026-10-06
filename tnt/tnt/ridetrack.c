@@ -80,7 +80,7 @@ void ride_tracking_update(RideTrackData *ridetrack, RuntimeData *rt, YawData *ya
 	ridetrack->efficiency = ridetrack->distance < 0.001 ? 0 : (VESC_IF->mc_get_watt_hours(false) - VESC_IF->mc_get_watt_hours_charged(false)) / (ridetrack->distance);
 }
 
-void carve_tracking(RuntimeData *rt, YawData *yaw, RideTrackData *ridetrack, tnt_config *config) {
+void carve_tracking(RuntimeData *rt, YawData *yaw, RideTrackData *ridetrack) {
 	//Apply a minimum yaw change and time yaw change is applied to filter out noise
 	if (yaw->abs_change < ridetrack->min_yaw_change) {
 		ridetrack->yaw_timer = rt->current_time;
