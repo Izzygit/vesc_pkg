@@ -20,7 +20,7 @@
 #include <math.h>
 
 void configure_ride_tracking(RideTrackData *ridetrack) {
-	ridetrack->min_yaw_change = 50.0f / VESC_IF->get_cfg_int(CFG_PARAM_IMU_sample_rate);
+	ridetrack->min_yaw_change = 50.0f;
 }
 
 void reset_ride_tracking(RideTrackData *ridetrack) {
@@ -67,8 +67,8 @@ void reset_ride_tracking_on_configure(RideTrackData *ridetrack, tnt_config *conf
 	}
 }
 
-void ride_tracking_update(RideTrackData *ridetrack, RuntimeData *rt, YawData *yaw, tnt_config *config) {
-	carve_tracking(rt, yaw, ridetrack, config);
+void ride_tracking_update(RideTrackData *ridetrack, RuntimeData *rt, YawData *yaw) {
+	carve_tracking(rt, yaw, ridetrack);
 	float corr_factor;
 	if (ridetrack->ride_time > 0) {
 		corr_factor =  (ridetrack->rest_time + ridetrack->ride_time) / ridetrack->ride_time ;
