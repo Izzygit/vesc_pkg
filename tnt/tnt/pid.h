@@ -77,8 +77,8 @@ typedef struct {
 	bool current; // enable currents debug
 	float debug21; //change
 	float debug22; //max kp
-	float debug23; //kp unscaled
-	float debug24; //kp scaled
+	float debug23; //pitch rate current demand
+	float debug24; // yaw angle kp
 	float debug25; //erpm scaler
 	float debug26; // yaw angle current
 } PidDebug;
