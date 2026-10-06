@@ -223,7 +223,7 @@ static void tnt_thd(void *arg) {
 			imu_data_update(&d->rt);
 			apply_filters(&d->rt, &d->tnt_conf);
 			temp_recovery_tone(&d->tone, &d->tone_config.fasttripleup, &d->motor);
-			ride_tracking_update(&d->ridetrack, &d->rt, &d->yaw, &d->tnt_conf);			
+			ride_tracking_update(&d->ridetrack, &d->rt, &d->yaw);			
 			update_remote(&d->tnt_conf, &d->remote);
 		}
 
