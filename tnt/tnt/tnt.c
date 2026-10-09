@@ -95,11 +95,11 @@ static void configure(data *d) {
 	configure_pid(&d->pid, &d->tnt_conf, &d->pid_dbg);			//control variables 
 	setpoint_configure(&d->spd, &d->tnt_conf);					//setpoint adjustment
 	configure_remote_features(&d->tnt_conf, &d->remote, &d->st_tilt);	//remote input
-	motor_data_configure(&d->motor, &d->tnt_conf);				//motor data
+	motor_data_configure(&d->motor, &d->tnt_conf, d->rt.loop_rate);		//motor data
 	configure_surge(&d->surge, &d->tnt_conf, &d->surge_dbg);	//surge feature
 	configure_traction(&d->traction, &d->braking, &d->tnt_conf, 
-		&d->traction_dbg, &d->braking_dbg); 					//traction control and traction braking
-	tone_configure_all(&d->tone_config, &d->tnt_conf, &d->tone);	//FOC play tones
+		&d->traction_dbg, &d->braking_dbg, d->rt.loop_rate); 	//traction control and traction braking
+	tone_configure_all(&d->tone_config, &d->tnt_conf, &d->tone, d->rt.loop_rate);	//FOC play tones
 	configure_ride_tracking(&d->ridetrack);			//Ride tracking
 	reset_ride_tracking_on_configure(&d->ridetrack, &d->tnt_conf, &d->traction_dbg);	//Reset current trip information
 	
@@ -120,11 +120,6 @@ static void configure(data *d) {
 	//Check for yaw inputs
 	yaw_kp_configure(&d->tnt_conf, &d->yaw_accel_kp, 1);
 	yaw_kp_configure(&d->tnt_conf, &d->yaw_brake_kp, 2);
-
-	// Overwrite App CFG Mahony KP to Float CFG Value
-	if (VESC_IF->get_cfg_float(CFG_PARAM_IMU_mahony_kp) != d->tnt_conf.mahony_kp) {
-		VESC_IF->set_cfg_float(CFG_PARAM_IMU_mahony_kp, d->tnt_conf.mahony_kp);
-	}
 }
 
 static void reset_vars(data *d) {
@@ -140,6 +135,11 @@ static void reset_vars(data *d) {
 		reset_ride_tracking(&d->ridetrack);			//Ride tracking
 	}
 	state_engage(&d->state);
+	
+	// Overwrite App CFG Mahony KP to Float CFG Value
+	if (VESC_IF->get_cfg_float(CFG_PARAM_IMU_mahony_kp) != d->tnt_conf.mahony_kp) {
+		VESC_IF->set_cfg_float(CFG_PARAM_IMU_mahony_kp, d->tnt_conf.mahony_kp);
+	}
 }
 
 void apply_kp_modifiers(data *d) {
