@@ -96,17 +96,18 @@ void configure_runtime(RuntimeData *rt, tnt_config *config) {
 
 	// Loop time in microseconds
 	rt->imu_sample_rate = VESC_IF->get_cfg_int(CFG_PARAM_IMU_sample_rate);
+	rt->loop_rate = max(rt->imu_sample_rate, config->hertz);// If the IMU is faster than the user configured pkg loop rate, use the IMU rate
 	rt->slow_loop_time_us = 1e6 / rt->imu_sample_rate;
-	rt->loop_time_us = min(rt->slow_loop_time_us, 1e6 / config->hertz); // If the IMU is faster than the user configured pkg loop rate, use the IMU rate
+	rt->loop_time_us = 1e6 / rt->loop_rate; 
 
 	// Loop time in seconds times 20 for a nice long grace period
-	rt->motor_timeout_s = 20.0f / config->hertz;
+	rt->motor_timeout_s = 20.0f / rt->loop_rate;
 	
 	//Pitch Biquad Configure
 	biquad_configure(&rt->pitch_biquad, BQ_LOWPASS, min(1, 1.0f * config->pitch_filter / rt->imu_sample_rate)); 
 	
 	// EMA Filter Factor for Current Output
-	rt->ema_factor = min(1 , config->ema_factor * 832.0f / config->hertz);
+	rt->ema_factor = min(1 , config->ema_factor * 832.0f / rt->loop_rate);
 
 	//Gyro Y Biquad Configure
 	biquad_configure(&rt->gyro_y_biquad, BQ_NOTCH,  max(0.03f, min(0.1f, 1.0f * config->gyro_filter / rt->imu_sample_rate))); 
