@@ -74,6 +74,7 @@ For more instructions on setting up your board please refer to the [Set Up Guide
   * Optimized the function that calculates pitch, roll, and yaw gain
   * Optimized the debug calculations by only calculating values currently displayed on AppUI
   * Optimized traction control functions
+  * Optimized the function that engages FOC tones
   * Removed legacy Kalman filter as it is no longer required with low Mahoney kp.
 
 ### 1.6
