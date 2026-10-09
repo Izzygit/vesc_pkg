@@ -55,35 +55,15 @@ void apply_filters(RuntimeData *rt, tnt_config *config){
 		rt->pitch_smooth = biquad_process(&rt->pitch_biquad, rt->pitch_angle);
 	else
 		rt->pitch_smooth = rt->pitch_angle;
-
-	if (config->kalman_factor1 > 0) 
-		 apply_kalman(rt->pitch_smooth, rt->gyro[1], &rt->pitch_smooth_kalman, rt->diff_time, &rt->pitch_kalman);
-	else 
-		rt->pitch_smooth_kalman = rt->pitch_smooth;
 	
 	if (config->gyro_filter > 0) 
 		rt->gyro_y_smooth = biquad_process(&rt->gyro_y_biquad, rt->gyro_y);
 	else
 		rt->gyro_y_smooth = rt->gyro_y;
-
-	if (config->kalman_factor2 > 0) 
-		rt->gyro_yaw_smooth = biquad_process(&rt->gyro_yaw_biquad, rt->gyro_yaw);
-	else
-		rt->gyro_yaw_smooth = rt->gyro_yaw;
 }
 
 void calc_yaw_change(YawData *yaw, RuntimeData *rt, YawDebugData *yaw_dbg){ 
-	/*float new_change = rt->yaw_angle - yaw->last_angle / rt->imu_rate_factor;
-	//if ((new_change == 0) || // Exact 0's only happen when the IMU is not updating between loops
-	//    (fabsf(new_change) > 100)) { // yaw flips signs at 180, ignore those changes
-	//	new_change = yaw->last_change;
-	//}
-	if (sign(rt->yaw_angle) != sign(yaw->last_angle)) // yaw flips signs at 180, ignore those changes
-		new_change = yaw->last_change;
-	yaw->last_change = new_change;
-	yaw->last_angle = rt->yaw_angle;*/
-	
-	float new_change = rt->gyro_yaw_smooth;
+	float new_change = rt->gyro_yaw;
 	ema(&yaw->change, 0.2, new_change); //originally configured for 0.2 at 832 Hz
 	yaw->abs_change = fabsf(yaw->change);
 	yaw_dbg->debug1 = yaw->change;
@@ -94,10 +74,6 @@ void reset_runtime(RuntimeData *rt, YawData *yaw, YawDebugData *yaw_dbg, tnt_con
 	//Low pass pitch filter
 	rt->pitch_smooth = rt->pitch_angle;
 	biquad_reset(&rt->pitch_biquad);
-	
-	//Kalman filter
-	reset_kalman(&rt->pitch_kalman);
-	rt->pitch_smooth_kalman = rt->pitch_angle;
 
 	//Yaw
 	yaw->last_angle = rad2deg(VESC_IF->ahrs_get_yaw(&rt->m_att_ref));
@@ -110,9 +86,6 @@ void reset_runtime(RuntimeData *rt, YawData *yaw, YawDebugData *yaw_dbg, tnt_con
 
 	biquad_reset(&rt->gyro_y_biquad);
 	rt->gyro_y_smooth = 0;
-
-	biquad_reset(&rt->gyro_yaw_biquad);
-	rt->gyro_yaw_smooth = 0;
 
 	if (rt->imu_sample_rate != VESC_IF->get_cfg_int(CFG_PARAM_IMU_sample_rate)) //New IMU sample rate was written in App Cfg and not configured in TNT
 		configure_runtime(rt, config);
@@ -132,21 +105,12 @@ void configure_runtime(RuntimeData *rt, tnt_config *config) {
 	
 	//Pitch Biquad Configure
 	biquad_configure(&rt->pitch_biquad, BQ_LOWPASS, min(1, 1.0f * config->pitch_filter / rt->imu_sample_rate)); 
-
-	//Pitch Kalman Configure
-	configure_kalman(config, &rt->pitch_kalman);
-	
-	//Yaw change correction factor
-	rt->imu_rate_factor = lerp(832, 10000, 1, 2, rt->imu_sample_rate);
 	
 	// EMA Filter Factor for Current Output
 	rt->ema_factor = min(1 , config->ema_factor * 832.0f / config->hertz);
 
 	//Gyro Y Biquad Configure
 	biquad_configure(&rt->gyro_y_biquad, BQ_NOTCH,  max(0.03f, min(0.1f, 1.0f * config->gyro_filter / rt->imu_sample_rate))); 
-	
-	//Gyro Yaw Biquad Configure
-	biquad_configure(&rt->gyro_yaw_biquad, BQ_LOWPASS,  min(1, 1.0f * config->kalman_factor2 / rt->imu_sample_rate)); 
 }
 
 void check_odometer(RuntimeData *rt) { 
