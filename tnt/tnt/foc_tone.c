@@ -127,7 +127,7 @@ void tone_configure(ToneConfig *toneconfig, float freq1, float freq2, float freq
 	toneconfig->priority = priority;
 }
 
-void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config, ToneData *tone, RuntimeData *rt) {
+void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config, ToneData *tone, int loop_rate) {
 	float beep_voltage = config->is_beeper_enabled ? config->beep_voltage : 0;
 	tone_configure(&toneconfig->continuous1, 659.3, 0, 0, beep_voltage, 601, 1, 0, 1);
 	tone_configure(&toneconfig->fastdouble1, 659.3, 659.3, 0, beep_voltage, .1, 2, 10, 1);
@@ -156,10 +156,10 @@ void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config, ToneData *t
 	beep_voltage = config->haptic_buzz_current ? config->tone_volt_high_current : 0; 		//High Current Tone
 	tone_configure(&toneconfig->currenttone, config->tone_freq_high_current, 0, 0, beep_voltage, config->overcurrent_period, 1, 0, 12);
 
-	tone->tone_duty = 1.0 * config->tiltback_duty / 100.0; 
-	tone->delay_100ms = rt->loop_rate / 10;
-	tone->delay_250ms = rt->loop_rate / 4;
-	tone->delay_500ms = rt->loop_rate / 2;
+	tone->tone_duty = 1.0f * config->tiltback_duty / 100.0f; 
+	tone->delay_100ms = loop_rate / 10.0f;
+	tone->delay_250ms = loop_rate / 4.0f;
+	tone->delay_500ms = loop_rate / 2.0f;
 	tone->lowrange_warning = config->lowvolt_warning;
 	tone->midrange_warning = config->midvolt_warning;
 	tone->lowvolt_warning = config->tiltback_lv;
