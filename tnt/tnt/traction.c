@@ -158,16 +158,16 @@ void deactivate_traction(TractionData *traction, State *state, TractionDebug *tr
 		traction_dbg->max_time = max(traction_dbg->max_time, elapsed);
 }
 
-void configure_traction(TractionData *traction, BrakingData *braking, tnt_config *config, TractionDebug *traction_dbg, BrakingDebug *braking_dbg){
-	traction->start_accel = 1000.0 * config->wheelslip_accelstart / config->hertz; //convert from erpm/ms to erpm/cycle
-	traction->slowed_accel = 1000.0 * config->wheelslip_accelslowed / config->hertz;
-	traction->end_accel = 1000.0 * config->wheelslip_accelend / config->hertz;
-	traction->hold_accel = 1000.0 * config->wheelslip_accelhold / config->hertz;
-	traction_dbg->freq_factor = 1000.0 / config->hertz;
+void configure_traction(TractionData *traction, BrakingData *braking, tnt_config *config, TractionDebug *traction_dbg, BrakingDebug *braking_dbg, int loop_rate){
+	traction->start_accel = 1000.0f * config->wheelslip_accelstart / loop_rate; //convert from erpm/ms to erpm/cycle
+	traction->slowed_accel = 1000.0f * config->wheelslip_accelslowed / loop_rate;
+	traction->end_accel = 1000.0f * config->wheelslip_accelend / loop_rate;
+	traction->hold_accel = 1000.0f * config->wheelslip_accelhold / loop_rate;
+	traction_dbg->freq_factor = 1000.0f / loop_rate;
 	braking_dbg->freq_factor = traction_dbg->freq_factor;
-	traction->erpm_rate_limit = 1000.0 * config->wheelslip_erpm_rate_limit / config->hertz;
-	traction->erpm_exclusion_rate = 1000.0 * config->wheelslip_erpm_exclusion_rate / config->hertz;
-	braking->off_time_limit = 1.0 * config->tc_braking_off_time / 1000.0;
+	traction->erpm_rate_limit = 1000.0f * config->wheelslip_erpm_rate_limit / loop_rate;
+	traction->erpm_exclusion_rate = 1000.0f * config->wheelslip_erpm_exclusion_rate / loop_rate;
+	braking->off_time_limit = 1.0f * config->tc_braking_off_time / 1000.0f;
 	if (config->is_tcdebug_enabled)
 		traction_dbg->enabled = true;
 	else if (config->is_brakingdebug_enabled)
