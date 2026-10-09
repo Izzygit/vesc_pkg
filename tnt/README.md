@@ -31,7 +31,7 @@ Default settings are based on 20s battery, Hypercore (Future Motion motor), and 
   * Current 3 (default pitch angle 1.5 deg) will affect nose height in medium demand (i.e. slight uphills/downhills)
   * Current 4 (default pitch angle 2 deg) will affect nose height in high demand (i.e. steep uphills/downhills)
   * Angle 5 (default current 150A) can be decreased to make the board more aggressive and surge more readily (better for bonks). Higher values will make the high current response softer which can be smoother for rough trails.
-  * Current 1 (default pitch angle 0.5 deg) and Kp0 can be increaced to make the board tighter around the setpoint
+  * Current 1 (default pitch angle 0.5 deg) and Kp0 can be increased to make the board tighter around the setpoint
   * Increase or decrease Pitch Rate Kp to adjust nose stiffness
 * Roll Tune - The default roll tune is very loose and moderate for easy, deep carving.
   * To make the roll tighter and more race-like, decrease Level 2 and Level 3 Roll Angle.
@@ -58,19 +58,23 @@ For more instructions on setting up your board please refer to the [Set Up Guide
 ### 1.7
 * **This version requires 6.05+ firmware minimum, 7.0+ optimal**
 * _Features_
+  * Yaw
+    * Fixed a bug causing yaw gain to not be applied, even though debug values were reading correctly
+    * Changed yaw calculation from yaw angle based to gyro based. This takes yaw out of the Mahoney filter, but provides better response and accuracy.
+    * Yaw tunes will generally be reduced in gain and yaw change to produce the same results
   * Dynamic Stability
-    * Pitch Rate Stability no longer affects pitch rate for braking currents
+    * Pitch Rate Stability no longer affects Braking Pitch Rate Kp
   * Acceleration
     * Added new filter Gyro Notch Filter under Acceleration->Filter
     * The parameter defines the center frequency of the stop band to exclude gyro IMU noise
+  * Braking
+    * Changed the way Braking Pitch Rate Kp is applied to make it more impactful to the board tune
 * _Fixes/Improvements_
-   * Changed the main control loop so the IMU and lower priority functions operate at the IMU sample rate. Other functions continue to operate at the package loop rate.
-   * Fixed a bug causing yaw gain to not be applied, even though debug values were reading correctly
-   * Changed the way Braking Pitch Rate Kp is applied to make it more impactful to the board tune
-   * Changed EMA Filter Factor calculation for higher IMU sample rates
-   * Optimized the function that calculates pitch, roll, and yaw gain
-   * Optimized the debug calculations by only calculating values currently displayed on AppUI
-   * Optimized traction control functions
+  * Changed the main control loop so the IMU and lower priority functions operate at the IMU sample rate. Other functions continue to operate at the package loop rate.
+  * Optimized the function that calculates pitch, roll, and yaw gain
+  * Optimized the debug calculations by only calculating values currently displayed on AppUI
+  * Optimized traction control functions
+  * Removed legacy Kalman filter as it is no longer required with low Mahoney kp.
 
 ### 1.6
 * **This version requires 6.05+ firmware to function properly**
