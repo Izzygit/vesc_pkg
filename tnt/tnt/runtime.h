@@ -38,8 +38,6 @@ typedef struct { //Run time values used in various features
 	Biquad gyro_y_biquad; // Notch Filter
 	float pitch_smooth; // Low Pass Filter
 	Biquad pitch_biquad; // Low Pass Filter
-	KalmanFilter pitch_kalman; // Kalman Filter
-	float pitch_smooth_kalman; // Kalman Filter
 	float diff_time, last_time;
 	ATTITUDE_INFO m_att_ref; // Feature: True Pitch / Yaw
 	bool brake_pitch, brake_roll, brake_yaw;
@@ -52,11 +50,8 @@ typedef struct { //Run time values used in various features
 	uint64_t odometer;
 	float brake_timeout;
 	float fault_angle_pitch_timer, fault_angle_roll_timer, fault_switch_timer, fault_switch_half_timer; // Seconds
-	float imu_rate_factor;
 	float ema_factor;
 	float gyro_yaw;
-	float gyro_yaw_smooth;
-	Biquad gyro_yaw_biquad; // Low Pass Filter
 	int imu_sample_rate;
 } RuntimeData;
 
