@@ -223,9 +223,9 @@ float roll_erpm_scale(PidData *p, State *state, float abs_erpm, KpArray *roll_ac
 		// If we want to actually stop at low speed reduce kp to 0
 		erpmscale = 0;
 	} else if (roll_accel_kp->count!=0 && abs_erpm < config->rollkp_higherpm) { 
-		erpmscale = 1 + erpm_scale(config->rollkp_lowerpm, config->rollkp_higherpm, config->rollkp_maxscale / 100.0, 0, abs_erpm);
+		erpmscale = 1 + erpm_scale(config->rollkp_lowerpm, config->rollkp_higherpm, config->rollkp_maxscale / 100.0f, 0, abs_erpm);
 	} else if (roll_accel_kp->count!=0 && abs_erpm > config->roll_hs_lowerpm) { 
-		erpmscale = 1 + erpm_scale(config->roll_hs_lowerpm, config->roll_hs_higherpm, 0, config->roll_hs_maxscale / 100.0, abs_erpm);
+		erpmscale = 1 + erpm_scale(config->roll_hs_lowerpm, config->roll_hs_higherpm, 0, config->roll_hs_maxscale / 100.0f, abs_erpm);
 	}
 	return erpmscale;
 }
@@ -251,11 +251,12 @@ void apply_soft_start(PidData *p, float mc_current_max) {
 
 void configure_pid(PidData *p, tnt_config *config, PidDebug *pid_dbg) {
 	//Dynamic Stability
-	p->stabl_step_size_up = 1.0 * config->stabl_ramp / 100.0 / config->hertz;
-	p->stabl_step_size_down = 1.0 * config->stabl_ramp_down / 100.0 / config->hertz;
+	float imu_sample_rate = VESC_IF->get_cfg_int(CFG_PARAM_IMU_sample_rate);
+	p->stabl_step_size_up = 1.0 * config->stabl_ramp / 100.0 / imu_sample_rate;
+	p->stabl_step_size_down = 1.0 * config->stabl_ramp_down / 100.0 / imu_sample_rate;
 	
 	// Feature: Soft Start
-	p->softstart_step_size = 100.0f / VESC_IF->get_cfg_int(CFG_PARAM_IMU_sample_rate);
+	p->softstart_step_size = 100.0f / imu_sample_rate;
 	
 	//Debug
 	pid_dbg->pitch = config->is_pitchdebug_enabled;
@@ -485,6 +486,6 @@ bool check_faults(MotorData *motor, FootpadSensor *fs, RuntimeData *rt, State *s
 
 void calculate_proportional(RuntimeData *rt, PidData *pid, float setpoint) {
 	pid->proportional = setpoint - rt->pitch_angle;
-	pid->prop_smooth = setpoint - rt->pitch_smooth_kalman;
+	pid->prop_smooth = setpoint - rt->pitch_smooth;
 	pid->abs_prop_smooth = fabsf(pid->prop_smooth);
 }
