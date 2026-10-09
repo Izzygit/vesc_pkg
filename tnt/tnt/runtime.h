@@ -17,7 +17,6 @@
 
 #pragma once
 #include "biquad.h"
-#include "kalman.h"
 #include "conf/datatypes.h"
 #include "vesc_c_if.h"
 #include <stdint.h>
