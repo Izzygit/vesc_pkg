@@ -20,7 +20,6 @@
 #include <math.h>
 #include "utils_tnt.h"
 #include "biquad.h"
-#include "kalman.h"
 
 void runtime_data_update(RuntimeData *rt) {
 	// Update times
