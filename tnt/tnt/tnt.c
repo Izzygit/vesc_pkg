@@ -200,25 +200,25 @@ static void tnt_thd(void *arg) {
 	data *d = (data*)arg;
 	
 	// Accumulated time for operations that run at the slower loop rate. Initializing this to run slow loop on first pass
-	uint32_t slow_loop_elapsed_us = d->rt.slow_loop_time_us;	
+	uint32_t imu_loop_elapsed_us = d->rt.imu_loop_time_us;	
 	// Indicates whether the current iteration should execute the slow-loop
-	bool slow_loop = false;
+	bool imu_loop = false;
 		
 	configure(d);
 
 	while (!VESC_IF->should_terminate()) {
 		// Accumulate the normal loop period until the configured slow-loop period has elapsed.
-		slow_loop_elapsed_us += d->rt.loop_time_us;
-		if (slow_loop_elapsed_us >= d->rt.slow_loop_time_us) {
-			slow_loop = true;
-			slow_loop_elapsed_us -= d->rt.slow_loop_time_us;
+		imu_loop_elapsed_us += d->rt.loop_time_us;
+		if (imu_loop_elapsed_us >= d->rt.imu_loop_time_us) {
+			imu_loop = true;
+			imu_loop_elapsed_us -= d->rt.imu_loop_time_us;
 		} else {
-			slow_loop = false;
+			imu_loop = false;
 		}
 		runtime_data_update(&d->rt); // Update the time with the VESC system time
 		
 		//Low priority and IMU calculations run at the sample rate of the IMU App Cfg
-		if (slow_loop) {
+		if (imu_loop) {
 			imu_data_update(&d->rt);
 			apply_filters(&d->rt, &d->tnt_conf);
 			temp_recovery_tone(&d->tone, &d->tone_config.fasttripleup, &d->motor);
@@ -253,7 +253,7 @@ static void tnt_thd(void *arg) {
 
 			play_footpad_beep(&d->tone, &d->motor, &d->footpad_sensor, &d->tone_config.continuousfootpad);
 
-			if (slow_loop) {
+			if (imu_loop) {
 				//Ride Timer
 				ride_timer(&d->ridetrack, &d->rt);
 				d->rt.disengage_timer = d->rt.current_time;
