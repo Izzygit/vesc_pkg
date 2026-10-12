@@ -59,14 +59,14 @@ For more instructions on setting up your board please refer to the [Set Up Guide
 * **This version requires 6.05+ firmware minimum, 7.0+ optimal**
 * _Features_
   * Yaw
+    * Changed yaw calculation to use gyros only instead of yaw angle. This takes yaw out of the Mahoney filter, but provides better response and accuracy.
+    * Yaw tunes will need lower yaw change to produce the same results
     * Fixed a bug causing yaw gain to not be applied, even though debug values were reading correctly
-    * Changed yaw calculation from yaw angle based to gyro based. This takes yaw out of the Mahoney filter, but provides better response and accuracy.
-    * Yaw tunes will generally be reduced in gain and yaw change to produce the same results
   * Dynamic Stability
     * Pitch Rate Stability no longer affects Braking Pitch Rate Kp
   * Acceleration
     * Added new filter Gyro Notch Filter under Acceleration->Filter
-    * The parameter defines the center frequency of the stop band to exclude gyro IMU noise
+    * The new parameter defines the center frequency of the stop band to exclude gyro IMU noise.
   * Braking
     * Changed the way Braking Pitch Rate Kp is applied to make it more impactful to the board tune
 * _Fixes/Improvements_
