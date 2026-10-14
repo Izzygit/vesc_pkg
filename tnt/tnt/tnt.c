@@ -120,6 +120,11 @@ static void configure(data *d) {
 	//Check for yaw inputs
 	yaw_kp_configure(&d->tnt_conf, &d->yaw_accel_kp, 1);
 	yaw_kp_configure(&d->tnt_conf, &d->yaw_brake_kp, 2);
+
+	// Overwrite App CFG Mahony KP to Float CFG Value
+	if (VESC_IF->get_cfg_float(CFG_PARAM_IMU_mahony_kp) != d->tnt_conf.mahony_kp) {
+		VESC_IF->set_cfg_float(CFG_PARAM_IMU_mahony_kp, d->tnt_conf.mahony_kp);
+	}
 }
 
 static void reset_vars(data *d) {
@@ -135,11 +140,6 @@ static void reset_vars(data *d) {
 		reset_ride_tracking(&d->ridetrack);			//Ride tracking
 	}
 	state_engage(&d->state);
-	
-	// Overwrite App CFG Mahony KP to Float CFG Value
-	if (VESC_IF->get_cfg_float(CFG_PARAM_IMU_mahony_kp) != d->tnt_conf.mahony_kp) {
-		VESC_IF->set_cfg_float(CFG_PARAM_IMU_mahony_kp, d->tnt_conf.mahony_kp);
-	}
 }
 
 void apply_kp_modifiers(data *d) {
