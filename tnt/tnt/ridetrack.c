@@ -20,7 +20,7 @@
 #include <math.h>
 
 void configure_ride_tracking(RideTrackData *ridetrack) {
-	ridetrack->min_yaw_change = 30.0f;
+	ridetrack->min_yaw_change = 50.0f;
 }
 
 void reset_ride_tracking(RideTrackData *ridetrack) {
