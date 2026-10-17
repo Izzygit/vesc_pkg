@@ -128,17 +128,15 @@ static void configure(data *d) {
 }
 
 static void reset_vars(data *d) {
-	if (d->rt.current_time - d->rt.disengage_timer > 1) {//Delay reset in case there is a minor disengagement
-		motor_data_reset(&d->motor);				//Motor
-		setpoint_reset(&d->spd, &d->tnt_conf, &d->rt);		//Setpoint
-		reset_runtime(&d->rt, &d->yaw, &d->yaw_dbg, &d->tnt_conf);		//Runtime 
-		reset_pid(&d->pid, &d->pid_dbg);			//Control variables
-		reset_remote(&d->remote, &d->st_tilt);			//Remote
-		reset_surge(&d->surge);					//Surge
-		reset_traction(&d->traction, &d->state, &d->braking);	//Traction Control
-		tone_reset(&d->tone);					//FOC tones
-		reset_ride_tracking(&d->ridetrack);			//Ride tracking
-	}
+	motor_data_reset(&d->motor);				//Motor
+	setpoint_reset(&d->spd, &d->tnt_conf, &d->rt);		//Setpoint
+	reset_runtime(&d->rt, &d->yaw, &d->yaw_dbg, &d->tnt_conf);		//Runtime 
+	reset_pid(&d->pid, &d->pid_dbg);			//Control variables
+	reset_remote(&d->remote, &d->st_tilt);			//Remote
+	reset_surge(&d->surge);					//Surge
+	reset_traction(&d->traction, &d->state, &d->braking);	//Traction Control
+	tone_reset(&d->tone);					//FOC tones
+	reset_ride_tracking(&d->ridetrack);			//Ride tracking
 	state_engage(&d->state);
 }
 
