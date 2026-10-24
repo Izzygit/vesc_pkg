@@ -85,7 +85,7 @@ typedef struct {
 
 void pitch_kp_configure(const tnt_config *config, KpArray *k, int mode);
 void roll_kp_configure(const tnt_config *config, KpArray *k, int mode);
-void yaw_kp_configure(const tnt_config *config, KpArray *k, int mode);
+void yaw_kp_configure(const tnt_config *config, KpArray *k, int mode, bool brake_curve);
 float angle_kp_select(float angle, const KpArray *k);
 void angle_kp_reset(KpArray *k);
 float erpm_scale(float lowvalue, float highvalue, float lowscale, float highscale, float abs_erpm); 
