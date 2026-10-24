@@ -108,7 +108,7 @@ void angle_kp_reset(KpArray *k) {
 	k->count = 0;
 }
 
-void roll_kp_configure(const tnt_config *config, KpArray *k, int mode, bool brake_curve){
+void roll_kp_configure(const tnt_config *config, KpArray *k, int mode){
 	float accel_roll_kp[7][2] = { //Accel curve
 	{0, 0}, 
 	{config->roll1, config->roll_kp1},
@@ -144,7 +144,7 @@ void roll_kp_configure(const tnt_config *config, KpArray *k, int mode, bool brak
 	} else {k->count = 0;}
 }
 
-void yaw_kp_configure(const tnt_config *config, KpArray *k, int mode){
+void yaw_kp_configure(const tnt_config *config, KpArray *k, int mode, bool brake_curve){
 	float accel_yaw_kp[7][2] = { //Accel curve
 	{0, 0}, 
 	{config->yaw1, config->yaw_kp1},
