@@ -118,8 +118,8 @@ static void configure(data *d) {
 	roll_kp_configure(&d->tnt_conf, &d->roll_brake_kp, 2);
 
 	//Check for yaw inputs
-	yaw_kp_configure(&d->tnt_conf, &d->yaw_accel_kp, 1);
-	yaw_kp_configure(&d->tnt_conf, &d->yaw_brake_kp, 2);
+	yaw_kp_configure(&d->tnt_conf, &d->yaw_accel_kp, 1, d->tnt_conf.brake_curve);
+	yaw_kp_configure(&d->tnt_conf, &d->yaw_brake_kp, 2, d->tnt_conf.brake_curve);
 
 	// Overwrite App CFG Mahony KP to Float CFG Value
 	if (VESC_IF->get_cfg_float(CFG_PARAM_IMU_mahony_kp) != d->tnt_conf.mahony_kp) {
