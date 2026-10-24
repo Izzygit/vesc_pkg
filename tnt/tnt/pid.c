@@ -108,7 +108,7 @@ void angle_kp_reset(KpArray *k) {
 	k->count = 0;
 }
 
-void roll_kp_configure(const tnt_config *config, KpArray *k, int mode){
+void roll_kp_configure(const tnt_config *config, KpArray *k, int mode, bool brake_curve){
 	float accel_roll_kp[7][2] = { //Accel curve
 	{0, 0}, 
 	{config->roll1, config->roll_kp1},
@@ -170,7 +170,10 @@ void yaw_kp_configure(const tnt_config *config, KpArray *k, int mode){
 			k->angle_kp[x][y] = (mode==2) ? brake_yaw_kp[x][y] : accel_yaw_kp[x][y];
 		}
 	}
-	k->kp_rate = (mode==2) ? (1 - config->yaw_rate_kp) * config->kp_rate : (1 - config->yaw_rate_brake_kp) * config->brakekp_rate;
+	
+	if (brake_curve && mode==2) //if kp rate is defined for the pitch braking curve
+		k->kp_rate = (1 - config->yaw_rate_brake_kp) * config->brakekp_rate;
+	else k->kp_rate = (1 - config->yaw_rate_kp) * config->kp_rate;
 	
 	if (k->angle_kp[1][1]<k->angle_kp[2][1] && k->angle_kp[1][0]<k->angle_kp[2][0]) {
 		if (k->angle_kp[2][1]<k->angle_kp[3][1] && k->angle_kp[2][0]<k->angle_kp[3][0]) {
