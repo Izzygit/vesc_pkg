@@ -80,6 +80,8 @@ typedef struct {
 	int shutdown_mode;
 	float charged_voltage;
 	float charged_timer;
+	int write_error_count;
+	bool write_error;
 } ToneData;
 
 typedef struct {
@@ -117,7 +119,7 @@ void tone_update(ToneData *tone, const RuntimeData *rt, const State *state);
 void play_tone(ToneData *tone, ToneConfig *toneconfig, int beep_reason);
 void end_tone(ToneData *tone);
 void tone_reset_on_configure(ToneData *tone);
-void tone_reset(ToneData *tone);
+void tone_reset(ToneData *tone, int imu_sample_rate);
 void tone_configure(ToneConfig *toneconfig, float freq1, float freq2, float freq3, float voltage, float duration, int times, float delay, int priority);
 void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config, ToneData *tone, int loop_rate);
 void idle_tone(ToneData *tone, ToneConfig *toneconfig, RuntimeData *rt, MotorData *m);
