@@ -105,7 +105,7 @@ void tone_reset_on_configure(ToneData *tone) {
 	tone->lowrange_activated = false;
 }
 
-void tone_reset(ToneData *tone) {
+void tone_reset(ToneData *tone, int imu_sample_rate) {
 	tone->duty_tone_count = 0;
 	tone->duty_beep_count = 0; 
 	tone->midrange_count = 0;
@@ -114,6 +114,7 @@ void tone_reset(ToneData *tone) {
 	tone->lowvolt_count = 0;
 	tone->voltage_diff = 0;
 	tone->last_voltage = VESC_IF->mc_get_input_voltage_filtered();
+	tone->write_error = (imu_sample_rate != VESC_IF->get_cfg_int(CFG_PARAM_IMU_sample_rate));
 }
 
 void tone_configure(ToneConfig *toneconfig, float freq1, float freq2, float freq3, float voltage, float duration, int times, float delay, int priority) {
@@ -138,7 +139,7 @@ void tone_configure_all(ToneConfigs *toneconfig, tnt_config *config, ToneData *t
 	tone_configure(&toneconfig->slowtriple1, 659.3, 659.3, 659.3, beep_voltage, .3, 3, 10, 5); 	//Temp motor
 	tone_configure(&toneconfig->slowtriple2, 784, 784, 784, beep_voltage, .3, 3, 10, 5);		//Temp fets
 	tone_configure(&toneconfig->fasttripleup, 784, 698.5, 659.3, beep_voltage, .1, 3, 10, 5);	//temp recovery
-	tone_configure(&toneconfig->fasttripledown, 659.3, 698.5, 784, beep_voltage, .1, 3, 30, 1);
+	tone_configure(&toneconfig->fasttripledown, 659.3, 698.5, 784, beep_voltage, .1, 3, 10, 5); //write error
 	tone_configure(&toneconfig->slowtripleup, 784, 698.5, 659.3, beep_voltage, .3, 3, 5, 7);	//high voltage
 	tone_configure(&toneconfig->slowtripledown, 659.3, 698.5, 784, beep_voltage, .3, 3, 30, 8);	//low voltage
 	tone_configure(&toneconfig->midvoltwarning, 659.3, 784, 784, beep_voltage, .3, 3, 0, 7);	//mid range
@@ -275,16 +276,22 @@ void check_tone(ToneData *tone, ToneConfigs *toneconfig, MotorData *motor) {
 	//Low and high voltages	
 	if (input_voltage > tone->highvolt_warning) 
 		tone->highvolt_count++; 
+		if (tone->highvolt_count > tone->delay_500ms) 
+			play_tone(tone, &toneconfig->slowtripleup, BEEP_HV);
 	else tone->highvolt_count = 0;
 	
 	if (input_voltage < tone->lowvolt_warning) 
 		tone->lowvolt_count++;
+		if (tone->lowvolt_count > tone->delay_500ms) 
+			play_tone(tone, &toneconfig->slowtripledown, BEEP_LV);
 	else tone->lowvolt_count = 0;
 
-	if (tone->highvolt_count > tone->delay_500ms) 
-		play_tone(tone, &toneconfig->slowtripleup, BEEP_HV);
-	else if (tone->lowvolt_count > tone->delay_500ms) 
-		play_tone(tone, &toneconfig->slowtripledown, BEEP_LV);
+	//IMU sample rate in App config does not match IMU sample rate in Package
+	if (tone->write_error) //New IMU sample rate was written in App Cfg and not configured in TNT
+		tone->write_error_count++;
+		if (tone->write_error_count > tone->delay_500ms) 
+			play_tone(tone, &toneconfig->fasttripledown, WRITE_CFG);
+	else tone->write_error_count = 0;
 }
 
 void play_footpad_beep(ToneData *tone, MotorData *motor, FootpadSensor *fs, ToneConfig *toneconfig) {
