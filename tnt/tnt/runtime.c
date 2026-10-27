@@ -41,10 +41,9 @@ void imu_data_update(RuntimeData *rt) {
 	rt->true_pitch_angle = rad2deg(VESC_IF->ahrs_get_pitch(&rt->m_att_ref)); // True pitch is derived from the secondary IMU filter running with kp=0.2
 	rt->pitch_angle = rad2deg(VESC_IF->imu_get_pitch());
 	VESC_IF->imu_get_gyro(rt->gyro);
-	rt->gyro_y = rt->gyro[1]; // where y is up and down according to the IMU
+	rt->gyro_y = rt->gyro[1]; // where y is "up" and "down" relative to the IMU
 	rt->gyro_turning = sin_roll * sin_roll * rt->gyro[1] - cos_roll * sin_roll * rt->gyro[2]; //the gyro imparted to the y direction from turning the board
-	//VESC_IF->imu_get_accel(rt->accel); //Used for drop detection
-	rt->yaw_angle = rad2deg(VESC_IF->ahrs_get_yaw(&rt->m_att_ref));
+	rt->yaw_angle = rad2deg(VESC_IF->imu_get_yaw());
 	rt->gyro_yaw = cos_roll * rt->gyro[2] + sin_roll * rt->gyro[1]; // yaw relative to level
 }
 
@@ -68,14 +67,12 @@ void calc_yaw_change(YawData *yaw, RuntimeData *rt, YawDebugData *yaw_dbg){
 	yaw_dbg->debug3 = fmaxf(yaw->abs_change, yaw_dbg->debug3);
 }
 
-void reset_runtime(RuntimeData *rt, YawData *yaw, YawDebugData *yaw_dbg, tnt_config *config) {
+void reset_runtime(RuntimeData *rt, YawData *yaw, YawDebugData *yaw_dbg) {
 	//Low pass pitch filter
 	rt->pitch_smooth = rt->pitch_angle;
 	biquad_reset(&rt->pitch_biquad);
 
 	//Yaw
-	yaw->last_angle = rad2deg(VESC_IF->ahrs_get_yaw(&rt->m_att_ref));
-	yaw->last_change = 0;
 	yaw->abs_change = 0;
 	yaw_dbg->debug2 = 0;
 	yaw_dbg->debug3 = 0;
@@ -84,9 +81,6 @@ void reset_runtime(RuntimeData *rt, YawData *yaw, YawDebugData *yaw_dbg, tnt_con
 
 	biquad_reset(&rt->gyro_y_biquad);
 	rt->gyro_y_smooth = 0;
-
-	if (rt->imu_sample_rate != VESC_IF->get_cfg_int(CFG_PARAM_IMU_sample_rate)) //New IMU sample rate was written in App Cfg and not configured in TNT
-		configure_runtime(rt, config);
 }
 
 void configure_runtime(RuntimeData *rt, tnt_config *config) {
