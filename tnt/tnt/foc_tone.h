@@ -42,7 +42,8 @@ typedef enum {
 	BEEP_LW = 14,
 	BEEP_FETREC = 15,
 	BEEP_MOTREC = 16,
-	BEEP_CHARGED = 17
+	BEEP_CHARGED = 17,
+	WRITE_CFG =18
 } BeepReason;
 
 typedef struct {
