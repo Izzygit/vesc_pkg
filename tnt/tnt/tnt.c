@@ -135,7 +135,7 @@ static void reset_vars(data *d) {
 	reset_remote(&d->remote, &d->st_tilt);			//Remote
 	reset_surge(&d->surge);					//Surge
 	reset_traction(&d->traction, &d->state, &d->braking);	//Traction Control
-	tone_reset(&d->tone);					//FOC tones
+	tone_reset(&d->tone, d->rt.imu_sample_rate);					//FOC tones
 	reset_ride_tracking(&d->ridetrack);			//Ride tracking
 	state_engage(&d->state);
 }
