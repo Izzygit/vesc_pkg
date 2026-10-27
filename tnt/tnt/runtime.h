@@ -53,6 +53,7 @@ typedef struct { //Run time values used in various features
 	float gyro_yaw;
 	int imu_sample_rate;
 	int loop_rate;
+	float yaw_ema_factor;
 } RuntimeData;
 
 typedef struct {
