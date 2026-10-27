@@ -62,8 +62,7 @@ void apply_filters(RuntimeData *rt, tnt_config *config){
 }
 
 void calc_yaw_change(YawData *yaw, RuntimeData *rt, YawDebugData *yaw_dbg){ 
-	float new_change = rt->gyro_yaw;
-	ema(&yaw->change, 0.2, new_change); //originally configured for 0.2 at 832 Hz
+	ema(&yaw->change, rt->yaw_ema_factor, rt->gyro_yaw);
 	yaw->abs_change = fabsf(yaw->change);
 	yaw_dbg->debug1 = yaw->change;
 	yaw_dbg->debug3 = fmaxf(yaw->abs_change, yaw_dbg->debug3);
@@ -110,7 +109,10 @@ void configure_runtime(RuntimeData *rt, tnt_config *config) {
 	rt->ema_factor = min(1 , config->ema_factor * 832.0f / rt->loop_rate);
 
 	//Gyro Y Biquad Configure
-	biquad_configure(&rt->gyro_y_biquad, BQ_NOTCH,  max(0.02f, min(0.1f, 1.0f * config->gyro_filter / rt->imu_sample_rate))); 
+	biquad_configure(&rt->gyro_y_biquad, BQ_NOTCH,  max(0.02f, min(0.1f, 1.0f * config->gyro_filter / rt->imu_sample_rate)));
+
+	// EMA Filter Factor for Yaw Change
+	rt->yaw_ema_factor = min(1 , 100.0f / rt->loop_rate);
 }
 
 void check_odometer(RuntimeData *rt) { 
