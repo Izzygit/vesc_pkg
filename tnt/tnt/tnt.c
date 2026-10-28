@@ -140,43 +140,28 @@ static void reset_vars(data *d) {
 	state_engage(&d->state);
 }
 
-void check_brake_kp(PidData *p, State *state, tnt_config *config, KpArray *roll_brake_kp, KpArray *yaw_brake_kp) {
-
-}
-
 void debug_values(data *d) {
 	//Debug
 	if (d->pid_dbg.pitch) {
-		d->pid_dbg.debug9 = d->pid.kp_rate * d->pid.stability_kprate; // pitch rate kp		
-		d->pid_dbg.debug4 = d->rt.gyro_y_smooth;
-		d->pid_dbg.debug23 = d->pid.pitch_kp_rate_current;  // pitch rate current	
-		pid_dbg->debug1 = p->brake_pitch ? -d->pid.pitch_kp : d->pid.pitch_kp; //pitch angle kp, display as negative for braking
-		pid_dbg->debug12 = d->pid.pitch_current; // pitch angle demand
+		d->pid_dbg.debug1 = d->pid.brake_pitch ? -d->pid.pitch_kp : d->pid.pitch_kp; //pitch angle kp, display as negative for braking
+		d->pid_dbg.debug2 = d->pid.brake_gyro ? -d->pid.kp_rate : d->pid.kp_rate; //pitch rate kp, display as negative for braking
 	} else if (d->pid_dbg.stability) {
-		d->pid_dbg.debug6 = kp_rate * (stability_kp_rate - 1); //stability rate kp
-		d->pid_dbg.debug14 = kp_rate * (stability_kp_rate - 1) * -d->rt.gyro_y_smooth; //stability rate deamnd
-				pid_dbg->debug8 = kp_mod - kp_mod / p->stability_kp;  //stability contribution to pitch kp
-		pid_dbg->debug13 = pid_dbg->debug8 * p->proportional; // pitch demand from stability
+		d->pid_dbg.debug6 = d->pid.kp_rate * (d->pid.selected_stability_kprate - 1); //stability rate kp
+		d->pid_dbg.debug7 = d->pid_dbg.debug6 * -d->rt.gyro_y_smooth; //stability rate deamnd
+		d->pid_dbg.debug8 =  d->pid.pitch_kp * (d->pid.stability_kp - 1);  //stability contribution to pitch kp
+		d->pid_dbg.debug9 = d->pid_dbg.debug8 * d->pid.proportional; // pitch demand from stability
  	} else if (d->pid_dbg.yaw) {
-		d->pid_dbg.debug5 = d->rt.gyro_turning;
-		d->pid_dbg.debug15 = yaw_kp_rate * d->rt.gyro_turning; //yaw rate kp
-		pid_dbg->debug26 = d->pid.yawkp * d->pid.pitch_current;
-		pid_dbg->debug25 = yaw_erpm_scale;
-		pid_dbg->debug24 = p->brake_yaw ? -d->pid.yawkp : d->pid.yawkp;
-		pid_dbg->debug22 = fmaxf(pid_dbg->debug22, d->pid.yawkp);
+		d->pid_dbg.debug5 = abs(d->pid.pitch_current) * d->pid.yaw_kp_mod * d->pid.yaw_erpm_scaler;
+		d->pid_dbg.debug4 = d->pid.brake_yaw ? -d->pid.yaw_kp_mod : d->pid.yaw_kp_mod;
  	} else if (d->pid_dbg.current) {
-		d->pid_dbg.debug15 = yaw_kp_rate * d->rt.gyro_turning; // yaw rate current
-			d->pid_dbg.debug23 = d->pid.pid_mod;  // pitch rate current	
-		d->pid_dbg.debug14 = kp_rate * (stability_kp_rate - 1) * -d->rt.gyro_y_smooth; //stability rate deamnd
-				pid_dbg->debug12 = kp_mod * p->proportional; // pitch demand 
-		pid_dbg->debug13 = ( kp_mod - kp_mod / p->stability_kp) * p->proportional; // pitch demand from stability
-		pid_dbg->debug26 = d->pid.yawkp * d->pid.pitch_current;
-				pid_dbg->debug18 =  d->pid.rollkp * d->pid.pitch_current;
-	} else 	if (pid_dbg->roll) {
-		pid_dbg->debug16 = max(rd->rt.abs_roll_angle, pid_dbg->debug16);
-		pid_dbg->debug2 = p->brake_roll ? -d->pid.rollkp : d->pid.rollkp;	
-		pid_dbg->debug18 =  d->pid.rollkp * d->pid.pitch_current;
-		pid_dbg->debug17 = d->pid.roll_erpm_scaler;
+		d->pid_dbg.debug7 = d->pid_dbg.debug6 * -d->rt.gyro_y_smooth; //stability rate deamnd
+		d->pid_dbg.debug8 = d->pid_dbg.debug8 * d->pid.proportional; // pitch demand from stability
+		d->pid_dbg.debug5 = abs(d->pid.pitch_current) * d->pid.yaw_kp_mod * d->pid.yaw_erpm_scaler;
+		d->pid_dbg.debug10 =  abs(d->pid.pitch_current) * d->pid.roll_kp_mod * d->pid.roll_erpm_scaler;
+	} else if (d->pid_dbg.roll) {
+		d->pid_dbg.debug11 = max(d->rt.abs_roll_angle, d->pid_dbg.debug11);
+		d->pid_dbg.debug3 = d->pid.brake_roll ? -d->pid.roll_kp_mod : d->pid.roll_kp_mod;	
+		d->pid_dbg.debug10 =  abs(d->pid.pitch_current) * d->pid.roll_kp_mod * d->pid.roll_erpm_scaler;
 	}
 }
 
@@ -264,7 +249,7 @@ static void tnt_thd(void *arg) {
 				//Adjust Setpoint as required
 				apply_noseangling(&d->spd, &d->motor, &d->tnt_conf);
 
-				//Apply Stability
+				//Calculation Stability Kp
 				if (d->tnt_conf.enable_speed_stability || 
 				    d->tnt_conf.enable_throttle_stability) 
 					apply_stability(&d->pid, d->motor.abs_erpm, d->remote.setpoint, &d->tnt_conf);
@@ -275,13 +260,13 @@ static void tnt_thd(void *arg) {
 				// Calculate yaw change
 				calc_yaw_change(&d->yaw, &d->rt, &d->yaw_dbg);
 				
-				//Check for braking conditions and braking curves, and kp values for pitch roll and yaw
+				//Check for braking conditions, braking curves, and kp values for pitch roll and yaw
 				d->state.braking_pos = sign(d->pid.proportional) != d->motor.erpm_sign;
 				d->state.braking_pos_smooth = sign(d->pid.prop_smooth) != d->motor.erpm_sign;
-				d->pid.brake_roll = roll_brake_kp->count!=0 && state->braking_pos;
-				d->pid.brake_pitch = config->brake_curve && d->accel_kp.count!=0 && state->braking_pos;
-				d->pid.brake_yaw = yaw_brake_kp->count!=0 && state->braking_pos;
-				d->pid.gyro_braking = d->motor.erpm_sign == sign(d->rt.gyro_y_smooth);
+				d->pid.brake_roll = d->roll_brake_kp.count!=0 && d->state.braking_pos;
+				d->pid.brake_pitch = d->tnt_conf.brake_curve && d->brake_kp.count!=0 && d->state.braking_pos;
+				d->pid.brake_yaw = d->yaw_brake_kp.count!=0 && d->state.braking_pos;
+				d->pid.brake_gyro = (d->motor.erpm_sign == sign(d->rt.gyro_y_smooth)) && d->tnt_conf.brake_curve;
 				
 				//Pitch Kp
 				d->pid.pitch_kp = angle_kp_select(d->pid.abs_prop_smooth, d->pid.brake_pitch ? &d->brake_kp : &d->accel_kp);
@@ -289,34 +274,38 @@ static void tnt_thd(void *arg) {
 				//Roll and Yaw Kp			
 				d->pid.roll_erpm_scaler = roll_erpm_scale(&d->pid, &d->state, d->motor.abs_erpm, &d->roll_accel_kp, &d->tnt_conf);
 				d->pid.yaw_erpm_scaler = yaw_erpm_scale(&d->pid, &d->state, d->motor.abs_erpm, &d->tnt_conf);				
-				d->pid.rollkp = angle_kp_select(d->rt.abs_roll_angle, p->brake_roll ? &d->roll_brake_kp : &d->roll_accel_kp);
-				d->pid.yawkp = angle_kp_select(d->yaw.abs_change, p->brake_yaw ? &d->yaw_brake_kp : &d->yaw_accel_kp);
+				d->pid.rollkp = angle_kp_select(d->rt.abs_roll_angle, d->pid.brake_roll ? &d->roll_brake_kp : &d->roll_accel_kp);
+				d->pid.yawkp = angle_kp_select(d->yaw.abs_change, d->pid.brake_yaw ? &d->yaw_brake_kp : &d->yaw_accel_kp);
 
 				//Pitch Rate Kp
-				d->pid.kp_rate = gyro_braking ? d->brake_kp.kp_rate : d->accel_kp.kp_rate;
-				d->pid.stability_kp_rate = gyro_braking ? 1 : d->pid.stability_kprate; //only apply stability for accelerating pitch rate
-				d->pid.pitch_kp_rate_current =  d->pid.kp_rate * -d->rt.gyro_y_smooth;
-				d->pid.yaw_kp_rate = gyro_braking ? d->yaw_brake_kp.kp_rate : d->yaw_accel_kp.kp_rate;
+				d->pid.kp_rate = d->pid.brake_gyro ? d->brake_kp.kp_rate : d->accel_kp.kp_rate;
+				d->pid.selected_stability_kprate = d->pid.brake_gyro ? 1 : d->pid.stability_kprate; //only apply stability for accelerating pitch rate
+				d->pid.pitch_rate_current =  d->pid.kp_rate * -d->rt.gyro_y_smooth;
+				d->pid.yaw_kp_rate = d->pid.brake_gyro ? d->yaw_brake_kp.kp_rate : d->yaw_accel_kp.kp_rate;
 				d->pid.yaw_kp_rate_current = d->pid.yaw_kp_rate * d->rt.gyro_turning;
-				d->pid.kp_rate_current = d->pid.yaw_kp_rate_current + d->pid.pitch_kp_rate_current;
+				d->pid.kp_rate_current = d->pid.yaw_kp_rate_current + d->pid.pitch_rate_current;
 			}
 
 			//Filter roll and yaw kp
-			ema(&p->roll_pid_mod, 0.01, d->pid.rollkp * d->motor.erpm_sign); 	//always act in the direciton of travel	
-			ema(&p->yaw_pid_mod, 0.01, d->pid.yawkp * d->motor.erpm_sign); 	//always act in the direciton of travel
+			ema(&d->pid.roll_kp_mod, 0.01f, d->pid.rollkp * d->motor.erpm_sign); 	//always act in the direciton of travel	
+			ema(&d->pid.yaw_kp_mod, 0.01f, d->pid.yawkp * d->motor.erpm_sign); 	//always act in the direciton of travel
 
 			//Calculate pitch current demand
-			d->pid.pitch_current = d->pid.pitch_kp * p->proportional * p->stability_kp;
+			d->pid.pitch_current = d->pid.pitch_kp * d->pid.proportional * d->pid.stability_kp;
 			
 			//Calculate the demand from roll and yaw
-			d->pid.pid_mod = d->pid.pitch_current * (1 + d->pid.rollkp * d->pid.roll_erpm_scaler) * (1 + d->pid.yawkp * d->pid.yaw_erpm_scaler) + d->pid.kp_rate_current * d->pid.stability_kprate;
+			d->pid.pid_mod = abs(d->pid.pitch_current) * 				//pitch demand, abs value because kp is already signed by motor direction
+				((d->pid.roll_kp_mod * d->pid.roll_erpm_scaler) + 		//roll multiplier
+				(d->pid.yaw_kp_mod * d->pid.yaw_erpm_scaler)) + 			//yaw multiplier
+				d->pid.kp_rate_current * d->pid.selected_stability_kprate;	//pitch rate adder
 			
 			//Overide the calculated pid_mod with soft start if starting
 			apply_soft_start(&d->pid, d->motor.mc_current_max);
 
 			//Add pid_mod to pitch current demand
-			d->pid.new_pid_value = d-.pid.pitch_current + d->pid.pid_mod;
-			
+			d->pid.new_pid_value = d->pid.pitch_current + d->pid.pid_mod;
+			debug_values(d);
+				
 			// Current Limiting
 			float current_limit = d->motor.braking ? d->motor.mc_current_min : d->motor.mc_current_max;
 			if (fabsf(d->pid.new_pid_value) > current_limit) {
@@ -569,35 +558,35 @@ static void send_realtime_data(data *d){
 	} else if (d->tnt_conf.is_pitchdebug_enabled) {   
 		buffer[ind++] = 3;
 		buffer_append_float32_auto(buffer, d->rt.pitch_smooth, &ind); //smooth pitch	
-		buffer_append_float32_auto(buffer, d->pid.pitch_kp, &ind); // pitch kp
-		buffer_append_float32_auto(buffer, d->pid.new_pid_value, &ind); // pitch angle demand
-		buffer_append_float32_auto(buffer, d->pid_dbg.debug4, &ind); //pitch rate 
-		buffer_append_float32_auto(buffer, d->pid_dbg.debug9, &ind); // pitch kp rate
-		buffer_append_float32_auto(buffer, d->pid_dbg.debug23, &ind); //	pitch rate demand												
+		buffer_append_float32_auto(buffer, d->pid_dbg.debug1, &ind); // pitch kp
+		buffer_append_float32_auto(buffer, d->pid.pitch_current, &ind); // pitch angle demand
+		buffer_append_float32_auto(buffer, -d->rt.gyro_y_smooth, &ind); //pitch rate 
+		buffer_append_float32_auto(buffer, d->pid_dbg.debug2, &ind); // pitch kp rate
+		buffer_append_float32_auto(buffer, d->pid.pitch_rate_current, &ind); //	pitch rate demand									
 	} else if (d->tnt_conf.is_stabilitydebug_enabled) {
 		buffer[ind++] = 4;
 		buffer_append_float32_auto(buffer, d->motor.abs_erpm, &ind); // erpm
 		buffer_append_float32_auto(buffer, d->pid.stabl, &ind); //stablity 0-100%
 		buffer_append_float32_auto(buffer, d->pid_dbg.debug8, &ind); // added pitch kp 
 		buffer_append_float32_auto(buffer, d->pid_dbg.debug6, &ind); // added stability rate P for pitch
-		buffer_append_float32_auto(buffer, d->pid_dbg.debug13, &ind); // added demand for pitch angle
-		buffer_append_float32_auto(buffer, d->pid_dbg.debug14, &ind); // added demand for pitch rate
+		buffer_append_float32_auto(buffer, d->pid_dbg.debug9, &ind); // added demand for pitch angle
+		buffer_append_float32_auto(buffer, d->pid_dbg.debug7, &ind); // added demand for pitch rate
 	} else if (d->tnt_conf.is_yawdebug_enabled) {
 		buffer[ind++] = 5;
 		buffer_append_float32_auto(buffer, d->rt.yaw_angle, &ind); //yaw angle
 		buffer_append_float32_auto(buffer, d->rt.gyro_yaw, &ind); //yaw change
 		buffer_append_float32_auto(buffer, d->yaw_dbg.debug3, &ind); //max yaw change		
-		buffer_append_float32_auto(buffer, d->pid_dbg.debug24, &ind); //yaw kp 	
-		buffer_append_float32_auto(buffer, d->pid_dbg.debug26, &ind); //yaw kp current demand
-		buffer_append_float32_auto(buffer, d->pid_dbg.debug5, &ind); //yaw rate
-		buffer_append_float32_auto(buffer, d->pid_dbg.debug15, &ind); //yaw gyro current demand		
+		buffer_append_float32_auto(buffer, d->pid_dbg.debug4, &ind); //yaw kp 	
+		buffer_append_float32_auto(buffer, d->pid_dbg.debug5, &ind); //yaw kp current demand
+		buffer_append_float32_auto(buffer, d->rt.gyro_turning, &ind); //yaw rate
+		buffer_append_float32_auto(buffer, d->pid.yaw_kp_rate_current, &ind); //yaw gyro current demand		
 	} else if (d->tnt_conf.is_rolldebug_enabled) {
 		buffer[ind++] = 6;
 		buffer_append_float32_auto(buffer, d->rt.roll_angle, &ind); //roll angle
-		buffer_append_float32_auto(buffer, d->pid_dbg.debug16, &ind); //max roll	
-		buffer_append_float32_auto(buffer, d->pid_dbg.debug17, &ind); // erpm scale
-		buffer_append_float32_auto(buffer, d->pid_dbg.debug2, &ind); //roll kp
-		buffer_append_float32_auto(buffer, d->pid_dbg.debug18, &ind); //roll current demand
+		buffer_append_float32_auto(buffer, d->pid_dbg.debug11, &ind); //max roll	
+		buffer_append_float32_auto(buffer, d->pid.roll_erpm_scaler, &ind); // erpm scale
+		buffer_append_float32_auto(buffer, d->pid_dbg.debug3, &ind); //roll kp
+		buffer_append_float32_auto(buffer, d->pid_dbg.debug10, &ind); //roll current demand
 	} else if (d->tnt_conf.is_brakingdebug_enabled) {
 		buffer[ind++] = 7;
 		buffer_append_float32_auto(buffer, d->braking_dbg.debug2, &ind); //current duty
@@ -609,13 +598,13 @@ static void send_realtime_data(data *d){
 		buffer_append_float32_auto(buffer, d->braking_dbg.debug5, &ind); //count 
 	} else if (d->tnt_conf.is_currentdebug_enabled) {
 		buffer[ind++] = 8;
-		buffer_append_float32_auto(buffer, d->pid_dbg.debug12, &ind); // pitch angle demand
-		buffer_append_float32_auto(buffer, d->pid_dbg.debug23, &ind); // pitch rate demand												
-		buffer_append_float32_auto(buffer, d->pid_dbg.debug26, &ind); //yaw kp current demand
-		buffer_append_float32_auto(buffer, d->pid_dbg.debug15, &ind); //yaw gyro current demand		
-		buffer_append_float32_auto(buffer, d->pid_dbg.debug18, &ind); //roll current demand
-		buffer_append_float32_auto(buffer, d->pid_dbg.debug13, &ind); // added stablity demand for pitch angle
-		buffer_append_float32_auto(buffer, d->pid_dbg.debug14, &ind); // added stability demand for pitch rate
+		buffer_append_float32_auto(buffer, d->pid.pitch_current, &ind); // pitch angle demand
+		buffer_append_float32_auto(buffer, d->pid.pitch_rate_current, &ind); // pitch rate demand												
+		buffer_append_float32_auto(buffer, d->pid_dbg.debug5, &ind); //yaw kp current demand
+		buffer_append_float32_auto(buffer, d->pid.yaw_kp_rate_current, &ind); //yaw gyro current demand		
+		buffer_append_float32_auto(buffer, d->pid_dbg.debug10, &ind); //roll current demand
+		buffer_append_float32_auto(buffer, d->pid_dbg.debug9, &ind); // added stablity demand for pitch angle
+		buffer_append_float32_auto(buffer, d->pid_dbg.debug7, &ind); // added stability demand for pitch rate
 	} else { 
 		buffer[ind++] = 0;
 	}
