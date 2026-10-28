@@ -269,97 +269,11 @@ void configure_pid(PidData *p, tnt_config *config, PidDebug *pid_dbg) {
 	pid_dbg->current = config->is_currentdebug_enabled;
 }
 
-
-float apply_pitch_kp(KpArray *accel_kp, KpArray *brake_kp, PidData *p, PidDebug *pid_dbg) {
-	//Select and Apply Pitch kp  
-	float kp_mod, new_pid_value;
-	kp_mod = angle_kp_select(p->abs_prop_smooth, 
-		p->brake_pitch ? brake_kp : accel_kp);
-	
-	//Calc final kp and new current value
-	kp_mod *= p->stability_kp;
-	new_pid_value = p->proportional * kp_mod;
-	
-	//Debug
-	if (pid_dbg->pitch) {
-		pid_dbg->debug1 = p->brake_pitch ? -kp_mod : kp_mod; //pitch angle kp, display as negative for braking
-		pid_dbg->debug12 = kp_mod * p->proportional; // pitch angle demand
-	} else if (pid_dbg->stability) {
-		pid_dbg->debug8 = kp_mod - kp_mod / p->stability_kp;  //stability contribution to pitch kp
-		pid_dbg->debug13 = pid_dbg->debug8 * p->proportional; // pitch demand from stability
-	} else if (pid_dbg->current) {
-		pid_dbg->debug12 = kp_mod * p->proportional; // pitch demand 
-		pid_dbg->debug13 = ( kp_mod - kp_mod / p->stability_kp) * p->proportional; // pitch demand from stability
-	}
-
-	return new_pid_value;
-}
-
-float apply_kp_rate(KpArray *accel_kp, KpArray *brake_kp, bool braking, PidDebug *pid_dbg) {
-	float kp_rate = braking ? brake_kp->kp_rate : accel_kp->kp_rate;	
-	
-	//Debug for temporary use
-	pid_dbg->debug10 = kp_rate;
-	
-	return kp_rate;
-}
-
-float apply_roll_kp(KpArray *roll_accel_kp, KpArray *roll_brake_kp, PidData *p, int erpm_sign, float abs_roll_angle, float roll_erpm_scale, PidDebug *pid_dbg) {
-	// Select Roll Kp
-	float rollkp = 0;
-	rollkp = angle_kp_select(abs_roll_angle, 
-		p->brake_roll ? roll_brake_kp : roll_accel_kp);
-	
-	//ERPM Scale
-	rollkp *= roll_erpm_scale;
-
-	//Apply Roll Boost
-	ema(&p->roll_pid_mod, 0.01, rollkp * fabsf(p->new_pid_value) * erpm_sign); 	//always act in the direciton of travel
-
-	//Debug
-	if (pid_dbg->roll) {
-		pid_dbg->debug16 = max(abs_roll_angle, pid_dbg->debug16);
-		pid_dbg->debug2 = p->brake_roll ? -rollkp : rollkp;	
-		pid_dbg->debug18 =  p->roll_pid_mod;
-		pid_dbg->debug17 = roll_erpm_scale;
-	} else if (pid_dbg->current) {
-		pid_dbg->debug18 =  p->roll_pid_mod;
-	}
-	
-	return p->roll_pid_mod;
-}
-
 float yaw_erpm_scale(PidData *p, State *state, float abs_erpm, tnt_config *config) {
 	float yaw_erpm_scale = ((p->brake_yaw && abs_erpm < 750) || 
 		abs_erpm < config->yaw_minerpm || 
 		state->sat == SAT_CENTERING) ? 0 : 1;
 	return yaw_erpm_scale;
-}
-
-
-float apply_yaw_kp(KpArray *yaw_accel_kp, KpArray *yaw_brake_kp, PidData *p, float erpm_sign, float abs_change, float yaw_erpm_scale, PidDebug *pid_dbg) {
-	//Select Yaw Kp
-	float yawkp = 0;
-	yawkp = angle_kp_select(abs_change, 
-		p->brake_yaw ? yaw_brake_kp : yaw_accel_kp);
-	
-	//Apply ERPM Scale
-	yawkp *= yaw_erpm_scale;
-	
-	//Apply Yaw Boost
-	ema(&p->yaw_pid_mod, 0.01, yawkp * fabsf(p->new_pid_value) * erpm_sign); 	//always act in the direciton of travel
-
-	//Debug
-	if	(pid_dbg->yaw) {
-		pid_dbg->debug26 = p->yaw_pid_mod;
-		pid_dbg->debug25 = yaw_erpm_scale;
-		pid_dbg->debug24 = p->brake_yaw ? -yawkp : yawkp;
-		pid_dbg->debug22 = fmaxf(pid_dbg->debug22, yawkp);
-	} else if (pid_dbg->current) {
-		pid_dbg->debug26 = p->yaw_pid_mod;
-	}
-	
-	return p->yaw_pid_mod;
 }
 
 void brake(float current, RuntimeData *rt, MotorData *motor) {
