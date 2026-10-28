@@ -60,6 +60,7 @@ typedef struct {
 	float yaw_kp_rate;
 	float yaw_kp_rate_current;
 	float kp_rate_current;
+	float pitch_current;
 } PidData;
 
 typedef struct {
