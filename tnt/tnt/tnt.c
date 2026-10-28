@@ -151,17 +151,17 @@ void debug_values(data *d) {
 		d->pid_dbg.debug8 =  d->pid.pitch_kp * (d->pid.stability_kp - 1);  //stability contribution to pitch kp
 		d->pid_dbg.debug9 = d->pid_dbg.debug8 * d->pid.proportional; // pitch demand from stability
  	} else if (d->pid_dbg.yaw) {
-		d->pid_dbg.debug5 = abs(d->pid.pitch_current) * d->pid.yaw_kp_mod * d->pid.yaw_erpm_scaler;
+		d->pid_dbg.debug5 = fabsf(d->pid.pitch_current) * d->pid.yaw_kp_mod * d->pid.yaw_erpm_scaler;
 		d->pid_dbg.debug4 = d->pid.brake_yaw ? -d->pid.yaw_kp_mod : d->pid.yaw_kp_mod;
  	} else if (d->pid_dbg.current) {
 		d->pid_dbg.debug7 = d->pid_dbg.debug6 * -d->rt.gyro_y_smooth; //stability rate deamnd
 		d->pid_dbg.debug8 = d->pid_dbg.debug8 * d->pid.proportional; // pitch demand from stability
-		d->pid_dbg.debug5 = abs(d->pid.pitch_current) * d->pid.yaw_kp_mod * d->pid.yaw_erpm_scaler;
-		d->pid_dbg.debug10 =  abs(d->pid.pitch_current) * d->pid.roll_kp_mod * d->pid.roll_erpm_scaler;
+		d->pid_dbg.debug5 = fabsf(d->pid.pitch_current) * d->pid.yaw_kp_mod * d->pid.yaw_erpm_scaler;
+		d->pid_dbg.debug10 =  fabsf(d->pid.pitch_current) * d->pid.roll_kp_mod * d->pid.roll_erpm_scaler;
 	} else if (d->pid_dbg.roll) {
 		d->pid_dbg.debug11 = max(d->rt.abs_roll_angle, d->pid_dbg.debug11);
 		d->pid_dbg.debug3 = d->pid.brake_roll ? -d->pid.roll_kp_mod : d->pid.roll_kp_mod;	
-		d->pid_dbg.debug10 =  abs(d->pid.pitch_current) * d->pid.roll_kp_mod * d->pid.roll_erpm_scaler;
+		d->pid_dbg.debug10 =  fabsf(d->pid.pitch_current) * d->pid.roll_kp_mod * d->pid.roll_erpm_scaler;
 	}
 }
 
@@ -294,7 +294,7 @@ static void tnt_thd(void *arg) {
 			d->pid.pitch_current = d->pid.pitch_kp * d->pid.proportional * d->pid.stability_kp;
 			
 			//Calculate the demand from roll and yaw
-			d->pid.pid_mod = abs(d->pid.pitch_current) * 				//pitch demand, abs value because kp is already signed by motor direction
+			d->pid.pid_mod = fabsf(d->pid.pitch_current) * 				//pitch demand, abs value because kp is already signed by motor direction
 				((d->pid.roll_kp_mod * d->pid.roll_erpm_scaler) + 		//roll multiplier
 				(d->pid.yaw_kp_mod * d->pid.yaw_erpm_scaler)) + 			//yaw multiplier
 				d->pid.kp_rate_current * d->pid.selected_stability_kprate;	//pitch rate adder
