@@ -230,13 +230,13 @@ float roll_erpm_scale(PidData *p, State *state, float abs_erpm, KpArray *roll_ac
 void reset_pid(PidData *p, PidDebug *pid_dbg) {
 	p->pid_value = 0;
 	p->pid_mod = 0;
-	p->roll_pid_mod = 0;
-	p->yaw_pid_mod = 0;
+	p->roll_kp_mod = 0;
+	p->roll_kp_mod = 0;
 	p->stabl = 0;
 	p->prop_smooth = 0;
 	p->abs_prop_smooth = 0;
 	p->softstart_pid_limit = 0;
-	pid_dbg->debug16 = 0;
+	pid_dbg->debug11 = 0;
 }
 
 void apply_soft_start(PidData *p, float mc_current_max) {
