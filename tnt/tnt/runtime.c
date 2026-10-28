@@ -106,7 +106,7 @@ void configure_runtime(RuntimeData *rt, tnt_config *config) {
 	biquad_configure(&rt->gyro_y_biquad, BQ_NOTCH,  max(0.02f, min(0.1f, 1.0f * config->gyro_filter / rt->imu_sample_rate)));
 
 	// EMA Filter Factor for Yaw Change
-	rt->yaw_ema_factor = min(1 , config->yaw_ema_factor * 100.0f / rt->loop_rate);
+	//rt->yaw_ema_factor = min(1 , config->yaw_ema_factor * 100.0f / rt->loop_rate);
 }
 
 void check_odometer(RuntimeData *rt) { 
