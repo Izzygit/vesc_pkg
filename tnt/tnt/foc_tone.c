@@ -274,24 +274,24 @@ void check_tone(ToneData *tone, ToneConfigs *toneconfig, MotorData *motor) {
 	}
 
 	//Low and high voltages	
-	if (input_voltage > tone->highvolt_warning) 
+	if (input_voltage > tone->highvolt_warning) {
 		tone->highvolt_count++; 
 		if (tone->highvolt_count > tone->delay_500ms) 
 			play_tone(tone, &toneconfig->slowtripleup, BEEP_HV);
-	else tone->highvolt_count = 0;
+	} else tone->highvolt_count = 0;
 	
-	if (input_voltage < tone->lowvolt_warning) 
+	if (input_voltage < tone->lowvolt_warning) {
 		tone->lowvolt_count++;
 		if (tone->lowvolt_count > tone->delay_500ms) 
 			play_tone(tone, &toneconfig->slowtripledown, BEEP_LV);
-	else tone->lowvolt_count = 0;
+	} else tone->lowvolt_count = 0;
 
 	//IMU sample rate in App config does not match IMU sample rate in Package
-	if (tone->write_error) //New IMU sample rate was written in App Cfg and not configured in TNT
+	if (tone->write_error) { //New IMU sample rate was written in App Cfg and not configured in TNT
 		tone->write_error_count++;
 		if (tone->write_error_count > tone->delay_500ms) 
 			play_tone(tone, &toneconfig->fasttripledown, WRITE_CFG);
-	else tone->write_error_count = 0;
+	} else tone->write_error_count = 0;
 }
 
 void play_footpad_beep(ToneData *tone, MotorData *motor, FootpadSensor *fs, ToneConfig *toneconfig) {
