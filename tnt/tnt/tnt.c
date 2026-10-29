@@ -287,8 +287,8 @@ static void tnt_thd(void *arg) {
 			}
 
 			//Filter roll and yaw kp
-			ema(&d->pid.roll_kp_mod, 0.01f, d->pid.rollkp * d->motor.erpm_sign); 	//always act in the direciton of travel	
-			ema(&d->pid.yaw_kp_mod, 0.01f, d->pid.yawkp * d->motor.erpm_sign); 	//always act in the direciton of travel
+			ema(&d->pid.roll_kp_mod, d->rt.yaw_ema_factor, d->pid.rollkp * d->motor.erpm_sign); 	//always act in the direciton of travel	
+			ema(&d->pid.yaw_kp_mod, d->rt.yaw_ema_factor, d->pid.yawkp * d->motor.erpm_sign); 	//always act in the direciton of travel
 
 			//Calculate pitch current demand
 			d->pid.pitch_current = d->pid.pitch_kp * d->pid.proportional * d->pid.stability_kp;
