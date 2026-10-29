@@ -1,6 +1,6 @@
 // Copyright 2024 Michael Silberstein
 //
-// This file is part of the Refloat VESC package.
+// This file is part of the Trick and Trail VESC package.
 //
 // Refloat VESC package is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by the
